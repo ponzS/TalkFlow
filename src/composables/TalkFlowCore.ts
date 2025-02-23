@@ -752,29 +752,25 @@ async function getChunkCount(chatId: string, chunkIndex: number): Promise<number
  /**
    * 在 sendChat 中使用的“分块存储”逻辑
    */
- async function publishChatMessage(chatId: string, msgObj: any) {
-  // 1) 获取最新块号
-  let latest = await getLatestChatChunkIndex(chatId)
-  // 2) 判断块是否已满
-  const count = await getChunkCount(chatId, latest)
-  if (count >= CHUNK_SIZE) {
-    latest++
-    await setLatestChatChunkIndex(chatId, latest)
-  }
-  // 3) 写入 chunkX
-  gun
-    .get('chats')
-    .get(chatId)
-    .get('chunks')
-    .get(String(latest))
-    .set(msgObj, (ack: any) => {
-      if (ack.err) {
-        console.error('发布消息失败:', ack.err)
-      } else {
-        console.log(`消息成功写到 chunk=${latest}`)
+  async function publishChatMessage(chatId: string, msgObj: ChatMessage) {
+    let latest = await getLatestChatChunkIndex(chatId);
+    if (latest === 0) {
+      const realLatest = await new Promise<number | undefined>((resolve) =>
+        gun.get('chats').get(chatId).get('latestChunk').once((val) => resolve(val))
+      );
+      if (realLatest === undefined) {
+        await setLatestChatChunkIndex(chatId, 0);
       }
-    })
-}
+    }
+
+    const count = await getChunkCount(chatId, latest);
+    if (count >= CHUNK_SIZE) {
+      latest++;
+      await setLatestChatChunkIndex(chatId, latest);
+    }
+
+    gun.get('chats').get(chatId).get('chunks').get(String(latest)).set(msgObj);
+  }
 
 
   // async function sendChat(messageType: MessageType, payload: string | null = null) {
