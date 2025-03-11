@@ -1,5 +1,10 @@
 # TalkFlow
 
+en:warning! the version has big bug, fuck! wait for me update!
+
+cn：警告！当前版本存在严重bug，不要用于生产环境，请等待我的更新，工作已经在进行中。
+
+
 TalkFlow is a decentralized real-time communication tool. Based on the principle of CRDT. Friends are nodes to each other, connecting everyone like a starry sky.
 
 One person's strength is always limited, but when we unite, we will become an endless starry sky without fear of all threats.
