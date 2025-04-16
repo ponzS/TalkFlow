@@ -36,8 +36,11 @@ There are more! Forgive me for not more time to write a description! Because the
 # Quick Start 
 
 iOS:
+
 AppStore:TalkFlow
+
 https://apps.apple.com/us/app/talkflow/id6736827124
+
 https://apps.apple.com/cn/app/talkflow/id6736827124
 
 MacOS&Windows client:
@@ -68,6 +71,10 @@ start
 ```base
 node start.js
 ```
+
+![test](https://github.com/user-attachments/assets/65c4575d-73ef-43b3-ba50-63c8c5116d28)
+
+
 
 # composables
 You only need to pay attention to the implementation of LisenChat and SentChat when expanding the controller.
