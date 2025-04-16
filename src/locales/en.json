@@ -1,0 +1,168 @@
+{
+  "next": "Next",
+  "hello": "Hello, World",
+  "password": "Password",
+  "username": "Username",
+  "register": "Create Key",
+  "register1": "Generate Key and Encrypt",
+  "login": "Decrypt and Login",
+  "back": "Back",
+  "setting": "Settings",
+  "resetPassword": "Reset Password",
+  "forgotPassword": "Forgot Password",
+  "logout": "Log Out",
+  "talkflowid": "Identity Key",
+  "blacklist": "Blacklist",
+  "myblacklist": "My Blacklist",
+  "addblacklist": "Add to Blacklist",
+  "deleteblacklist": "Remove from Blacklist",
+  "keysecuritydetection": "Key Security Detection",
+  "datamigration": "Data Migration",
+  "cachemanagement": "Cache Management",
+  "clearthechatrecords": "Clear Chat Records",
+  "destroythekey": "Delete Account",
+  "accountsettings": "Account Settings",
+  "notify": "Notification",
+  "colosenotify": "Disable Notification",
+  "Toast": "Toast Notification",
+  "language": "Language",
+  "help": "Help",
+  "setforme": "Account Setup",
+  "mynode": "My Node",
+  "friendkey": "Friend's Identity Key",
+  "addfriend": "Send Friend Request",
+  "close": "Close",
+  "addfriend1": "Add Friend",
+  "addfriend2": "Send Request",
+  "remarkname": "Remark",
+  "remarks": "Remark Information",
+  "save": "Save",
+  "delete": "Delete",
+  "hide": "Hide",
+  "afriend": "Verified Relationship",
+  "sendmessage": "Send Message",
+  "scanner": "Scanner",
+  "qrcodetool": "QR Code Tool",
+  "offlinewebtools": "Offline Web Tools",
+  "relay": "Relay",
+  "onlineequipment": "Online Devices",
+  "historicalequipment": "Historical Devices",
+  "refreshstatus": "Refresh Status",
+  "exportdata": "Export Data",
+  "importdata": "Import Data",
+  "datamigrationtalk": "Please ensure both devices are on the same node or have established a peer-to-peer connection, and both devices have decrypted key pairs and remain online. Migration content includes: basic personal data - contacts - session list - chat records in text and AAC audio format.",
+  "importdatatalk": "Please enter the sync code",
+  "importdatatalk1": "Start Importing",
+  "importdatatalk2": "Please ensure the current device is connected to the same valid node as the exporting device",
+  "importdatatalk3": "Importing Data",
+  "importdatatalk4": "Progress",
+  "exportdatatalk1": "Start Exporting",
+  "exportdatatalk2": "Preparing to export data...",
+  "exportdatatalk3": "Please ensure the current device is connected to a valid node.",
+  "exportdatatalk4": "Export Complete",
+  "exportdatatalk5": "Please use the following sync code to import on the new device",
+  "addfriendtalk": "Please enter a message",
+  "agree": "Agree",
+  "refuse": "Refuse",
+  "notethename": "Remark Name",
+  "Remarks": "Remark Information",
+  "savesettings": "Save Settings",
+  "deletefriend": "Delete Friend",
+  "sending": "Sending",
+  "htmltalk": "This is a tool for generating offline webpages. After entering content and setting a password, select encryption, and a link will be returned. Simply copy the link to a browser to access the generated content. Of course, you can also choose not to set a password; it’s an optional feature.",
+  "relaytalk": "TalkFlow transmits and publishes data in a real-time distributed network through relays. It’s the core of everything. By default, it uses official peer nodes, but you can also use your own private node or open your private node to the public network to connect with more people. The relay management tool is ready, having undergone multiple stress tests, and is a very stable and reliable version. Expand your relay list now!",
+  "versiontalk": "Version Notes - v1.0",
+  "versiontalk1": "This version does not include all features; please wait for updates. Features in progress include: APNs lock screen notifications - reliable encrypted large file transfers - reliable encrypted real-time voice and video communication - portable game server port - a more powerful desktop port for Windows, Linux, and macOS based on ollama - Version Pro and mixed reality gesture control versions for Oculus Quest & Pico - public node community (this feature may not pass review, so it’s on hold) - group chat (currently implemented but not stable, may be available in the next version; private communication has a higher encryption level). Private encrypted communication in the current version is reliable. You can connect to a desktop client with a private AI or drone. The desktop port has opened AI and controller interfaces; simply configure the node and add the AI as a friend to communicate with your private AI via a decentralized network."
+
+  ,"eula": {
+    "title": "End User License Agreement",
+    "lastUpdated": "Last Updated: March 12, 2025",
+    "sections": {
+      "acceptance": {
+        "title": "1. Acceptance of Terms",
+        "content": "By using TalkFlow (\"the App\"), you agree to be bound by this End User License Agreement (\"EULA\"). If you do not agree, please do not use the App."
+      },
+      "license": {
+        "title": "2. License Grant",
+        "content": "TalkFlow grants you a non-exclusive, non-transferable license to use the App for personal or commercial purposes, subject to this EULA. The App operates on a decentralized network, and you are responsible for managing your own data and keys."
+      },
+      "conduct": {
+        "title": "3. User Conduct",
+        "content": "You agree not to use the App to:<br>- Post, share, or transmit any objectionable content, including but not limited to hate speech, harassment, violence, pornography, or illegal material.<br>- Engage in abusive behavior toward other users, such as spamming, trolling, threats, or malicious interference with network nodes.<br>- Violate any applicable laws or regulations, including but not limited to data privacy and communication laws."
+      },
+      "moderation": {
+        "title": "4. Content Moderation",
+        "content": "For content transmitted through public open nodes, TalkFlow reserves the right to monitor, review, and block user-generated content that violates this EULA. For private nodes or peer-to-peer connections, you are responsible for content management. You may report objectionable content via the in-app reporting feature or by emailing zhangguoai888@gmail.com."
+      },
+      "termination": {
+        "title": "5. Termination",
+        "content": "If you violate this EULA, we may suspend or terminate your access to the App with or without notice. Data in the decentralized network may still be retained by other nodes, and we are not responsible for such retention."
+      },
+      "warranty": {
+        "title": "6. No Warranty",
+        "content": "The App is provided \"as is\" without any express or implied warranties, including but not limited to guarantees of decentralized network stability or data transmission reliability. Due to its decentralized nature, service availability may be affected by network conditions."
+      },
+      "liability": {
+        "title": "7. Limitation of Liability",
+        "content": "TalkFlow is not liable for any damages arising from your use of the App, including but not limited to data loss, key loss, or third-party actions. We do not provide key recovery services; due to the decentralized nature of the App, losing your key will result in inability to access encrypted data. Please safeguard your keys."
+      },
+      "changes": {
+        "title": "8. Changes to EULA",
+        "content": "We may update this EULA at any time, and the updated version will be published in the App or through official channels. Continued use of the App constitutes acceptance of the updated terms."
+      },
+      "contact": {
+        "title": "9. Contact",
+        "content": "For questions or support, please contact us at zhangguoai888@gmail.com. Due to the decentralized nature of the App, some issues may require you to troubleshoot node or key-related settings yourself."
+      },
+      "agreement": {
+        "content": "By clicking \"I Agree,\" you acknowledge that you have read, understood, and agree to all terms of this EULA, and you are willing to assume the responsibilities and risks associated with using a decentralized real-time communication service."
+      }
+    },
+    "buttons": {
+      "agree": "I Agree",
+      "decline": "Decline"
+    }
+  },
+  "help1" : "This is an offline-first communication application.",
+"help2" : "All data is stored only on your local disk and is incrementally updated via the latest snapshot data from a distributed network only when needed.",
+"help3" : "This means your contact list and private data will not appear anywhere you have not manually configured.",
+"help4" : "If you need to use it across devices or switch devices, please go to the settings page and select data migration. Export the data from the device and import it to the new device, ensuring both devices use the same key pair and peer nodes while remaining logged in. If you wish to use your own peer nodes, you need to manually configure them in the relay options; by default, official nodes are used. The transferred content includes: contact list, chat history, and historical device records.",
+"help5" : "If you need to extend AI and IoT controller capabilities, please use the MacOS or Windows version to deploy a private service. Add the server node as a friend. This way, you can communicate with AI or other IoT devices like drones over long distances via a distributed network using your mobile device.",
+"help6" : "How to add a friend?",
+"help7" : "In the options at the top right of the contacts page, you can choose to manually copy and paste the other party’s public key or scan their QR code with the scanner to send a friend request.",
+"help8" : "How to accept a friend request?",
+"help9" : "In the options at the top left of the contacts page, you can directly access the friend request list and select the friends you wish to add. Additionally, if you feel harassed by a user, we provide a blacklist feature. You can add them to your blacklist, and you will no longer receive any data from that user.",
+"help10" : "Additional notes on adding friends:",
+"help11" : "Private communication data is not automatically generated for security reasons, including avoiding identity spoofing issues. When you communicate with the other party for the first time, a unique communication certificate and communication ID will be generated locally for you and them. After adding the other party, find them in the contact list, click to enter the conversation page, and send a custom message to establish the communication certificate and ID locally. The other party must do the same. Your certificates with them are independent, but both your key pairs and certificates are required to decrypt and communicate."
+
+
+
+,
+  "sponsor": "Sponsorship",
+  "sponsor1": "Support TalkFlow",
+  "sponsor2": "Join us in accelerating communication innovation. Become a sponsor today!",
+  "sponsor3": "Your sponsorship will be distributed to everyone who has contributed to TalkFlow!",
+  "sponsor4": "Your identity will be added to the TalkFlow sponsors list!",
+  "sponsor5": "Sponsorship Contact Methods",
+  "sponsor6": "TalkFlow Contributors",
+  "sponsor7": "TalkFlow Author - Created the core TalkFlow platform and the Gun-Relay-based communication system.",
+  "sponsor8": "GunJs Author - Provided TalkFlow with a powerful real-time distributed database.",
+  "sponsor9": "Gun-Vue & Gun-Avatar Author - Provided TalkFlow with stable foundational components and fun avatars.",
+  "sponsor10": "Mark and the Gun open-source community contributors have donated decades of effort to everyone for free, offering TalkFlow reliable long-term technical support and assistance.",
+  "sponsor11": "TalkFlow Technology Stack",
+  "sponsor12": "TalkFlow is built with cutting-edge tools and languages to ensure a robust, scalable experience:",
+  "sponsor13": "Programming Languages:",
+  "sponsor14": "Database:",
+  "sponsor15": "Tools:",
+
+  "github": "Relay Deployment",
+  "github1": "GunRelay-TalkFlow is a TalkFlow relay node based on GUN.",
+  "github2": "Gain independent communication capabilities through a decentralized relay node.",
+  "github3": "Enables you to set up a relay node for TalkFlow using GUN (a decentralized graph database). The relay node provides real-time data synchronization between devices, ensuring seamless and secure communication. Whether you're a developer or an enthusiast, deploying your own relay is a crucial step toward a global decentralized distributed mesh network future. When we reach Mars, it will quickly restore the network experience we had on Earth.",
+  "github4": "Visit GitHub Repository",
+  "github5": "Deploy it yourself via the GitHub repository below. You can directly use the source code to build your preferred appearance or extend functionalities, as well as create your own installation package or run it directly using terminal commands. Once successfully run, it will automatically start a decentralized relay node without additional configuration."
+
+
+
+
+}

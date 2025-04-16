@@ -1,0 +1,165 @@
+{
+  "next": "Weiter",
+  "hello": "Hallo, Welt",
+  "password": "Passwort",
+  "username": "Benutzername",
+  "register": "Schlüssel erstellen",
+  "register1": "Schlüssel generieren und verschlüsseln",
+  "login": "Entschlüsseln und anmelden",
+  "back": "Zurück",
+  "setting": "Einstellungen",
+  "resetPassword": "Passwort zurücksetzen",
+  "forgotPassword": "Passwort vergessen",
+  "logout": "Abmelden",
+  "talkflowid": "Identitätsschlüssel",
+  "blacklist": "Schwarze Liste",
+  "myblacklist": "Meine schwarze Liste",
+  "addblacklist": "Zur schwarzen Liste hinzufügen",
+  "deleteblacklist": "Von der schwarzen Liste entfernen",
+  "keysecuritydetection": "Schlüsselsicherheitsprüfung",
+  "datamigration": "Datenmigration",
+  "cachemanagement": "Cache-Verwaltung",
+  "clearthechatrecords": "Chatverläufe löschen",
+  "destroythekey": "Schlüssel zerstören",
+  "accountsettings": "Kontoeinstellungen",
+  "notify": "Benachrichtigung",
+  "colosenotify": "Benachrichtigungen deaktivieren",
+  "Toast": "Toast-Benachrichtigung",
+  "language": "Sprache",
+  "help": "Hilfe",
+  "setforme": "Kontoeinrichtung",
+  "mynode": "Mein Knoten",
+  "friendkey": "Identitätsschlüssel des Freundes",
+  "addfriend": "Freundschaftsanfrage senden",
+  "close": "Schließen",
+  "addfriend1": "Freund hinzufügen",
+  "addfriend2": "Anfrage senden",
+  "remarkname": "Bemerkung",
+  "remarks": "Bemerkungsinformationen",
+  "save": "Speichern",
+  "delete": "Löschen",
+  "hide": "Verbergen",
+  "afriend": "Verifizierte Beziehung",
+  "sendmessage": "Nachricht senden",
+  "scanner": "Scanner",
+  "qrcodetool": "QR-Code-Tool",
+  "offlinewebtools": "Offline-Web-Tools",
+  "relay": "Relais",
+  "onlineequipment": "Online-Geräte",
+  "historicalequipment": "Historische Geräte",
+  "refreshstatus": "Status aktualisieren",
+  "exportdata": "Daten exportieren",
+  "importdata": "Daten importieren",
+  "datamigrationtalk": "Stellen Sie sicher, dass beide Geräte sich auf demselben Knoten befinden oder eine Peer-to-Peer-Verbindung hergestellt haben, und dass beide Geräte entschlüsselte Schlüsselpaare besitzen und online sind. Der Migrationsinhalt umfasst: grundlegende persönliche Daten - Kontakte - Sitzungsliste - Chatverläufe in Text- und AAC-Audioformat.",
+  "importdatatalk": "Bitte geben Sie den Synchronisierungscode ein",
+  "importdatatalk1": "Import starten",
+  "importdatatalk2": "Stellen Sie sicher, dass das aktuelle Gerät mit demselben gültigen Knoten verbunden ist wie das Exportgerät",
+  "importdatatalk3": "Daten werden importiert",
+  "importdatatalk4": "Fortschritt",
+  "exportdatatalk1": "Export starten",
+  "exportdatatalk2": "Datenexport wird vorbereitet...",
+  "exportdatatalk3": "Stellen Sie sicher, dass das aktuelle Gerät mit einem gültigen Knoten verbunden ist.",
+  "exportdatatalk4": "Export abgeschlossen",
+  "exportdatatalk5": "Bitte verwenden Sie den folgenden Synchronisierungscode, um auf dem neuen Gerät zu importieren",
+  "addfriendtalk": "Bitte geben Sie eine Nachricht ein",
+  "agree": "Zustimmen",
+  "refuse": "Ablehnen",
+  "notethename": "Bemerkungsname",
+  "Remarks": "Bemerkungsinformationen",
+  "savesettings": "Einstellungen speichern",
+  "deletefriend": "Freund löschen",
+  "sending": "Wird gesendet",
+  "htmltalk": "Dies ist ein Tool zur Erstellung von Offline-Webseiten. Nachdem Sie Inhalte eingegeben und ein Passwort festgelegt haben, wählen Sie Verschlüsselung, und es wird ein Link zurückgegeben. Kopieren Sie den Link einfach in einen Browser, um auf die generierten Inhalte zuzugreifen. Natürlich können Sie auch darauf verzichten, ein Passwort festzulegen; das ist eine zusätzliche Option.",
+  "relaytalk": "TalkFlow überträgt und veröffentlicht Daten in einem Echtzeit-verteilten Netzwerk über Relais. Es ist das Herzstück von allem. Standardmäßig werden offizielle Peer-Knoten verwendet, aber Sie können auch Ihren eigenen privaten Knoten nutzen oder Ihren privaten Knoten für das öffentliche Netzwerk öffnen, um sich mit mehr Menschen zu verbinden. Das Relais-Management-Tool ist bereit, hat mehrere Stresstests bestanden und ist eine sehr stabile und zuverlässige Version. Erweitern Sie Ihre Relais-Liste!",
+  "versiontalk": "Versionshinweise - v1.0",
+  "versiontalk1": "Diese Version enthält nicht alle Funktionen; bitte warten Sie auf Updates. Funktionen in Entwicklung umfassen: APNs-Sperrbildschirm-Benachrichtigungen - zuverlässiger verschlüsselter Transfer großer Dateien - zuverlässige verschlüsselte Echtzeit-Sprach- und Videokommunikation - portabler Spielserver-Port - ein leistungsstärkerer Desktop-Port für Windows, Linux und macOS basierend auf ollama - Pro-Versionen und Gestensteuerung in gemischter Realität für Oculus Quest und Pico - öffentliche Knoten-Community (diese Funktion könnte die Überprüfung nicht bestehen, daher ist sie vorerst zurückgestellt) - Gruppenchat (derzeit implementiert, aber nicht stabil, könnte in der nächsten Version verfügbar sein; private Kommunikation hat ein höheres Verschlüsselungsniveau). Die verschlüsselte private Kommunikation in der aktuellen Version ist zuverlässig. Sie können sich über einen Desktop-Client mit einer privaten KI oder Drohne verbinden. Der Desktop-Port hat KI- und Controller-Schnittstellen geöffnet; konfigurieren Sie einfach den Knoten und fügen Sie die KI als Freund hinzu, um über ein dezentrales Netzwerk mit Ihrer privaten KI zu kommunizieren."
+
+,
+"eula": {
+  "title": "最终用户许可协议",
+  "lastUpdated": "最后更新：2025年3月12日",
+  "sections": {
+    "acceptance": {
+      "title": "1. 接受条款",
+      "content": "使用 TalkFlow（以下简称“本应用”）即表示您同意受本最终用户许可协议（以下简称“EULA”）的约束。如果您不同意，请勿使用本应用。"
+    },
+    "license": {
+      "title": "2. 许可授予",
+      "content": "TalkFlow 授予您非独占、不可转让的许可，允许您出于个人或商业目的使用本应用，但须遵守本 EULA 的条款。本应用基于去中心化网络运行，您对数据和密钥的管理由您自行负责。"
+    },
+    "conduct": {
+      "title": "3. 用户行为",
+      "content": "您同意不将本应用用于以下用途：<br>- 发布、分享或传输任何不当内容，包括但不限于仇恨言论、骚扰、暴力、色情或非法内容。<br>- 对其他用户实施滥用行为，例如发送垃圾信息、挑衅、威胁或恶意干扰网络节点。<br>- 违反任何适用法律或法规，包括但不限于数据隐私法和通信法规。"
+    },
+    "moderation": {
+      "title": "4. 内容审查",
+      "content": "对于通过公共公开节点网络传输的内容，TalkFlow 保留监控、审查和屏蔽违反本 EULA 的用户生成内容的权利。对于私人节点或对等连接中的内容，您自行负责管理。如发现不当内容，您可以通过应用内举报功能或邮箱 zhangguoai888@gmail.com 联系我们进行报告。"
+    },
+    "termination": {
+      "title": "5. 终止",
+      "content": "如果您违反本 EULA，我们可能会在通知或不通知的情况下暂停或终止您对本应用的访问权限。去中心化网络中的数据可能仍由其他节点保留，我们对此不承担责任。"
+    },
+    "warranty": {
+      "title": "6. 无担保",
+      "content": "本应用按“现状”提供，不提供任何明示或暗示的担保，包括但不限于对去中心化网络稳定性和数据传输可靠性的担保。由于其去中心化特性，服务可用性可能受网络状况影响。"
+    },
+    "liability": {
+      "title": "7. 责任限制",
+      "content": "TalkFlow 对因您使用本应用而产生的任何损害（包括但不限于数据丢失、密钥丢失或第三方行为）不承担责任。本应用不提供密钥找回服务，因其去中心化属性，密钥丢失将导致无法访问相关加密数据，请妥善保管您的密钥。"
+    },
+    "changes": {
+      "title": "8. EULA 修改",
+      "content": "我们可能会随时更新本 EULA，更新后的版本将在应用内或通过官方渠道发布。继续使用本应用即表示您接受更新后的条款。"
+    },
+    "contact": {
+      "title": "9. 联系方式",
+      "content": "如有疑问或需要支持，请通过 zhangguoai888@gmail.com 联系我们。由于本应用去中心化特性，部分问题可能需要您自行排查节点或密钥相关设置。"
+    },
+    "agreement": {
+      "content": "点击“我同意”即表示您已阅读、理解并同意本 EULA 的所有条款，并愿意承担使用去中心化实时通信服务所带来的责任与风险。"
+    }
+  },
+  "buttons": {
+    "agree": "我同意",
+    "decline": "拒绝"
+  }
+},
+"help1" : "Dies ist eine Kommunikationsanwendung mit Offline-Priorität.",
+"help2" : "Alle Daten werden ausschließlich auf Ihrer lokalen Festplatte gespeichert und nur bei Bedarf über die neuesten Snapshot-Daten aus einem verteilten Netzwerk inkrementell aktualisiert.",
+"help3" : "Das bedeutet, dass Ihre Kontaktliste und privaten Daten nirgendwo erscheinen, außer an den Orten, die Sie manuell konfiguriert haben.",
+"help4" : "Wenn Sie sie auf mehreren Geräten nutzen oder das Gerät wechseln möchten, gehen Sie zur Einstellungsseite und wählen Sie die Datenmigration aus. Exportieren Sie die Daten vom Gerät und importieren Sie sie auf das neue Gerät, wobei Sie sicherstellen, dass beide dasselbe Schlüsselpaar und dieselben Peer-Knoten verwenden und angemeldet bleiben. Wenn Sie Ihre eigenen Peer-Knoten verwenden möchten, müssen Sie diese manuell in den Relay-Optionen konfigurieren; standardmäßig werden offizielle Knoten verwendet. Der übertragene Inhalt umfasst: Kontaktliste, Chatverlauf und Aufzeichnungen früherer Geräte.",
+"help5" : "Wenn Sie die Fähigkeiten von KI und IoT-Controllern erweitern möchten, verwenden Sie die MacOS- oder Windows-Version, um einen privaten Dienst bereitzustellen. Fügen Sie den Serverknoten als Freund hinzu. Auf diese Weise können Sie über ein verteiltes Netzwerk aus der Ferne mit KI oder anderen IoT-Geräten wie Drohnen kommunizieren, indem Sie Ihr Mobilgerät verwenden.",
+"help6" : "Wie füge ich einen Freund hinzu?",
+"help7" : "In den Optionen oben rechts auf der Kontaktseite können Sie den öffentlichen Schlüssel der anderen Person manuell kopieren und einfügen oder deren QR-Code mit dem Scanner scannen, um eine Freundschaftsanfrage zu senden.",
+"help8" : "Wie akzeptiere ich eine Freundschaftsanfrage?",
+"help9" : "In den Optionen oben links auf der Kontaktseite können Sie direkt auf die Liste der Freundschaftsanfragen zugreifen und die Freunde auswählen, die Sie hinzufügen möchten. Wenn Sie glauben, von einem Benutzer belästigt zu werden, bieten wir ein Blacklist-Modul an. Sie können diesen Benutzer auf Ihre Blacklist setzen, und Sie erhalten keine Daten mehr von diesem Benutzer.",
+"help10" : "Zusätzliche Hinweise zum Hinzufügen von Freunden:",
+"help11" : "Private Kommunikationsdaten werden aus Sicherheitsgründen nicht automatisch generiert, einschließlich der Vermeidung von Problemen wie Identitätsfälschung. Wenn Sie zum ersten Mal mit der anderen Person kommunizieren, wird lokal auf Ihrem Gerät ein einzigartiges Kommunikationszertifikat und eine Kommunikations-ID für Sie und die andere Person erstellt. Nachdem Sie die andere Person hinzugefügt haben, finden Sie sie in der Kontaktliste, klicken Sie, um zur Gesprächsseite zu gelangen, und senden Sie eine benutzerdefinierte Nachricht, um lokal das Kommunikationszertifikat und die ID zu erstellen. Die andere Person muss dasselbe tun. Die Zertifikate zwischen Ihnen und der anderen Person sind unabhängig, aber sowohl Ihr Schlüsselpaar als auch die Zertifikate beider Parteien sind erforderlich, um zu entschlüsseln und zu kommunizieren."
+
+
+,
+  "sponsor": "Sponsoring",
+  "sponsor1": "Unterstütze TalkFlow",
+  "sponsor2": "Schließe dich uns an, um Kommunikationsinnovationen zu beschleunigen. Werde noch heute Sponsor!",
+  "sponsor3": "Dein Sponsoring wird an alle verteilt, die zu TalkFlow beigetragen haben!",
+  "sponsor4": "Deine Identität wird zur Liste der TalkFlow-Sponsoren hinzugefügt!",
+  "sponsor5": "Kontaktmethoden für Sponsoring",
+  "sponsor6": "TalkFlow-Mitwirkende",
+  "sponsor7": "TalkFlow-Autor - Hat die Hauptplattform von TalkFlow und das auf Gun-Relay basierende Kommunikationssystem entwickelt.",
+  "sponsor8": "GunJs-Autor - Hat TalkFlow eine leistungsstarke Echtzeit-verteilte Datenbank bereitgestellt.",
+  "sponsor9": "Gun-Vue & Gun-Avatar-Autor - Hat TalkFlow stabile Grundkomponenten und unterhaltsame Avatare geliefert.",
+  "sponsor10": "Mark und die Mitwirkenden der Gun-Open-Source-Community haben Jahrzehnte an Aufwand kostenlos allen zur Verfügung gestellt und TalkFlow zuverlässigen langfristigen technischen Support und Hilfe geboten.",
+  "sponsor11": "TalkFlow-Technologie-Stack",
+  "sponsor12": "TalkFlow wird mit modernsten Werkzeugen und Sprachen entwickelt, um ein robustes, skalierbares Erlebnis zu gewährleisten:",
+  "sponsor13": "Programmiersprachen:",
+  "sponsor14": "Datenbank:",
+  "sponsor15": "Werkzeuge:",
+
+  "github": "Relay-Bereitstellung",
+  "github1": "GunRelay-TalkFlow ist ein TalkFlow-Relay-Knoten basierend auf GUN.",
+  "github2": "Erhalte unabhängige Kommunikationsfähigkeiten durch einen dezentralen Relay-Knoten.",
+  "github3": "Ermöglicht es dir, einen Relay-Knoten für TalkFlow mit GUN (einer dezentralen Graphdatenbank) einzurichten. Der Relay-Knoten bietet Echtzeit-Datensynchronisation zwischen Geräten und sorgt für nahtlose und sichere Kommunikation. Egal, ob du Entwickler oder Enthusiast bist, das Bereitstellen deines eigenen Relays ist ein entscheidender Schritt in Richtung einer globalen dezentralen verteilten Mesh-Netzwerk-Zukunft. Wenn wir den Mars erreichen, wird es unsere Netzwerkerfahrung von der Erde schnell wiederherstellen.",
+  "github4": "Besuche das GitHub-Repository"
+,"github5": "Stelle es selbst über das untenstehende GitHub-Repository bereit. Du kannst den Quellcode direkt verwenden, um dein bevorzugtes Erscheinungsbild zu erstellen oder Funktionen zu erweitern, sowie dein eigenes Installationspaket erstellen oder es direkt mit Terminalbefehlen ausführen. Sobald es erfolgreich läuft, startet automatisch ein dezentraler Relay-Knoten ohne zusätzliche Konfiguration."
+
+}

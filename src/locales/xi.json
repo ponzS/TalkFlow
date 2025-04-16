@@ -1,0 +1,168 @@
+{
+  "next": "Siguiente",
+  "hello": "Hola, mundo",
+  "password": "Contraseña",
+  "username": "Nombre de usuario",
+  "register": "Crear clave",
+  "register1": "Generar clave y cifrar",
+  "login": "Descifrar e iniciar sesión",
+  "back": "Volver",
+  "setting": "Configuración",
+  "resetPassword": "Restablecer contraseña",
+  "forgotPassword": "Olvidé mi contraseña",
+  "logout": "Cerrar sesión",
+  "talkflowid": "Clave de identidad",
+  "blacklist": "Lista negra",
+  "myblacklist": "Mi lista negra",
+  "addblacklist": "Añadir a la lista negra",
+  "deleteblacklist": "Eliminar de la lista negra",
+  "keysecuritydetection": "Detección de seguridad de la clave",
+  "datamigration": "Migración de datos",
+  "cachemanagement": "Gestión de caché",
+  "clearthechatrecords": "Borrar registros de chat",
+  "destroythekey": "Destruir la clave",
+  "accountsettings": "Configuración de la cuenta",
+  "notify": "Notificación",
+  "colosenotify": "Desactivar notificaciones",
+  "Toast": "Notificación emergente",
+  "language": "Idioma",
+  "help": "Ayuda",
+  "setforme": "Configuración de la cuenta",
+  "mynode": "Mi nodo",
+  "friendkey": "Clave de identidad del amigo",
+  "addfriend": "Enviar solicitud de amistad",
+  "close": "Cerrar",
+  "addfriend1": "Añadir amigo",
+  "addfriend2": "Enviar solicitud",
+  "remarkname": "Nota",
+  "remarks": "Información de la nota",
+  "save": "Guardar",
+  "delete": "Eliminar",
+  "hide": "Ocultar",
+  "afriend": "Relación verificada",
+  "sendmessage": "Enviar mensaje",
+  "scanner": "Escáner",
+  "qrcodetool": "Herramienta de código QR",
+  "offlinewebtools": "Herramientas web sin conexión",
+  "relay": "Relé",
+  "onlineequipment": "Dispositivos en línea",
+  "historicalequipment": "Dispositivos históricos",
+  "refreshstatus": "Actualizar estado",
+  "exportdata": "Exportar datos",
+  "importdata": "Importar datos",
+  "datamigrationtalk": "Asegúrese de que ambos dispositivos estén en el mismo nodo o hayan establecido una conexión peer-to-peer, y que ambos dispositivos tengan pares de claves descifradas y estén en línea. El contenido de la migración incluye: datos personales básicos - contactos - lista de sesiones - registros de chat en texto y formato de audio AAC.",
+  "importdatatalk": "Por favor, introduzca el código de sincronización",
+  "importdatatalk1": "Comenzar importación",
+  "importdatatalk2": "Asegúrese de que el dispositivo actual esté conectado al mismo nodo válido que el dispositivo de exportación",
+  "importdatatalk3": "Importando datos",
+  "importdatatalk4": "Progreso",
+  "exportdatatalk1": "Comenzar exportación",
+  "exportdatatalk2": "Preparando datos para exportar...",
+  "exportdatatalk3": "Asegúrese de que el dispositivo actual esté conectado a un nodo válido.",
+  "exportdatatalk4": "Exportación completada",
+  "exportdatatalk5": "Por favor, use el siguiente código de sincronización para importar en el nuevo dispositivo",
+  "addfriendtalk": "Por favor, introduzca un mensaje",
+  "agree": "Aceptar",
+  "refuse": "Rechazar",
+  "notethename": "Nombre de la nota",
+  "Remarks": "Información de la nota",
+  "savesettings": "Guardar configuración",
+  "deletefriend": "Eliminar amigo",
+  "sending": "Enviando",
+  "htmltalk": "Esta es una herramienta para generar páginas web sin conexión. Después de introducir el contenido y establecer una contraseña, seleccione cifrado y se devolverá un enlace. Simplemente copie el enlace en un navegador para acceder al contenido generado. Por supuesto, también puede optar por no establecer una contraseña; es una opción adicional.",
+  "relaytalk": "TalkFlow transmite y publica datos en una red distribuida en tiempo real a través de relés. Es el núcleo de todo. Por defecto, utiliza nodos peer oficiales, pero también puede usar su propio nodo privado o abrir su nodo privado a la red pública para conectarse con más personas. La herramienta de gestión de relés está lista, ha pasado múltiples pruebas de estrés y es una versión muy estable y confiable. ¡Expanda su lista de relés!",
+  "versiontalk": "Notas de la versión - v1.0",
+  "versiontalk1": "Esta versión no incluye todas las funciones; por favor, espere actualizaciones. Las funciones en desarrollo incluyen: notificaciones en pantalla de bloqueo APNs - transferencia confiable de archivos grandes cifrados - comunicación de voz y video en tiempo real cifrada y confiable - puerto portátil para servidores de juegos - un puerto de escritorio más potente para Windows, Linux y macOS basado en ollama - versiones Pro y de control por gestos en realidad mixta para Oculus Quest y Pico - comunidad de nodos públicos (esta función podría no pasar la revisión, por lo que está en espera) - chat grupal (actualmente implementado pero no estable, podría estar disponible en la próxima versión; la comunicación privada tiene un nivel de cifrado más alto). La comunicación cifrada privada en la versión actual es confiable. Puede conectarse a un cliente de escritorio con una IA privada o un dron. El puerto de escritorio ha abierto interfaces de IA y controladores; simplemente configure el nodo y añada la IA como amigo para comunicarse con su IA privada a través de una red descentralizada."
+
+
+  ,    "eula": {
+    "title": "最终用户许可协议",
+    "lastUpdated": "最后更新：2025年3月12日",
+    "sections": {
+      "acceptance": {
+        "title": "1. 接受条款",
+        "content": "使用 TalkFlow（以下简称“本应用”）即表示您同意受本最终用户许可协议（以下简称“EULA”）的约束。如果您不同意，请勿使用本应用。"
+      },
+      "license": {
+        "title": "2. 许可授予",
+        "content": "TalkFlow 授予您非独占、不可转让的许可，允许您出于个人或商业目的使用本应用，但须遵守本 EULA 的条款。本应用基于去中心化网络运行，您对数据和密钥的管理由您自行负责。"
+      },
+      "conduct": {
+        "title": "3. 用户行为",
+        "content": "您同意不将本应用用于以下用途：<br>- 发布、分享或传输任何不当内容，包括但不限于仇恨言论、骚扰、暴力、色情或非法内容。<br>- 对其他用户实施滥用行为，例如发送垃圾信息、挑衅、威胁或恶意干扰网络节点。<br>- 违反任何适用法律或法规，包括但不限于数据隐私法和通信法规。"
+      },
+      "moderation": {
+        "title": "4. 内容审查",
+        "content": "对于通过公共公开节点网络传输的内容，TalkFlow 保留监控、审查和屏蔽违反本 EULA 的用户生成内容的权利。对于私人节点或对等连接中的内容，您自行负责管理。如发现不当内容，您可以通过应用内举报功能或邮箱 zhangguoai888@gmail.com 联系我们进行报告。"
+      },
+      "termination": {
+        "title": "5. 终止",
+        "content": "如果您违反本 EULA，我们可能会在通知或不通知的情况下暂停或终止您对本应用的访问权限。去中心化网络中的数据可能仍由其他节点保留，我们对此不承担责任。"
+      },
+      "warranty": {
+        "title": "6. 无担保",
+        "content": "本应用按“现状”提供，不提供任何明示或暗示的担保，包括但不限于对去中心化网络稳定性和数据传输可靠性的担保。由于其去中心化特性，服务可用性可能受网络状况影响。"
+      },
+      "liability": {
+        "title": "7. 责任限制",
+        "content": "TalkFlow 对因您使用本应用而产生的任何损害（包括但不限于数据丢失、密钥丢失或第三方行为）不承担责任。本应用不提供密钥找回服务，因其去中心化属性，密钥丢失将导致无法访问相关加密数据，请妥善保管您的密钥。"
+      },
+      "changes": {
+        "title": "8. EULA 修改",
+        "content": "我们可能会随时更新本 EULA，更新后的版本将在应用内或通过官方渠道发布。继续使用本应用即表示您接受更新后的条款。"
+      },
+      "contact": {
+        "title": "9. 联系方式",
+        "content": "如有疑问或需要支持，请通过 zhangguoai888@gmail.com 联系我们。由于本应用去中心化特性，部分问题可能需要您自行排查节点或密钥相关设置。"
+      },
+      "agreement": {
+        "content": "点击“我同意”即表示您已阅读、理解并同意本 EULA 的所有条款，并愿意承担使用去中心化实时通信服务所带来的责任与风险。"
+      }
+    },
+    "buttons": {
+      "agree": "我同意",
+      "decline": "拒绝"
+    }
+  },
+  "help1" : "Esta es una aplicación de comunicación con prioridad offline.",
+"help2" : "Todos los datos se almacenan únicamente en tu disco local y se actualizan de manera incremental a través de los últimos datos de instantáneas de una red distribuida solo cuando es necesario.",
+"help3" : "Esto significa que tu lista de contactos y datos privados no aparecerán en ningún lugar que no hayas configurado manualmente.",
+"help4" : "Si necesitas usarla en varios dispositivos o cambiar de dispositivo, ve a la página de configuración y selecciona la migración de datos. Exporta los datos desde el dispositivo e impórtalos en el nuevo dispositivo, asegurándote de que ambos usen el mismo par de claves y nodos pares, y permanezcan conectados. Si deseas usar tus propios nodos pares, debes configurarlos manualmente en las opciones de relay; por defecto, se utilizan los nodos oficiales. El contenido transferido incluye: lista de contactos, historial de chats y registros de dispositivos anteriores.",
+"help5" : "Si deseas ampliar las capacidades de IA y controladores IoT, utiliza la versión para MacOS o Windows para implementar un servicio privado. Agrega el nodo del servidor como amigo. De esta manera, puedes comunicarte a larga distancia a través de una red distribuida con IA u otros dispositivos IoT, como drones, usando tu dispositivo móvil.",
+"help6" : "¿Cómo agregar un amigo?",
+"help7" : "En las opciones de la esquina superior derecha de la página de contactos, puedes elegir copiar y pegar manualmente la clave pública de la otra persona o escanear su código QR con el escáner para enviar una solicitud de amistad.",
+"help8" : "¿Cómo aceptar una solicitud de amistad?",
+"help9" : "En las opciones de la esquina superior izquierda de la página de contactos, puedes acceder directamente a la lista de solicitudes de amistad y seleccionar los amigos que deseas agregar. Además, si sientes que un usuario te está acosando, ofrecemos un módulo de lista negra. Puedes añadirlo a tu lista negra y no recibirás más datos de ese usuario.",
+"help10" : "Notas adicionales sobre la adición de amigos:",
+"help11" : "Los datos de comunicación privada no se generan automáticamente por razones de seguridad, incluyendo la prevención de problemas como la suplantación de identidad. Cuando te comuniques por primera vez con la otra persona, se generará localmente en tu dispositivo un certificado de comunicación único y un ID de comunicación para ti y para ellos. Después de agregar a la otra persona, encuéntrala en la lista de contactos, haz clic para entrar en la página de conversación y envía un mensaje personalizado para establecer localmente el certificado de comunicación y el ID. La otra persona debe hacer lo mismo. Los certificados entre tú y la otra persona son independientes, pero tanto tu par de claves como el certificado de ambas partes son necesarios para descifrar y comunicarse."
+
+
+
+,
+  "sponsor": "Patrocinio",
+  "sponsor1": "Apoya a TalkFlow",
+  "sponsor2": "Únete a nosotros para acelerar la innovación en comunicación. ¡Conviértete en patrocinador hoy!",
+  "sponsor3": "¡Tu patrocinio se distribuirá entre todos los que han contribuido a TalkFlow!",
+  "sponsor4": "¡Tu identidad será añadida a la lista de patrocinadores de TalkFlow!",
+  "sponsor5": "Métodos de contacto para el patrocinio",
+  "sponsor6": "Contribuidores de TalkFlow",
+  "sponsor7": "Autor de TalkFlow - Creó la plataforma principal de TalkFlow y el sistema de comunicación basado en Gun-Relay.",
+  "sponsor8": "Autor de GunJs - Proporcionó a TalkFlow una potente base de datos distribuida en tiempo real.",
+  "sponsor9": "Autor de Gun-Vue y Gun-Avatar - Proporcionó a TalkFlow componentes básicos estables y avatares divertidos.",
+  "sponsor10": "Mark y los contribuidores de la comunidad de código abierto de Gun donaron gratuitamente décadas de esfuerzo a todos, brindando a TalkFlow soporte técnico confiable a largo plazo y asistencia.",
+  "sponsor11": "Pila tecnológica de TalkFlow",
+  "sponsor12": "TalkFlow está construido con herramientas y lenguajes de vanguardia para garantizar una experiencia robusta y escalable:",
+  "sponsor13": "Lenguajes de programación:",
+  "sponsor14": "Base de datos:",
+  "sponsor15": "Herramientas:",
+
+  "github": "Despliegue de relé",
+  "github1": "GunRelay-TalkFlow es un nodo de relé de TalkFlow basado en GUN.",
+  "github2": "Obtén capacidades de comunicación independientes a través de un nodo de relé descentralizado.",
+  "github3": "Te permite configurar un nodo de relé para TalkFlow usando GUN (una base de datos gráfica descentralizada). El nodo de relé proporciona sincronización de datos en tiempo real entre dispositivos, asegurando una comunicación fluida y segura. Ya seas desarrollador o entusiasta, desplegar tu propio relé es un paso crucial hacia un futuro de red de malla distribuida descentralizada global. Cuando lleguemos a Marte, restaurará rápidamente la experiencia de red que teníamos en la Tierra.",
+  "github4": "Visitar el repositorio de GitHub"
+,"github5": "Despliégalo tú mismo a través del repositorio de GitHub a continuación. Puedes usar directamente el código fuente para construir la apariencia que prefieras o ampliar funcionalidades, así como crear tu propio paquete de instalación o ejecutarlo directamente usando comandos de terminal. Una vez que se ejecute con éxito, un nodo de relé descentralizado se iniciará automáticamente sin necesidad de configuración adicional."
+
+
+
+}
