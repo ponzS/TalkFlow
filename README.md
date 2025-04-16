@@ -24,3 +24,14 @@ We assume the design scenario of a controller. We use mobile devices to send a m
 
 All processes maintain military encryption security standards. You can deploy the repeater by yourself and turn on the storage, and observe the changes of data in the store to confirm the security standards.
 
+I modified it on the basis of Gun's design concept. It does not fully depend on the consensus mechanism. Instead, through Gun incremental snapshot data to the local independent form, block and block data are classified and archived through self-increasing keys. This will improve the performance of data indexing, because Gun is a graph database, which is sorted by msgId, which will encounter some trouble when the data volume is large and the data relationship is too complex. At the same time, further improve the stability of data. Sometimes the truth may be distorted, but we only trust private snapshot data. This is a friendly module for model training data. At the same time, you can easily migrate training data and address book chat records and other data. This is the design of point-to-point data. 
+
+Channel data depends on Gun's powerful content addressing and multicast mechanism. This gives TalkFlow strong network self-healing capabilities and data recovery capabilities.
+
+
+
+
+
+
+
+
