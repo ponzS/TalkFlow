@@ -72,6 +72,10 @@ start
 node start.js
 ```
 
+
+![win](https://github.com/user-attachments/assets/6edc4642-7928-4b6c-b5bf-a67cbe13e97d)
+
+
 ![test](https://github.com/user-attachments/assets/65c4575d-73ef-43b3-ba50-63c8c5116d28)
 
 
