@@ -7,10 +7,15 @@ What is TalkFlow?
 ![ios](https://github.com/user-attachments/assets/587f732c-3b68-4c50-8959-1ef01ba44626)
 
 1.Decentralized end-to-end encrypted chat application.
+
 2.Decentralized artificial intelligence communication tools.
+
 3.Decentralized general AI controller.
+
 4.Decentralized Internet of Things controller.
+
 5.Global decentralized distributed mesh communication network artificial intelligence data solution.
+
 
 # Design
 We hope to use portable devices in our pockets to connect with the private artificial intelligence deployed at home anytime and anywhere. At the same time, our private artificial intelligence will help us solve everything. No matter where you are, Gun-Relay will provide you with powerful decentralized communication power.
