@@ -28,6 +28,74 @@ I modified it on the basis of Gun's design concept. It does not fully depend on 
 
 Channel data depends on Gun's powerful content addressing and multicast mechanism. This gives TalkFlow strong network self-healing capabilities and data recovery capabilities.
 
+Modular as possible - repeater module - AI communication bridge module - basic chat application module - Internet of Things controller module
+
+There are more! Forgive me for not more time to write a description! Because there are more designs that have not been completed!
+
+
+# Quick Start 
+
+iOS:
+AppStore:TalkFlow
+https://apps.apple.com/us/app/talkflow/id6736827124
+https://apps.apple.com/cn/app/talkflow/id6736827124
+
+MacOS&Windows client:
+
+install dep
+```base
+yarn install
+```
+start
+```base
+yarn tauri dev
+```
+build the installation package
+```base
+yarn tauri build
+```
+
+Run Gun-Relay&Ollama
+
+```base
+cd gun-ollama
+```
+install dep
+```base
+yarn install
+```
+start
+```base
+node start.js
+```
+
+# Used library
+Vue
+Vite
+GunJs
+Gun-Vue
+Gun-Vue/relay
+gun-avatar
+OllamaJs
+Tauri
+capacitor
+ionic
+threeJs
+cordova
+ffmpeg
+...
+
+# Explanation of open source
+
+I can't make all the artificial intelligence and Internet of Things controllers by myself. If you are interested in decentralized artificial intelligence tools, please submit PR. If TalkFlow is sponsored, all the funds obtained will be distributed equally to all TalkFlow contributors. The sponsor's avatar and name will be added to the iOS app and warehouse documents and our website. 
+X:@GuoaiZ11355 
+
+Thanks to Mark and Davay for their help and guidance. They are my teachers, my idols, and my best friends.
+
+You can build any decentralized artificial intelligence application on the basis of this code warehouse. Of course, it would be better if you are willing to share your efforts with the open source community or submit PR! This will accelerate the development of decentralized forces!
+
+
+
 
 
 
