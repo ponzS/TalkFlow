@@ -69,20 +69,46 @@ start
 node start.js
 ```
 
+# composables
+You only need to pay attention to the implementation of LisenChat and SentChat when expanding the controller.
+
+```base
+listenChat(pubKey: string)
+const chatId = generateChatId(myPub, pubKey);
+```
+
+```base
+sendChat(messageType: MessageType, payload: string | null = null, duration?: number)
+```
+
 # Used library
+
 Vue
+
 Vite
+
 GunJs
+
 Gun-Vue
+
 Gun-Vue/relay
+
 gun-avatar
+
 OllamaJs
+
 Tauri
+
 capacitor
+
 ionic
+
 threeJs
+
 cordova
+
 ffmpeg
+
 ...
 
 # Explanation of open source
@@ -93,6 +119,7 @@ X:@GuoaiZ11355
 Thanks to Mark and Davay for their help and guidance. They are my teachers, my idols, and my best friends.
 
 You can build any decentralized artificial intelligence application on the basis of this code warehouse. Of course, it would be better if you are willing to share your efforts with the open source community or submit PR! This will accelerate the development of decentralized forces!
+
 
 
 
