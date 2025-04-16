@@ -1,3 +1,0 @@
-<template>
-  <FriendList />
-</template>
