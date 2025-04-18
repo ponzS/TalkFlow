@@ -131,7 +131,19 @@ Thanks to Mark and Davay for their help and guidance. They are my teachers, my i
 
 You can build any decentralized artificial intelligence application on the basis of this code warehouse. Of course, it would be better if you are willing to share your efforts with the open source community or submit PR! This will accelerate the development of decentralized forces!
 
+# Basic core source
 
+Gun DB
+
+https://github.com/amark/gun
+
+Created by Mark Nadal in 2014. More than ten years of testing and improvement. This includes the joint efforts of the Gun team contributors for more than 10 years.
+
+Gun-Vue
+
+https://github.com/DeFUCC/gun-vue
+
+Created by Davay/Denis Starov. He spent four years researching on communication security and making stable basic components. The basic functions of TalkFlow are all modified from the basic components of Gun-Vue. Davay provided me with basic educational guidance and technical analysis. He is my teacher and my best friend. Thank you for Davay's help.
 
 
 
