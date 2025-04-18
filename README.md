@@ -16,6 +16,7 @@ What is TalkFlow?
 
 5.Global decentralized distributed mesh communication network artificial intelligence data solution.
 
+Decentralized artificial intelligence - robots - drones - communication facilities
 
 # Design
 We hope to use portable devices in our pockets to connect with the private artificial intelligence deployed at home anytime and anywhere. At the same time, our private artificial intelligence will help us solve everything. No matter where you are, Gun-Relay will provide you with powerful decentralized communication power.
@@ -75,8 +76,7 @@ node start.js
 
 ![win](https://github.com/user-attachments/assets/6edc4642-7928-4b6c-b5bf-a67cbe13e97d)
 
-
-![test](https://github.com/user-attachments/assets/65c4575d-73ef-43b3-ba50-63c8c5116d28)
+![20250418124625](https://github.com/user-attachments/assets/a3618b86-3902-46cf-a066-d9d110dbbdf8)
 
 
 
