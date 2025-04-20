@@ -47,6 +47,11 @@ https://apps.apple.com/us/app/talkflow/id6736827124
 
 https://apps.apple.com/cn/app/talkflow/id6736827124
 
+Android APK:
+
+https://github.com/ponzS/TalkFlow/releases/tag/v1.0.0
+
+
 MacOS&Windows client:
 
 install dep
