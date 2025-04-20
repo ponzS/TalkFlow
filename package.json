@@ -168,7 +168,7 @@
     "typescript": "^5.1.6",
     "unocss": "^65.4.2",
     "unplugin-vue-components": "latest",
-    "vite": "^latest",
+    "vite": "^5.4.8",
     "vite-plugin-pages": "latest",
     "vite-plugin-vue-devtools": "latest",
     "vitest": "latest",
