@@ -62,7 +62,7 @@ const customRoutes = [
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: customRoutes,
-})
+} as any)
 
 
 // 导航守卫
