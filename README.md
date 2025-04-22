@@ -1,5 +1,6 @@
 
-![talkflow](https://github.com/user-attachments/assets/83733bed-e28d-4b3f-af6a-6212e3ed402a)
+![talkflowcyber](https://github.com/user-attachments/assets/fce54f43-5f3a-4aba-8fd8-4596318a41b5)
+
 
 # Decentralized artificial intelligence application
 
@@ -80,7 +81,7 @@ start
 ```base
 node start.js
 ```
-
+![talkflow](https://github.com/user-attachments/assets/83733bed-e28d-4b3f-af6a-6212e3ed402a)
 
 ![win](https://github.com/user-attachments/assets/6edc4642-7928-4b6c-b5bf-a67cbe13e97d)
 
