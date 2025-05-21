@@ -6,7 +6,7 @@
 
 What is TalkFlow?
 
-![IMG1524](https://github.com/user-attachments/assets/2762f866-c12b-403b-9d48-c80aafd162c6)
+<img src="https://github.com/user-attachments/assets/2762f866-c12b-403b-9d48-c80aafd162c6" alt="" width="300" height="150">
 
 1.Decentralized end-to-end encrypted chat application.
 
@@ -84,10 +84,9 @@ node start.js
 ```
 ![talkflow](https://github.com/user-attachments/assets/83733bed-e28d-4b3f-af6a-6212e3ed402a)
 
-![win](https://github.com/user-attachments/assets/6edc4642-7928-4b6c-b5bf-a67cbe13e97d)
 
 
-<img src="https://github.com/user-attachments/assets/6edc4642-7928-4b6c-b5bf-a67cbe13e97d" alt="" width="600" height="300">
+<img src="https://github.com/user-attachments/assets/6edc4642-7928-4b6c-b5bf-a67cbe13e97d" alt="" width="600" height="390">
 
 
 <img src="https://github.com/user-attachments/assets/37ae341c-6595-4b70-89cc-375e5ed341a6" alt="" width="300" height="600">
