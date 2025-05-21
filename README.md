@@ -5,7 +5,8 @@
 # Decentralized artificial intelligence application
 
 What is TalkFlow?
-![ios](https://github.com/user-attachments/assets/587f732c-3b68-4c50-8959-1ef01ba44626)
+
+![WechatIMG1524](https://github.com/user-attachments/assets/2762f866-c12b-403b-9d48-c80aafd162c6)
 
 1.Decentralized end-to-end encrypted chat application.
 
