@@ -6,7 +6,7 @@
 
 What is TalkFlow?
 
-![WechatIMG1524](https://github.com/user-attachments/assets/2762f866-c12b-403b-9d48-c80aafd162c6)
+![IMG1524](https://github.com/user-attachments/assets/2762f866-c12b-403b-9d48-c80aafd162c6)
 
 1.Decentralized end-to-end encrypted chat application.
 
@@ -86,8 +86,9 @@ node start.js
 
 ![win](https://github.com/user-attachments/assets/6edc4642-7928-4b6c-b5bf-a67cbe13e97d)
 
-![20250418124625](https://github.com/user-attachments/assets/a3618b86-3902-46cf-a066-d9d110dbbdf8)
+![IMG1520](https://github.com/user-attachments/assets/37ae341c-6595-4b70-89cc-375e5ed341a6)
 
+<img src="https://github.com/user-attachments/assets/37ae341c-6595-4b70-89cc-375e5ed341a6" alt="" width="200" height="300">
 
 
 # composables
