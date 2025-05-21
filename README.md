@@ -86,7 +86,7 @@ node start.js
 
 ![win](https://github.com/user-attachments/assets/6edc4642-7928-4b6c-b5bf-a67cbe13e97d)
 
-![20250418124625](https://github.com/user-attachments/assets/a3618b86-3902-46cf-a066-d9d110dbbdf8){style="width:300px;height:200px;"}
+![20250418124625](https://github.com/user-attachments/assets/a3618b86-3902-46cf-a066-d9d110dbbdf8)
 
 
 
