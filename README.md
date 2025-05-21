@@ -6,7 +6,7 @@
 
 What is TalkFlow?
 
-<img src="https://github.com/user-attachments/assets/2762f866-c12b-403b-9d48-c80aafd162c6" alt="" width="300" height="150">
+<img src="https://github.com/user-attachments/assets/2762f866-c12b-403b-9d48-c80aafd162c6" alt="" width="300" height="120">
 
 1.Decentralized end-to-end encrypted chat application.
 
