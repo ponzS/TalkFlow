@@ -86,9 +86,11 @@ node start.js
 
 ![win](https://github.com/user-attachments/assets/6edc4642-7928-4b6c-b5bf-a67cbe13e97d)
 
-![IMG1520](https://github.com/user-attachments/assets/37ae341c-6595-4b70-89cc-375e5ed341a6)
 
-<img src="https://github.com/user-attachments/assets/37ae341c-6595-4b70-89cc-375e5ed341a6" alt="" width="200" height="300">
+<img src="https://github.com/user-attachments/assets/6edc4642-7928-4b6c-b5bf-a67cbe13e97d" alt="" width="600" height="300">
+
+
+<img src="https://github.com/user-attachments/assets/37ae341c-6595-4b70-89cc-375e5ed341a6" alt="" width="300" height="600">
 
 
 # composables
