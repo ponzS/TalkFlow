@@ -1,5 +1,3 @@
-<!-- src/views/LanguageSelectionPage.vue -->
-<!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <ion-page>
     <ion-content>
@@ -9,7 +7,7 @@
       <div class="aurora-background1" @click="winupStart"></div>
       <div class="aurora-background" @click="winupStart">
 
-    <canvas ref="canvas" />
+    <canvas ref="canvas"  />
   </div>
       <div>
         <!-- TalkFlow Title -->
@@ -56,8 +54,16 @@
       <!-- EULA Module -->
    <!-- EULA Module (使用英文静态文本) -->
    <div :class="showEula ? 'eula-panel' : 'eula-panel-hidden'">
-        <div class="eula-content">
-          <h2>End User License Agreement</h2>
+    <div class="eula-buttons">
+          <button class="eula-decline" @click="declineEula">
+            <p style="font-size: 18px; font-weight: 700; cursor: pointer; z-index: 9999;">Decline</p>
+          </button>
+          <button class="eula-agree" @click="agreeEula" style="--background: #23d5ab; color: antiquewhite;">
+            <p style="font-size: 18px; font-weight: 700; cursor: pointer; z-index: 9999;">I Agree</p>
+          </button>
+        </div>  
+    <div class="eula-content">
+          <h2>End User License Agreement </h2>
           <p><strong>Last Updated: March 12, 2025</strong></p>
           <div class="eula-section">
             <strong>1. Acceptance of Terms</strong>
@@ -113,11 +119,64 @@
       <div :class="loginModel1 ? 'login-show' : 'login-hidden'">
         <div>
     <!-- 登录卡片 -->
-    <div :class="['login-card', { hidden: isCreateKey }]">
    
+    <div :class="['login-card', { hidden: isCreateKey }]">
+      
+      <div
+              class="talkflow-title-text"
+              style="z-index: -9999 !important; cursor: pointer"
+             
+            >
+              <!-- <p><span style="color: black">Talk</span><span>Flow</span></p> -->
+              <!-- <p><span style="color: black">Gun</span><span >Auth</span></p> -->
+            </div>
       <div class="login-container">
+
+              <p style="text-align: center;">TalkFlow - General auth for GUN-SEA</p>
+
+
+         
+              <div class="avatarteam" v-if="encryptedKeyInput">
+                <object
+class="avatar1"
+type="image/svg+xml"
+:key="jsonkeypair"
+:data="
+gunAvatar({
+pub: jsonkeypair,
+svg: 'interactive',
+// svg: true,
+// size: 1000,
+dark: isDark,
+p3: true,
+embed: true,
+})
+"
+></object>
+<object
+class="avatar"
+type="image/svg+xml"
+:key="jsonkeypair"
+:data="
+gunAvatar({
+pub: jsonkeypair,
+svg: 'interactive',
+// svg: true,
+// size: 1000,
+dark: isDark,
+p3: true,
+embed: true,
+})
+"
+
+></object>
+
+              </div>
+
+
+        <!-- <p><span style="color: red">Gun</span><span style="color: #fff">Relay</span></p> -->
         <!-- 密码输入框 -->
-        <div class="login-input floating-label-container">
+        <!-- <div class="login-input floating-label-container">
           <input
             type="password"
             v-model="passphrase"
@@ -125,10 +184,11 @@
             @blur="removeFocus('passphrase')"
           />
           <label :class="{ active: isFocused.passphrase || passphrase }">{{ $t('password') }} (AES)</label>
-        </div>
-        <!-- 加密私钥多行输入框 -->
-        <div class="floating-label-container" style="margin: 8px 0">
+        </div> -->
+        <!-- 加密私钥多行输入框 v-if="isKeyPair"-->
+        <div v-if="isKeyPair"  class="floating-label-container" style="margin: 8px 0">
           <textarea
+           
             v-model="encryptedKeyInput"
             @focus="setFocus('encryptedKeyInput')"
             @blur="removeFocus('encryptedKeyInput')"
@@ -141,19 +201,23 @@
         <div v-if="loginError" style="color: red; margin-top: 8px">{{ loginError }}</div>
         
         <!-- QR扫描选项 -->
-        <div class="qr-options">
-          <!-- <ion-button color="dark" @click="scanQRCode" style="flex: 1; margin-right: 8px;">
+        <div class="qr-options" style="gap:10px">
+          <ion-button color="dark" @click="KeyPairShow" style="flex: 1; ">
+            <ion-icon :icon="keyOutline" ></ion-icon>
+  
+          </ion-button>
+          <ion-button color="dark" @click="scanQRCode" style="flex: 1;">
             <ion-icon :icon="scanOutline" ></ion-icon>
-         
-          </ion-button> -->
-          <ion-button color="dark" @click="pickFromGallery" style="flex: 1; margin-left: 8px;">
+          
+          </ion-button>
+          <ion-button color="dark" @click="pickFromGallery" style="flex: 1; ">
             <ion-icon :icon="imageOutline" ></ion-icon>
             <!-- {{ $t('gallery') || 'From Gallery' }} -->
           </ion-button>
         </div>
 <!-- class="login-button" -->
      
-          <ion-button color="dark"  @click="OnLongin" style="margin-top: 8px">{{ $t('login') }}</ion-button>
+          <ion-button color="dark"   @click="simpleLogin(encryptedKeyInput)" style="margin-top: 8px">{{ $t('login') }}</ion-button>
           <ion-button color="dark"  @click="goCreateKey" style="margin-top: 8px">
             {{ $t('register') }}
           </ion-button>
@@ -166,6 +230,7 @@
       <div class="login-container">
         <!-- 生成新密钥对 -->
         <div>
+       
           <!-- <h3>生成密钥对 (Create Key Pair)</h3> -->
           <item class="login-input floating-label-container">
             <input
@@ -177,7 +242,7 @@
             <label :class="{ active: isFocused.newAlias || newAlias }">{{ $t('username') }}</label>
           </item>
           <div style="margin: 8px 0;"/>
-          <item class="login-input floating-label-container">
+          <!-- <item class="login-input floating-label-container">
             <input
               type="password"
               v-model="newPassphrase"
@@ -189,17 +254,36 @@
             <label :class="{ active: isFocused.newPassphrase || newPassphrase }"
               >{{ $t('password') }} (AES)</label
             >
-          </item>
-
+          </item> -->
+<!-- registerWithFaceID -->
+<!-- <ion-button
+            color="dark"
+            expand="block"
+            @click="generateKeyPairFaceId"
+            style="margin-top: 8px; font-weight: 700"
+          >
+            FaceID
+          </ion-button> -->
+          <!--   @click="generateKeyPairFaceId" -->
+          <!-- <ion-button
+            color="dark"
+            expand="block"
+          
+            style="margin-top: 8px; font-weight: 700"
+          >
+            KeyPair
+          </ion-button> -->
           <ion-button
             color="dark"
             expand="block"
             @click="KeyCardDown"
             style="margin-top: 8px; font-weight: 700"
           >
-            {{ $t('register1') }}
+          <ion-icon :icon="sparklesOutline" style="margin-right:5px"></ion-icon>
+            Gun-Avatar Changer
+            <!-- {{ $t('register1') }} -->
           </ion-button>
-          <p
+          <!-- <p
             v-if="generateMsg"
             style="
               margin: 10px 0px;
@@ -213,7 +297,7 @@
             "
           >
             {{ generateMsg }}
-          </p>
+          </p> -->
 
           <div
             v-if="encryptedKeyPair"
@@ -226,6 +310,72 @@
               color: #efefef8e;
             "
           >
+      
+<!--  :style="avatarStyle" -->
+  <!-- style="z-index: 9999;margin:0 auto;width:100%;height:150px;filter: blur(20px);
+  transform: scale(1.2);
+  opacity: 0.6;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  position: absolute;
+  z-index: 1;
+  overflow: visible;" -->
+  <div class="avatarteam">
+<!-- <object
+
+class="avatar1"
+
+
+type="image/svg+xml"
+:key="temppub!"
+:data="
+ gunAvatar({
+   pub: temppub,
+
+    svg:'true',
+   dark: isDark,
+   p3: true,
+   embed: true,
+   
+ })
+"
+
+></object> -->
+<!-- <transition name="fade"> -->
+
+  <img
+ 
+            :src="avatarurl"
+    
+            class="avatar1"
+            
+          />
+
+          <object
+
+	 class="avatar"
+
+  
+	type="image/svg+xml"
+	:key="temppub!"
+	:data="
+		gunAvatar({
+			pub: temppub,
+		   svg: 'interactive',
+      // svg: true,
+			// size: 1000,
+			dark: isDark,
+      p3: true,
+      embed: true,
+      
+		})
+	"
+
+></object>
+</div>
+
+<!-- </transition> -->
+
             <h4>Key:</h4>
             <p
               style="
@@ -246,13 +396,37 @@
               @click="copyPub(encryptedKeyPair)"
              
             >
+            <ion-icon :icon="copyOutline" style="margin-right:5px"></ion-icon>
               Copy
             </ion-button>
+            <!-- simpleLogin -->
+            <ion-button
+              color="dark"
+             expand="block"
+              @click="simpleLogin(encryptedKeyPair)"
+             
+            >
+            <ion-icon :icon="keyOutline" style="margin-right:5px"></ion-icon>
+              Login
+            </ion-button>
+
+
+
           </div>
         </div>
 
         <ion-button expand="block" color="dark" @click="backToLogin" style="margin-top: 8px">{{ $t('back') }}</ion-button>
+
+      
       </div>
+      <div
+              class="talkflow-title-text"
+              style="z-index: -9999 !important; cursor: pointer"
+             
+            >
+              <!-- <p><span style="color: black">Talk</span><span>Flow</span></p> -->
+              <!-- <p><span style="color: black;">Gun</span><span>SEA</span></p> -->
+            </div>
     </div>
   </div>
       </div>
@@ -261,6 +435,44 @@
 </template>
 
 <style scoped>
+
+
+.avatarteam{
+  width: 100%;
+  margin: 10px auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* background-color: black; */
+}
+.avatar{
+  position: absolute;
+
+  width: 130px;
+  height: 130px;
+  border-radius: 50%;
+  margin:0 auto;
+  z-index: 3;
+  overflow:hidden
+}
+.avatar1{
+  margin:10px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  filter: blur(10px);
+  background-color: black;
+  z-index: 1;
+  overflow:hidden
+}
+
+
+.avatarbackground{
+  background-color: black;
+  transition: all 0.3 ease-in-out;
+
+}
+
 .titleshow {
   display: block;
   z-index: 9999;
@@ -448,39 +660,44 @@
 /* EULA Panel Styles */
 .eula-panel {
   position: fixed;
-  top: 0vh;
-  right: 0px;
+  top: 30%;
+  right: 0;
   width: 100%;
   /* max-width: 500px; */
+  /* max-height: 500px; */
   height: 100vh;
   background-color: #000000;
-  backdrop-filter: blur(30px);
-
-  padding:120px 15px;
+  /* backdrop-filter: blur(30px); */
+  /* border-radius: 10px; */
+  padding:0px 10px;
   box-shadow: 0 0 10px 0 rgba(255, 255, 255, 0.685);
   transition: all 0.3s ease-in-out;
   z-index: 9999;
   overflow-y: auto;
+  padding-bottom: 500px;
+
 }
 
 .eula-panel-hidden {
   position: fixed;
-  top: 0vh;
+  top: 30%;
   right: -200%;
   width: 100%;
   /* max-width: 500px; */
   height: 100vh;
-  background-color: #89898940;
-  backdrop-filter: blur(30px);
-
-  padding:120px 15px;
+  background-color: #000000;
+  /* backdrop-filter: blur(30px); */
+  /* border-radius: 10px; */
+  padding:0px 10px;
   box-shadow: 0 0 10px 0 rgba(255, 255, 255, 0.685);
   transition: all 0.3s ease-in-out;
   z-index: 9999;
   overflow-y: auto;
+  padding-bottom: 500px;
 }
 
 .eula-content {
+
   color: white;
   font-family: 'Arial', sans-serif;
   
@@ -626,6 +843,7 @@
   justify-content: center;
   align-items: center;
   transition: transform 0.5s ease-in-out;
+  margin-top: -50px;
 }
 .create-key-card1 {
   position: fixed;
@@ -688,12 +906,12 @@ canvas {
   width: 95%;
   max-width: 700px;
   height: auto;
-  /* background: rgb(0, 0, 0); */
-  /* box-shadow:10px 10px  #43434368; */
+  background: rgb(52, 52, 52);
+ 
   position: fixed;
   top: 0;
   border-radius: 10px;
-  backdrop-filter: blur(10px);
+  /* backdrop-filter: blur(10px); */
   transition: all 0.3s ease-in-out;
 }
 
@@ -703,7 +921,7 @@ canvas {
   flex-direction: column;
   align-items: center;
   /* border: 1px solid #000000; */
-  border-radius: 5px;
+  border-radius: 20px;
   /* padding: 3px; */
   /* border: 2px solid #efefef8e; */
 }
@@ -713,7 +931,7 @@ canvas {
   /* border: 2px solid #efefef8e; */
   background-color: #000000;
   color: rgb(141, 141, 141);
-  border-radius: 5px;
+  border-radius: 20px;
   width: 100%;
   /* padding: 10px; */
   font-size: 13px;
@@ -722,6 +940,7 @@ canvas {
 /* 新增：浮动标签容器，用于实现输入框提示文字动画效果 */
 .floating-label-container {
   position: relative;
+  transition: all 0.3 ease-in-out;
 }
 
 .floating-label-container input,
@@ -734,9 +953,9 @@ canvas {
   /* border: 2px solid #efefef8e; */
   border: none;
   /* border: 1px solid green; */
-  border-radius: 5px;
+  border-radius: 15px;
   outline: none;
-  transition: border-color 0.3s;
+  transition: all 0.3 ease-in-out;
 }
 
 /* 使 textarea 保持原有样式（如需调整高度，可在行内样式中控制） */
@@ -809,10 +1028,11 @@ import { getTalkFlowCore } from '@/composables/TalkFlowCore';
 const chatFlow = getTalkFlowCore();
 const canvas = ref<HTMLCanvasElement | null>(null);
 import { useRouter } from 'vue-router'
-import { scanOutline, imageOutline } from 'ionicons/icons';
+import { scanOutline, imageOutline, fingerPrintOutline,keyOutline, copyOutline, sparklesOutline } from 'ionicons/icons';
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import jsQR from 'jsqr';
+
 
 const router = useRouter()
 
@@ -833,7 +1053,90 @@ const {
   currentUserAlias,
   loginError,
   KeyDown,
+  temppub,
+  simpleLogin
+  // generateKeyPairFaceId,
+  // importKeyPairFaceId
+
 } = chatFlow 
+
+const isKeyPair = ref(false)
+function KeyPairShow() {
+ isKeyPair.value = !isKeyPair.value
+//  KeyDown.value = true;
+
+}
+
+let jsonkeypair: Ref<any> = ref('');
+
+
+  function parseEncryptedKeyInput(): void {
+  try {
+    if (!encryptedKeyInput.value.trim()) {
+      jsonkeypair.value = '';
+      return;
+    }
+    const parsedObject: { pub?: string } = JSON.parse(encryptedKeyInput.value);
+    const pubString: string | null = parsedObject.pub || null;
+    if (!pubString) {
+      throw new Error("Pub field is missing or invalid");
+    }
+    jsonkeypair.value = pubString;
+  } catch (error: unknown) {
+    console.error("Error parsing encryptedKeyInput:", (error as Error).message);
+    jsonkeypair.value = '';
+  }
+}
+
+// watch(encryptedKeyInput, parseEncryptedKeyInput);
+//     return { encryptedKeyInput, jsonkeypair };
+
+watch(encryptedKeyInput, (newValue: string) => {
+  try {
+    if (!newValue.trim()) {
+      jsonkeypair.value = '';
+      return;
+    }
+    const parsedObject: { pub?: string } = JSON.parse(newValue);
+    const pubString: string | null = parsedObject.pub || null;
+    if (!pubString) {
+      throw new Error("Pub field is missing or invalid");
+    }
+    jsonkeypair.value = pubString;
+  } catch (error: unknown) {
+    console.error("Error parsing encryptedKeyInput:", (error as Error).message);
+    jsonkeypair.value = '';
+  }
+});
+// function parseEncryptedKeyInput(encryptedKeyInput : any) {
+//   try {
+//     // 将对象转换为 JSON 字符串
+//     const jsonString = JSON.stringify(encryptedKeyInput);
+    
+//     // 解析 JSON 字符串为对象
+//     const parsedObject = JSON.parse(jsonString);
+    
+//     // 提取 pub 字段并确保它是字符串
+//     const pubString = parsedObject.pub || null;
+    
+//     if (!pubString) {
+//       throw new Error("Pub field is missing or invalid");
+//     }
+   
+//     jsonkeypair = pubString;
+
+//     return pubString;
+    
+//   } catch (error : any) {
+//     console.error("Error parsing encryptedKeyInput:", error.message);
+//     return null;
+//   }
+// }
+
+
+
+
+
 
 // 新增：输入框聚焦状态管理，用于控制浮动标签效果
 const isFocused = reactive({
@@ -850,6 +1153,20 @@ function setFocus(field: 'passphrase' | 'encryptedKeyInput' | 'newAlias' | 'newP
 function removeFocus(field: 'passphrase' | 'encryptedKeyInput' | 'newAlias' | 'newPassphrase') {
   isFocused[field] = false
 }
+
+import { gunAvatar } from "gun-avatar";
+import { useTheme } from '@/composables/useTheme';
+const { isDark } = useTheme();
+
+const avatarurl = computed(() => 
+gunAvatar({ 
+  pub: temppub.value, 
+  round: false, 
+  dark: isDark.value, 
+  // svg: true,
+  p3: true,
+  embed: true,
+}));
 
 
 // 登录逻辑
