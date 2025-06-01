@@ -8,26 +8,53 @@ import { getCurrentInstance } from 'vue';
 import StorageService, { FileData } from '../services/storageService';
 import { useToast } from '@/composables/useToast';
 import { v4 as uuidv4 } from 'uuid';
-import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
 const { showToast } = useToast();
 import { sqliteServ, dbVerServ, storageServ } from '../services/globalServices';
 import { useAIAutoReply } from '@/composables/useAIAutoReply';
 import { generateReply } from '@/composables/ollamaService';
  import { ChatMessage } from '@/types/chat';
+//  import { BiometricAuth } from '@aparajita/capacitor-biometric-auth';
+//  import { SecureStorage } from '@aparajita/capacitor-secure-storage';
+ 
+import { getGunSQLiteAdapter } from '@/composables/GunStorageAdapter';
 
-// import { getGunSQLiteAdapter } from '@/composables/GunStorageAdapter';
+const gunSQLiteAdapter = getGunSQLiteAdapter(sqliteServ, dbVerServ, storageServ);
+export interface KeyPair {
+  pub: string;
+  priv: string;
+  epub: string;
+  epriv: string;
+  alias?: string;
+}
 
-// const gunSQLiteAdapter = getGunSQLiteAdapter(sqliteServ, dbVerServ, storageServ);
+
+// async function getMyKeyPair(){
+//   const credentialsResult = await storageServ.query('SELECT value FROM credentials WHERE key = ?', ['userCredentials']);
+//     const encryptedCredentials = credentialsResult.values[0].value as string;
+
+//   // 4. 解析密钥对
+//   let pair: KeyPair;
+//   try {
+//     pair = JSON.parse(encryptedCredentials);
+//   } catch (e) {
+//     console.error('密钥对解析失败:', e);
+//     return null;
+//   }
+
+//   // 5. 验证密钥对完整性
+//   if (!pair.pub || !pair.priv || !pair.epub || !pair.epriv) {
+//     console.error('密钥对不完整:', pair);
+//     return null;
+//   }
+
+//   console.log('成功获取密钥对:', { pub: pair.pub, alias: pair.alias });
+//   return pair;
+
+// } 
 
 
 // Initialize AI auto-reply
 const aiAutoReply = useAIAutoReply(storageServ);
-
-
-
-
-
-
 
 // 保存已注销账户到 SQLite
 async function saveDeactivatedAccount(pubKey: string): Promise<void> {
@@ -90,7 +117,6 @@ export interface LocalChatMessage {
   status: MessageStatus;
   isSending: boolean;
   duration?: number;
-  
 }
 
 // 网络存储的消息（仅加密数据）
@@ -107,7 +133,7 @@ export interface NetworkChatMessage {
   hash: string;
   timestamp: number;
   msgId: string;
-  duration?: number; // 非敏感数据，可保留
+  duration?: number; 
 }
 
 export interface Buddy {
@@ -136,48 +162,23 @@ export interface ChatPreview {
   hasNew: boolean;
 }
 
-// gunSQLiteAdapter.initialize().then(() => {
-//   console.log('Gun SQLite adapter initialized and ready.');
-// }).catch(err => {
-//   console.error('Failed to initialize Gun SQLite adapter:', err);
-// });
-
-// sharedStorage.create().then(() => {
-//    console.log('缓存适配器 SQLite 初始化完成');
-// });
-/**
- * * https://gun-manhattan.herokuapp.com/gun
-* https://peer.wallie.io/gun
-* https://gundb-relay-mlccl.ondigitalocean.app/gun
-* https://plankton-app-6qfp3.ondigitalocean.app/
-* https://gun.defucc.me/gun
- */
 const peersList = ref<string[]>([
   'https://peer.wallie.io/gun',
   'https://gun.defucc.me/gun',
   'http://123.57.225.210:8080/gun',
-  'https://gun-manhattan.herokuapp.com/gun',
-  'https://gundb-relay-mlccl.ondigitalocean.app/gun',
  
-
-
 ]);
 
 const enabledPeer = ref<string>(peersList.value[0]);
 
-
-
-
-
-
 let gun = Gun({
  
   peers: [ enabledPeer.value],
-  radisk: true,
+  radisk: false,
   localStorage: false,
-  // gunSQLiteAdapter: {
-  //   key: 'talkflowdb',
-  // },
+  gunSQLiteAdapter: {
+    key: 'talkflowdb',
+  },
 });
 
 const isLargeScreen = ref(window.innerWidth > 768);
@@ -185,6 +186,50 @@ const isLargeScreen = ref(window.innerWidth > 768);
 const currentComponent = shallowRef('Chat')
 const previousComponent = ref('Chat')
 
+
+const temppub : Ref<string | null> = ref(null);
+
+interface Group {
+  name: string;
+  pub: string;
+  pair: KeyPair;
+}
+
+interface Message {
+  id: string;
+  sender: string;
+  senderPub: string;
+  text: string;
+  timestamp: number;
+  formattedTime: string;
+}
+
+interface Member {
+  pubKey: string;
+  alias: string;
+  lastActive: number;
+  joinedAt: number;
+  isOnline: boolean;
+}
+
+interface Vote {
+  pubKey: string;
+  agreed: boolean;
+}
+
+
+const newGroupName = ref('');
+const joinGroupKey = ref('');
+const groups = ref<Group[]>([]);
+const currentGroup = ref<string | null>(null);
+const currentGroupName = ref<string>('');
+const messagesByGroup = ref<{ [groupPub: string]: Message[] }>({});
+const membersByGroup = ref<{ [groupPub: string]: Member[] }>({});
+const votesByGroup = ref<{ [groupPub: string]: Vote[] }>({});
+const newMessage = ref('');
+const tempKeyPair = ref<KeyPair | null>(null);
+const encryptMessages = ref(true);
+const decryptMessages = ref(true);
 
 
 const hasPadChat = ref(false);
@@ -211,6 +256,7 @@ const currentUserAlias1: Ref<string | null> = ref(null);
 const loginError: Ref<string | null> = ref(null);
 const friendRemarks: Ref<Record<string, { remark: string; remarkInfo: string }>> = ref({});
 let currentUserPair: any = null;
+
 const KeyDown: Ref<boolean> = ref(false);
 const newAlias: Ref<string> = ref('');
 const newPassphrase: Ref<string> = ref('');
@@ -237,6 +283,27 @@ const sentMessages: Ref<Set<string>> = ref(new Set());
 const offlineNotice: Ref<string | null> = ref(null);
 const userAvatars: Ref<Record<string, string>> = ref({});
 const selectedFriendPub: Ref<string | null> = ref(null);
+const TempLoginValue : Ref<string | null> = ref(null);
+
+async function getMyKeyPair(){
+  const credentialsResult = await storageServ.query('SELECT value FROM credentials WHERE key = ?', ['userCredentials']);
+    const encryptedCredentials = credentialsResult.values[0].value as string;
+
+
+  let pair: KeyPair;
+  try {
+    pair = JSON.parse(encryptedCredentials);
+  } catch (e) {
+    console.error('密钥对解析失败:', e);
+    return null;
+  }
+
+  return pair;
+
+} 
+
+//  const currentUserPair = getMyKeyPair();
+//  const currentUserPair: Ref<KeyPair | null> = ref(null);
 
 export function useChatFlow() {
   const appInstance = getCurrentInstance();
@@ -244,11 +311,14 @@ export function useChatFlow() {
   const storageServ = appInstance.appContext.config.globalProperties.$storageServ as StorageService;
 
 
-  // gunSQLiteAdapter.initialize().then(() => {
-  //   console.log('Gun SQLite adapter initialized and ready.');
-  // }).catch(err => {
-  //   console.error('Failed to initialize Gun SQLite adapter:', err);
-  // });
+  gunSQLiteAdapter.initialize().then(() => {
+    console.log('Gun SQLite adapter initialized and ready.');
+  }).catch(err => {
+    console.error('Failed to initialize Gun SQLite adapter:', err);
+  });
+
+
+
 
   function switchTo(componentName: string) {
     if (currentComponent.value === componentName) return
@@ -335,20 +405,15 @@ export function useChatFlow() {
 
   if (!Gun.SEA) throw new Error('SEA Unable to enable');
 
+
+
   async function generateKeyPair(): Promise<void> {
     const alias = newAlias.value.trim();
-    const pass = newPassphrase.value;
+    // const pass = newPassphrase.value;
 
-    if (!pass) {
-      generateMsg.value = 'Please enter the password(used to encrypt the private key)';
-      showToast(generateMsg.value, 'warning');
-      return;
-    }
-
-    // const networkAvailable = await pingNetworkAndPeers();
-    // if (!networkAvailable) {
-    //   generateMsg.value = 'error,check you network';
-    //   showToast(generateMsg.value, 'error');
+    // if (!pass) {
+    //   generateMsg.value = 'Please enter the password(used to encrypt the private key)';
+    //   showToast(generateMsg.value, 'warning');
     //   return;
     // }
 
@@ -358,17 +423,6 @@ export function useChatFlow() {
     let pair: any = null;
     let existingPubKeys: Set<string> = new Set();
 
-    // generateMsg.value = 'Ensuring the uniqueness of identity...';
-    // showToast(generateMsg.value, 'info');
-    // try {
-    //   existingPubKeys = await fetchAllPubKeys();
-    // } catch (err) {
-    //   generateMsg.value = err instanceof Error ? err.message : 'error,check you network';
-    //   showToast(generateMsg.value, 'error');
-    //   return;
-    // }
-
-    // generateMsg.value = 'The key pair is being generated,please wait a moment...';
     while (!unique && retries < MAX_RETRIES) {
       try {
         pair = await Promise.race([
@@ -380,6 +434,7 @@ export function useChatFlow() {
         }
         if (!existingPubKeys.has(pair.pub)) {
           unique = true;
+        
         } else {
           retries++;
         //  showToast(`build identity conflicts,please try agin. (${retries}/${MAX_RETRIES})`, 'warning');
@@ -399,35 +454,145 @@ export function useChatFlow() {
       return;
     }
 
-    const dataStr = JSON.stringify({ ...pair, alias });
-    const encrypted = encryptData(dataStr, pass);
+    //  const dataStr = JSON.stringify({ ...pair, alias });
+    const encrypted = JSON.stringify({ ...pair, alias });
     encryptedKeyPair.value = encrypted;
-    await storageServ.saveUser(pair.pub, alias, undefined, encrypted);
+    
+
+    temppub.value = pair.pub
+    TempLoginValue.value = pair.value
+    // await storageServ.saveUser(pair.pub, alias, undefined, encrypted);
+// 存储明文密钥对到 users 表
+// await storageServ.run(
+//   'INSERT INTO users (pubKey, alias, priv, epub, epriv) VALUES (?, ?, ?, ?, ?)',
+//   [pair.pub, alias, pair.priv, pair.epub, pair.epriv]
+// );
+
     generateMsg.value = 'The key is successfully generated. Please copy and save the encrypted private key and the decryption password you set, and provide it only once.';
  //   showToast(generateMsg.value, 'success');
     KeyDown.value = true;
-    newAlias.value = '';
-    newPassphrase.value = '';
+    // newAlias.value = '';
+    // newPassphrase.value = '';
   }
 
+
+
+
+  async function simpleLogin(TempLoginKey: any){
+  //  TempLoginValue.value!
+  // if (!encryptedKeyInput.value.trim()) {
+  //   loginError.value = 'Please fill in the decryption password and encryption private key.';
+
+  //   return;
+  // }
+
+
+  const decrypted = TempLoginKey!;
+  if (!decrypted) {
+    loginError.value = 'Decryption failure or incorrect password';
+  //  showToast(loginError.value, 'error');
+    return;
+  }
+  let pair: any;
+  try {
+    pair = JSON.parse(decrypted);
+  } catch (e) {
+    loginError.value = 'Decryption is successful, but the key format is wrong.';
+ //   showToast(loginError.value, 'error');
+    return;
+  }
+  if (!pair.pub || !pair.priv || !pair.epub || !pair.epriv) {
+    loginError.value = 'The key pair is incomplete.';
+ //   showToast(loginError.value, 'error');
+    return;
+  }
+// 检查账户是否已被删除
+const isDeactivated = await isAccountDeactivated(pair.pub);
+
+if (isDeactivated) {
+loginError.value = 'The account does not exist.';
+// showToast(loginError.value, 'error');
+return;
+}
+  await new Promise<void>((resolve, reject) => {
+    user.auth(pair, async (ack: any) => {
+      if (ack.err) {
+        loginError.value = ack.err;
+     //   showToast(`Login failed: ${ack.err}`, 'error');
+        isLoggedIn.value = false;
+        reject(new Error(ack.err));
+      } else {
+        loginError.value = null;
+        isLoggedIn.value = true;
+        currentUserPub.value = pair.pub;
+         currentUserPair = pair;
+
+        let userData = await storageServ.getUser(pair.pub);
+        if (!userData) {
+          await storageServ.saveUser(pair.pub, pair.alias || 'No Name', undefined, encryptedKeyInput.value.trim());
+          userData = await storageServ.getUser(pair.pub);
+        }
+        currentUserAlias.value = userData!.alias || '';
+        userAvatars.value[pair.pub] = userData!.avatar || '';
+        currentUserAlias1.value = '';
+
+//           await storageServ.run(
+//   'INSERT INTO users (pubKey, alias, priv, epub, epriv) VALUES (?, ?, ?, ?, ?)',
+//   [pair.pub, pair.alias, pair.priv, pair.epub, pair.epriv]
+// );
+
+
+const encryptedCredentials = TempLoginKey;
+
+await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?, ?)', ['userCredentials', encryptedCredentials]);
+        // await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?, ?)', ['userCredentials', pair]);
+
+
+        gun.get('users').get(pair.pub).put({ epub: pair.epub, alias: currentUserAlias.value });
+        gun.get('users').get(pair.pub).once((data: any) => {
+          if (data?.alias && data.alias !== currentUserAlias.value) {
+            currentUserAlias.value = data.alias;
+            storageServ.saveUser(pair.pub, data.alias, userAvatars.value[pair.pub]);
+          }
+          if (data?.signature) currentUserAlias1.value = data.signature;
+          if (data?.avatar) userAvatars.value[pair.pub] = data.avatar;
+        });
+
+        buddyList.value = await loadBuddies(pair.pub);
+        chatPreviewList.value = await restoreChatPreviews(pair.pub);
+        friendRemarks.value = await storageServ.getFriendRemarks(pair.pub);
+        blacklist.value = await storageServ.getBlacklist();
+        setupListeners(pair.pub);
+
+       encryptedKeyInput.value = '';
+        router.replace('/index');
+        resolve();
+      }
+    });
+  });
+
+  }
+
+
+
   async function importKeyPair(): Promise<void> {
-    if (!encryptedKeyInput.value.trim() || !passphrase.value) {
+    if (!encryptedKeyInput.value.trim()) {
       loginError.value = 'Please fill in the decryption password and encryption private key.';
     //  showToast(loginError.value, 'warning');
       return;
     }
-    const decrypted = decryptData(encryptedKeyInput.value.trim(), passphrase.value);
+    const decrypted = encryptedKeyInput.value.trim();
     if (!decrypted) {
       loginError.value = 'Decryption failure or incorrect password';
     //  showToast(loginError.value, 'error');
       return;
     }
     let pair: any;
+    
     try {
       pair = JSON.parse(decrypted);
     } catch (e) {
       loginError.value = 'Decryption is successful, but the key format is wrong.';
-   //   showToast(loginError.value, 'error');
       return;
     }
     if (!pair.pub || !pair.priv || !pair.epub || !pair.epriv) {
@@ -437,6 +602,7 @@ export function useChatFlow() {
     }
 // 检查账户是否已被删除
 const isDeactivated = await isAccountDeactivated(pair.pub);
+
 if (isDeactivated) {
   loginError.value = 'The account does not exist.';
  // showToast(loginError.value, 'error');
@@ -453,30 +619,29 @@ if (isDeactivated) {
           loginError.value = null;
           isLoggedIn.value = true;
           currentUserPub.value = pair.pub;
-          currentUserPair = pair;
+           currentUserPair = pair;
 
           let userData = await storageServ.getUser(pair.pub);
           if (!userData) {
-            await storageServ.saveUser(pair.pub, pair.alias || 'DefaultUser', undefined, encryptedKeyInput.value.trim());
+            await storageServ.saveUser(pair.pub, pair.alias || 'No Name', undefined);
             userData = await storageServ.getUser(pair.pub);
           }
           currentUserAlias.value = userData!.alias || '';
           userAvatars.value[pair.pub] = userData!.avatar || '';
           currentUserAlias1.value = '';
 
-          try {
-            const encryptedCredentials = encryptData(
-              JSON.stringify({
-                encryptedKeyPair: encryptedKeyInput.value.trim(),
-                passphrase: passphrase.value,
-              }),
-              'talkflow-secret-key'
-            );
-            await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?, ?)', ['userCredentials', encryptedCredentials]);
-          } catch (err) {
-            // console.warn('凭证保存失败:', err);
-          }
-         
+//           await storageServ.run(
+//   'INSERT INTO users (pubKey, alias, priv, epub, epriv) VALUES (?, ?, ?, ?, ?)',
+//   [pair.pub, pair.alias, pair.priv, pair.epub, pair.epriv]
+// );
+
+
+const encryptedCredentials = TempLoginValue!;
+
+await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?, ?)', ['userCredentials', encryptedCredentials]);
+          // await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?, ?)', ['userCredentials', pair]);
+
+
           gun.get('users').get(pair.pub).put({ epub: pair.epub, alias: currentUserAlias.value });
           gun.get('users').get(pair.pub).once((data: any) => {
             if (data?.alias && data.alias !== currentUserAlias.value) {
@@ -493,7 +658,7 @@ if (isDeactivated) {
           blacklist.value = await storageServ.getBlacklist();
           setupListeners(pair.pub);
 
-          passphrase.value = '';
+       
           encryptedKeyInput.value = '';
           router.replace('/index');
           resolve();
@@ -502,62 +667,48 @@ if (isDeactivated) {
     });
   }
 
+ 
+
+
+
+
   async function restoreLoginState(): Promise<void> {
-    console.log('正在恢复登录状态...');
+    // console.log('正在恢复登录状态...');
     
     try {
       // 1. 从本地数据库加载凭据
       const credentialsResult = await storageServ.query('SELECT value FROM credentials WHERE key = ?', ['userCredentials']);
       if (!credentialsResult.values || !credentialsResult.values.length) {
-        console.log('未找到本地凭据，登录恢复终止');
+        // console.log('未找到本地凭据，登录恢复终止');
         return;
       }
       
       // 2. 解密凭据
       const encryptedCredentials = credentialsResult.values[0].value as string;
-      const decryptedCredentials = decryptData(encryptedCredentials, 'talkflow-secret-key');
-      if (!decryptedCredentials) {
-        console.log('凭据解密失败，登录恢复终止');
-        return;
-      }
-  
-      // 3. 获取和验证密钥对
-      const { encryptedKeyPair: storedKeyPair, passphrase: storedPass } = 
-        JSON.parse(decryptedCredentials) as { encryptedKeyPair: string; passphrase: string };
+   
       
-      const decrypted = decryptData(storedKeyPair, storedPass);
-      if (!decrypted) {
-       // console.log('密钥对解密失败，登录恢复终止');
-        return;
-      }
-      
-      const pair: any = JSON.parse(decrypted);
+      const pair: any = JSON.parse(encryptedCredentials);
       if (!pair.pub || !pair.priv || !pair.epub || !pair.epriv) {
        // console.log('密钥对不完整，登录恢复终止');
         return;
       }
   
-      // 4. 设置用户状态 
-      //console.log(`从本地恢复用户状态: ${pair.pub.substring(0, 10)}...`);
-      
       // 防止递归和堆栈溢出
       const safeSetUserData = () => {
         user.auth(pair); //避免有时被搜索时搜不到，所以在每次重启时都在网络中验证一次身份。
         isLoggedIn.value = true;
         currentUserPub.value = pair.pub;
-        currentUserPair = pair;
+         currentUserPair = pair;
       };
       
       // 安全调用，避免堆栈溢出
       try {
         safeSetUserData();
       } catch (e) {
-        console.warn('设置用户状态时发生错误，重试...', e);
+       // console.warn('设置用户状态时发生错误，重试...', e);
         setTimeout(safeSetUserData, 0);
       }
   
-      // 5. 加载本地用户数据 - 并行处理以提高性能
-    //  console.log('正在加载本地用户数据...');
       
       try {
         const userData = await storageServ.getUser(pair.pub);
@@ -572,25 +723,24 @@ if (isDeactivated) {
         //console.warn('加载用户数据失败，使用默认值', e);
       }
   
-      // 6. 并行加载其他本地数据
-    //  console.log('正在并行加载本地数据...');
+
       
       try {
         const [buddies, remarks, previews, blockedUsers] = await Promise.all([
           loadBuddies(pair.pub).catch(e => { 
-            console.warn('加载好友列表失败', e); 
+          //  console.warn('加载好友列表失败', e); 
             return []; 
           }),
           storageServ.getFriendRemarks(pair.pub).catch(e => { 
-            console.warn('加载好友备注失败', e); 
+            //console.warn('加载好友备注失败', e); 
             return {}; 
           }),
           restoreChatPreviews(pair.pub).catch(e => { 
-            console.warn('加载聊天预览失败', e); 
+            //console.warn('加载聊天预览失败', e); 
             return []; 
           }),
           storageServ.getBlacklist().catch(e => { 
-            console.warn('加载黑名单失败', e); 
+            //console.warn('加载黑名单失败', e); 
             return []; 
           })
         ]);
@@ -605,8 +755,6 @@ if (isDeactivated) {
        // console.warn('并行加载本地数据时出错', e);
       }
   
-      // 7. 设置监听器 (使用安全包装)
-    //  console.log('设置数据监听器...');
       try {
         const safeSetupListeners = () => {
           try {
@@ -678,55 +826,6 @@ if (isDeactivated) {
     }
   }
 
-  // async function restoreLoginState1(): Promise<void> {
-  //   const credentialsResult = await storageServ.query('SELECT value FROM credentials WHERE key = ?', ['userCredentials']);
-  //   if (!credentialsResult.values!.length) return;
-  //   const encryptedCredentials = credentialsResult.values![0].value as string;
-  //   const decryptedCredentials = decryptData(encryptedCredentials, 'talkflow-secret-key');
-  //   if (!decryptedCredentials) return;
-
-  //   const { encryptedKeyPair: storedKeyPair, passphrase: storedPass } = JSON.parse(decryptedCredentials) as { encryptedKeyPair: string; passphrase: string };
-  //   const decrypted = decryptData(storedKeyPair, storedPass);
-  //   if (!decrypted) return;
-  //   const pair: any = JSON.parse(decrypted);
-  //   if (!pair.pub || !pair.priv || !pair.epub || !pair.epriv) return;
-
-  //   await new Promise<void>((resolve) => {
-  //     user.auth(pair, async (ack: any) => {
-  //       if (ack.err) {
-  //         isLoggedIn.value = false;
-  //         resolve();
-  //       } else {
-  //         isLoggedIn.value = true;
-  //         currentUserPub.value = pair.pub;
-  //         currentUserPair = pair;
-
-  //         const userData = await storageServ.getUser(pair.pub);
-  //         currentUserAlias.value = userData!.alias || '';
-  //         userAvatars.value[pair.pub] = userData!.avatar || '';
-  //         currentUserAlias1.value = '';
-
-  //         buddyList.value = await loadBuddies(pair.pub);
-  //         friendRemarks.value = await storageServ.getFriendRemarks(pair.pub);
-  //         chatPreviewList.value = await restoreChatPreviews(pair.pub);
-  //         blacklist.value = await storageServ.getBlacklist();
-
-  //         gun.get('users').get(pair.pub).once((data: any) => {
-  //           if (data?.alias && data.alias !== currentUserAlias.value) {
-  //             currentUserAlias.value = data.alias;
-  //             storageServ.saveUser(pair.pub, data.alias, userAvatars.value[pair.pub]);
-  //           }
-  //           if (data?.signature) currentUserAlias1.value = data.signature;
-  //           if (data?.avatar) userAvatars.value[pair.pub] = data.avatar;
-  //         });
-
-  //         setupListeners(pair.pub);
-  //         resolve();
-  //       }
-  //     });
-  //   });
-  // }
-
   async function loadBuddies(userPub: string): Promise<Buddy[]> {
     try {
       return await storageServ.getBuddies(userPub);
@@ -736,86 +835,6 @@ if (isDeactivated) {
       return [];
     }
   }
-
-// async function loadBuddies(userPub: string): Promise<Buddy[]> {
-//   // 首先尝试从本地加载
-//   let localBuddies: Buddy[] = [];
-//   try {
-//     localBuddies = await storageServ.getBuddies(userPub);
-//     // 如果本地有好友数据，直接返回
-//     if (localBuddies && localBuddies.length > 0) {
-//       return localBuddies;
-//     }
-//     // 如果本地没有好友，继续尝试从Gun加载
-//   } catch (err) {
-//     console.error(`从本地加载好友列表失败 ${userPub}:`, err);
-//     // 本地加载失败，继续尝试从Gun加载
-//   }
-
-//   // 从Gun节点加载好友列表
-//   try {
-//     return await new Promise<Buddy[]>((resolve) => {
-//       let gunBuddies: Buddy[] = [];
-//       let resolved = false;
-      
-//       // 设置超时以避免无限等待
-//       const timeout = setTimeout(() => {
-//         if (!resolved) {
-//           resolved = true;
-//           console.warn('从Gun加载好友列表超时');
-//           resolve(localBuddies); // 超时时返回本地数据（可能为空）
-//         }
-//       }, 5000);
-      
-//       gun.get('users').get(userPub).get('buddies').map().once(async (data, key) => {
-//         if (data && key && !resolved) {
-//           try {
-//             const timestamp = data.timestamp || Date.now();
-//             const epub = data.epub || await getUserEpub(key);
-            
-//             // 正确传递所有必需的参数，包括epub
-//             await storageServ.saveBuddy(
-//               userPub,
-//               key,
-//               true, // addedByMe
-//               timestamp,
-//               data.alias,
-//               data.avatar,
-//               epub
-//             );
-            
-//             const buddy: Buddy = {
-//               pub: key,
-//               addedByMe: true,
-//               timestamp,
-//               alias: data.alias,
-//               avatar: data.avatar
-//             };
-            
-//             gunBuddies.push(buddy);
-//           } catch (e) {
-//             console.error('处理Gun好友数据时出错:', e);
-//           }
-//         }
-//       });
-      
-//       // 给Gun一些时间来收集数据
-//       setTimeout(() => {
-//         clearTimeout(timeout);
-//         if (!resolved) {
-//           resolved = true;
-//           resolve(gunBuddies.length > 0 ? gunBuddies : localBuddies);
-//         }
-//       }, 3000);
-//     });
-//   } catch (gunErr) {
-//     console.error(`从Gun加载好友列表失败:`, gunErr);
-//     showToast('加载好友列表失败', 'error');
-//     return localBuddies; // 返回本地数据（可能为空）
-//   }
-// }
-
-
 
   async function getUserEpub(pub: string): Promise<string | null> {
     if (epubCache[pub]) return epubCache[pub];
@@ -890,12 +909,13 @@ if (isDeactivated) {
     // 1. 清理 Gun.js 用户状态
     user.leave();
   
+
     // 2. 重置内存中的状态
     isLoggedIn.value = false;
     currentUserPub.value = null;
     currentUserAlias.value = null;
     currentUserAlias1.value = null;
-    currentUserPair = null;
+     currentUserPair = null;
     loginError.value = null;
     buddyList.value = [];
     receivedRequests.value = [];
@@ -1201,18 +1221,6 @@ if (isDeactivated) {
 
   const secretCache: Record<string, string | undefined> = {};
 
-
-
-  // function getPreviewText(msg: LocalChatMessage): string {
-
-
-  //   switch (msg.type) {
-  //     case 'text': return msg.text || '';
-  //     case 'voice': return '[Voice]';
-  //     case 'file': return '[File]';
-  //     default: return '';
-  //   }
-  // }
   function getPreviewText(msg: LocalChatMessage): string {
     const MAX_PREVIEW_LENGTH = 20; // 限制预览文本长度为 20 个字符
   
@@ -1381,7 +1389,7 @@ window.addEventListener('online', async () => {
 
 async function sendChat(messageType: MessageType, payload: string | null = null, duration?: number): Promise<void> {
   if (!currentUserPub.value || !currentChatPub.value) {
-    // showToast('未登录或未选择聊天对象', 'warning');
+
     // console.log('未登录或未选择聊天对象');
     return;
   }
@@ -1444,7 +1452,7 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
 
     const signData: any = { from: myPub, hash, timestamp: now };
     if (messageType === 'voice' && duration !== undefined) signData.duration = duration;
-    const signature = await Gun.SEA.sign(JSON.stringify(signData), currentUserPair);
+    const signature = await Gun.SEA.sign(JSON.stringify(signData), currentUserPair!);
     if (!signature) throw new Error('签名失败');
 
     const networkMsg: NetworkChatMessage = {
@@ -1519,9 +1527,9 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
           await storageServ.updateMessage(chatId, msgId, localMsg);
           chatMessages.value[targetPub] = chatMessages.value[targetPub].map(m => m.msgId === msgId ? { ...localMsg } : m);
           chatMessages.value = { ...chatMessages.value };
-          showToast(`消息 ${msgId} 发送失败: ${errorMsg}`, 'error');
+      //    showToast(`消息 ${msgId} 发送失败: ${errorMsg}`, 'error');
         } else {
-          showToast(`消息 ${msgId} 发送失败 (第 ${retries}/${MAX_RETRIES} 次尝试): ${errorMsg}，1秒后重试`, 'warning');
+        //  showToast(`消息 ${msgId} 发送失败 (第 ${retries}/${MAX_RETRIES} 次尝试): ${errorMsg}，1秒后重试`, 'warning');
           await new Promise(resolve => setTimeout(resolve, 500));
         }
       }
@@ -1561,7 +1569,7 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
 }
   async function resendMessage(pub: string, msg: LocalChatMessage): Promise<void> {
     if (!navigator.onLine ) {
-      showToast('Currently offline, please try again after restoring the network.', 'warning');
+     // showToast('Currently offline, please try again after restoring the network.', 'warning');
       return;
     }
     if (!currentUserPub.value || !pub) return;
@@ -1581,10 +1589,10 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
 
     if (!payload) {
       // showToast('消息内容为空，无法重发', 'warning');
-      console.log('消息内容为空，无法重发')
+    //  console.log('消息内容为空，无法重发')
       return;
     }
-    console.log('重发开始')
+    //console.log('重发开始')
     currentChatPub.value = pub;
     await sendChat(msg.type, payload, msg.duration);
   }
@@ -1595,7 +1603,7 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
       // showToast('未登录，无法打开聊天', 'warning');
       return;
     }
-    user.auth(currentUserPair)
+    user.auth(currentUserPair!)
     currentChatPub.value = pubKey;
     const chat = chatPreviewList.value.find(c => c.pub === pubKey);
     if (chat) {
@@ -1620,7 +1628,7 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
       // showToast('未登录，无法打开聊天', 'warning');
       return;
     }
-    user.auth(currentUserPair)
+    user.auth(currentUserPair!)
     currentChatPub.value = pubKey;
     const chat = chatPreviewList.value.find(c => c.pub === pubKey);
     if (chat) {
@@ -1649,7 +1657,7 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
     isLoadingHistory.value = true;
     try {
       const fetchBeforeId = beforeId !== undefined ? beforeId : oldestMsg?.id;
-      const newMessages = await storageServ.getMessages(chatId, 10, fetchBeforeId, 'DESC');
+      const newMessages = await storageServ.getMessages(chatId, 15, fetchBeforeId, 'DESC');
       if (newMessages.length > 0) {
         const existingIds = new Set(messages.map(m => m.id));
         const filteredMessages = newMessages.filter(m => !existingIds.has(m.id));
@@ -1665,82 +1673,6 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
       isLoadingHistory.value = false;
     }
   }
-
-  // async function listenChat(pubKey: string): Promise<void> {
-  //   if (!currentUserPub.value) return;
-  //   const myPub = currentUserPub.value;
-  //   const chatId = generateChatId(myPub, pubKey);
-
-  //   if (!buddyList.value.some(b => b.pub === pubKey && b.addedByMe)) return;
-  //   if (chatListeners.value[pubKey]) return;
-  //   gun.get('chats').get(chatId).get('deleted').get(myPub).once((val: any) => {
-  //     deletedRecordsMap.value[chatId] = typeof val === 'number' ? val : 0;
-  //   });
-
-  //   const deletedListener = gun.get('chats').get(chatId).get('deleted').get(myPub).once((val: any) => {
-  //     deletedRecordsMap.value[chatId] = typeof val === 'number' ? val : 0;
-  //     chatMessages.value[pubKey] = (chatMessages.value[pubKey] || []).filter(m => m.timestamp > deletedRecordsMap.value[chatId]);
-  //     chatMessages.value = { ...chatMessages.value };
-  //   });
-
-  //   const messageListener = gun.get('chats').get(chatId).get('messages').map().on(async (data: NetworkChatMessage | undefined, msgId: string) => {
-  //     if (!data || !data.from || sentMessages.value.has(msgId)) return;
-  //     if (!buddyList.value.some(b => b.pub === data.from && b.addedByMe)) return;
-  //     if (data.from !== myPub && data.from !== pubKey) return;
-
-  //     const cutoff = deletedRecordsMap.value[chatId] || 0;
-  //     if (data.timestamp <= cutoff) return;
-
-  //     const existingInSqlite = await storageServ.query('SELECT id FROM messages WHERE chatID = ? AND msgId = ?', [chatId, msgId]);
-  //     if (existingInSqlite.values?.length > 0) return;
-
-  //     const localMsg = await decryptMessage(data, pubKey);
-  //     if (!localMsg) return;
-
-  //     localMsg.chatID = chatId;
-  //     const insertedId = await storageServ.insertMessage(chatId, localMsg);
-  //     localMsg.id = insertedId;
-
-  //     chatMessages.value[pubKey] = chatMessages.value[pubKey] || [];
-  //     chatMessages.value[pubKey].push(localMsg);
-  //     chatMessages.value = { ...chatMessages.value };
-
-  //     if (data.from !== myPub) {
-  //       const lastNotified = lastNotifiedTimestamp.value[pubKey] || 0;
-  //       if (localMsg.timestamp > lastNotified && localMsg.timestamp <= Date.now()) {
-  //         lastNotifiedTimestamp.value[pubKey] = localMsg.timestamp;
-  //         await triggerLightHaptic();
-  //       }
-  //     }
-
-  //     const shortMsg = getPreviewText(localMsg).length > 10 ? getPreviewText(localMsg).slice(0, 10) + '...' : getPreviewText(localMsg);
-  //     const timeStr = formatTimestamp(localMsg.timestamp);
-  //     const idx = chatPreviewList.value.findIndex(c => c.pub === pubKey);
-  //     if (idx >= 0) {
-  //       chatPreviewList.value[idx].lastMsg = shortMsg;
-  //       chatPreviewList.value[idx].lastTime = timeStr;
-  //       chatPreviewList.value[idx].hidden = false;
-  //       chatPreviewList.value[idx].hasNew = data.from !== myPub && currentChatPub.value !== pubKey;
-  //       await storageServ.saveChatPreview(chatPreviewList.value[idx]);
-  //     } else {
-  //       const newPreview: ChatPreview = {
-  //         pub: pubKey,
-  //         lastMsg: shortMsg,
-  //         lastTime: timeStr,
-  //         hidden: false,
-  //         hasNew: data.from !== myPub && currentChatPub.value !== pubKey,
-  //       };
-  //       chatPreviewList.value.push(newPreview);
-  //       await storageServ.saveChatPreview(newPreview);
-  //     }
-  //     chatPreviewList.value = [...chatPreviewList.value];
-  //   });
-
-  //   chatListeners.value[pubKey] = () => {
-  //     deletedListener.off();
-  //     messageListener.off();
-  //   };
-  // }
 
   async function listenChat(pubKey: string): Promise<void> {
     if (!currentUserPub.value) return;
@@ -1810,11 +1742,11 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
           setTimeout(async () => {
             currentChatPub.value = pubKey; // Set current chat to send message
             await sendChat('text', reply);
-            console.log(`AI auto-reply sent to ${pubKey}: ${reply}`);
+         //   console.log(`AI auto-reply sent to ${pubKey}: ${reply}`);
           }, settings.replyDelay);
         } catch (error) {
-          console.error('AI auto-reply failed:', error);
-          showToast('Failed to generate AI reply', 'error');
+        //  console.error('AI auto-reply failed:', error);
+         // showToast('Failed to generate AI reply', 'error');
         }
       }
 
@@ -1864,14 +1796,14 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
       await storageServ.deleteMessage(chatId, msg.id);
       chatMessages.value[pubKey] = chatMessages.value[pubKey].filter(m => m.msgId !== msgId);
       chatMessages.value = { ...chatMessages.value };
-      showToast(` ${msgId} Deleted from the local area`, 'success');
+    //  showToast(` ${msgId} Deleted from the local area`, 'success');
     }
     gun.get('chats').get(chatId).get('messages').get(msgId).put(null);
   }
 
   async function exportDataToGun(): Promise<{ syncCode: string; totalSize: number }> {
     if (!currentUserPub.value) {
-      showToast('Not logged in', 'warning');
+    //  showToast('Not logged in', 'warning');
       throw new Error('Not logged in');
     }
 
@@ -1933,7 +1865,7 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
 
       setTimeout(async () => {
         if (chunks.length === 0) {
-          showToast('Invalid synchronization code or data not found', 'error');
+         // showToast('Invalid synchronization code or data not found', 'error');
           reject(new Error('Invalid synchronization code'));
           return;
         }
@@ -1963,7 +1895,7 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
         chatPreviewList.value = await storageServ.getAllChatPreviews();
         if (currentChatPub.value) await openChat(currentChatPub.value);
 
-        showToast('Data import is successful', 'success');
+     //   showToast('Data import is successful', 'success');
         resolve();
       }, 2000);
     });
@@ -2119,17 +2051,6 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
     filePreviewUrl.value = null;
   }
 
-  // function onDeleteChatClick(pub: string): void {
-  //   if (!pub || !currentUserPub.value) return;
-  //   const chatId = generateChatId(currentUserPub.value, pub);
-  //   const cutoff = Date.now();
-  //   deletedRecordsMap.value[chatId] = cutoff;
-  //   chatMessages.value[pub] = [];
-  //   chatMessages.value = { ...chatMessages.value };
-  //   storageServ.run('DELETE FROM messages WHERE chatID = ?', [chatId]);
-  //   showToast(` ${chatId} The local record has been deleted`, 'success');
-  //   gun.get('chats').get(chatId).get('deleted').get(currentUserPub.value).put(cutoff);
-  // }
   async function onDeleteChatClick(pub: string): Promise<void> {
     if (!pub || !currentUserPub.value) return;
     const chatId = generateChatId(currentUserPub.value, pub);
@@ -2241,79 +2162,10 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
     });
   }
 
-  // function listenUserData(pub: string): void {
-  //   gun.get('users').get(pub).on(async (data: any) => {
-  //     if (data) {
-  //       const newAlias = data.alias || 'No Name';
-  //       const newAvatar = data.avatar || '';
-  //       const newSignature = data.signature || '';
-  //       if (newAlias !== aliasMap.value[pub] || newAvatar !== userAvatars.value[pub] || newSignature !== signatureMap.value[pub]) {
-  //         aliasMap.value[pub] = newAlias;
-  //         userAvatars.value[pub] = newAvatar;
-  //         signatureMap.value[pub] = newSignature;
-  //         const buddyIndex = buddyList.value.findIndex(b => b.pub === pub);
-  //         if (buddyIndex !== -1 && currentUserPub.value) {
-  //           buddyList.value[buddyIndex] = { ...buddyList.value[buddyIndex], alias: newAlias, avatar: newAvatar };
-  //           await storageServ.saveBuddy(currentUserPub.value, pub, buddyList.value[buddyIndex].addedByMe, buddyList.value[buddyIndex].timestamp, newAlias, newAvatar);
-  //           buddyList.value = [...buddyList.value];
-  //         }
-  //       }
-  //     }
-  //   });
-  // }
-  async function onDeleteAccount(): Promise<void> {
-    if (!currentUserPub.value) {
-      showToast('未登录，无需删除账户', 'warning');
-      return;
-    }
-    const myPub = currentUserPub.value;
-    try {
-      buddyList.value.forEach(buddy => {
-        gun.get('users').get(buddy.pub).get('notifications').set({
-          from: myPub,
-          type: 'friend_removed',
-          timestamp: Date.now(),
-          message: `${currentUserAlias.value || 'Someone'} 已删除账户并将您从好友列表移除`,
-        });
-      });
-      await saveDeactivatedAccount(myPub);
-      gun.get('users').get(myPub).put(null);
-      await storageServ.run('DELETE FROM users WHERE pubKey = ?', [myPub]);
-      await storageServ.run('DELETE FROM epubs WHERE pub = ?', [myPub]);
-      await storageServ.run('DELETE FROM buddies WHERE userPub = ?', [myPub]);
-      await storageServ.run('DELETE FROM messages WHERE from = ?', [myPub]);
-      await storageServ.execute('DELETE FROM chat_previews');
-      await storageServ.run('DELETE FROM friend_remarks WHERE userPub = ?', [myPub]);
-      await storageServ.run('DELETE FROM sent_requests WHERE fromPub = ?', [myPub]);
-      await storageServ.run('DELETE FROM credentials WHERE key = ?', ['userCredentials']);
-      user.leave();
-      isLoggedIn.value = false;
-      currentUserPub.value = null;
-      currentUserAlias.value = null;
-      currentUserPair = null;
-      buddyList.value = [];
-      receivedRequests.value = [];
-      chatPreviewList.value = [];
-      chatMessages.value = {};
-      aliasMap.value = {};
-      signatureMap.value = {};
-      userAvatars.value = {};
-      sentMessages.value.clear();
-      for (const pub in chatListeners.value) {
-        chatListeners.value[pub]();
-      }
-      chatListeners.value = {};
-      showToast('账户已删除，所有相关数据已清理', 'success');
-      router.replace({ path: '/' });
-    } catch (err) {
-      console.error('删除账户失败:', err);
-      showToast('账户删除失败，请重试', 'error');
-    }
-  }
   async function setupListeners(pub: string): Promise<void> {
     listenMyBuddyList(pub);
     listenMyAlias(pub);
-    // listenUserData(pub);
+ 
     listenMyBlacklist(pub);
     listenMyRequests(pub);
     listenAllChats(pub);
@@ -2324,7 +2176,7 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
       listenFriendSignature(buddy.pub);
     });
     await loadRequestsViewedState();
-    // await aiAutoReply.loadState();
+
   }
 
   const newAliasInput: Ref<string> = ref('');
@@ -2341,13 +2193,6 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
       showToast(updateAliasMsg.value, 'warning');
       return;
     }
-
-    // const networkAvailable = await pingNetworkAndPeers();
-    // if (!networkAvailable) {
-    //   updateAliasMsg.value = 'check you network';
-    //   showToast(updateAliasMsg.value, 'warning');
-    //   return;
-    // }
 
     try {
       gun.get('users').get(currentUserPub.value).put({ alias: newAliasValue });
@@ -2372,22 +2217,15 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
     }
     const newAliasValue1 = newAliasInput1.value.trim();
 
-    // const networkAvailable = await pingNetworkAndPeers();
-    // if (!networkAvailable) {
-    //   updateAliasMsg1.value = 'check you network';
-    //   showToast(updateAliasMsg1.value, 'warning');
-    //   return;
-    // }
-
     try {
       gun.get('users').get(currentUserPub.value).put({ signature: newAliasValue1 });
       updateAliasMsg1.value = 'Successful update';
-      showToast(updateAliasMsg1.value, 'success');
+   //   showToast(updateAliasMsg1.value, 'success');
       newAliasInput1.value = '';
       currentUserAlias1.value = newAliasValue1;
     } catch (err) {
       updateAliasMsg1.value = 'error';
-      showToast(updateAliasMsg1.value, 'error');
+     // showToast(updateAliasMsg1.value, 'error');
       // console.error('签名更新失败:', err);
     }
   }
@@ -2407,16 +2245,15 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
       reader.readAsDataURL(target.files[0]);
     }
   }
-// 新增函数：删除旧头像
+
 async function deleteOldAvatar(pubKey: string): Promise<void> {
   try {
     // 获取当前用户数据以获取旧头像
     const userData = await storageServ.getUser(pubKey);
     
     if (userData && userData.avatar) {
-      // 记录旧头像已删除
-     // console.log(`删除用户 ${pubKey} 的旧头像`);
-      
+         // 清空Gun.js中的avatar字段
+         gun.get('users').get(pubKey).put({ avatar: null });
       // 1. 从用户表中将avatar字段置为null
       await storageServ.run(
         'UPDATE users SET avatar = NULL WHERE pubKey = ?',
@@ -2449,12 +2286,6 @@ async function deleteOldAvatar(pubKey: string): Promise<void> {
       return;
     }
 
-    // const networkAvailable = await pingNetworkAndPeers();
-    // if (!networkAvailable) {
-    //   updateAvatarMsg.value = 'check you network';
-    //   showToast(updateAvatarMsg.value, 'warning');
-    //   return;
-    // }
 
     try {
       await new Promise<void>((resolve) => {
@@ -2503,7 +2334,7 @@ async function deleteOldAvatar(pubKey: string): Promise<void> {
  
 
   async function searchUserProfile(pub: string): Promise<{ pub: string; alias?: string; avatar?: string } | null> {
-    user.auth(currentUserPair)
+    user.auth(currentUserPair!)
     let retries = 0;
     const maxRetries = 3;
     while (retries < maxRetries) {
@@ -2520,7 +2351,7 @@ async function deleteOldAvatar(pubKey: string): Promise<void> {
       if (result) return result;
       retries++;
       if (retries === maxRetries) {
-        showToast(`No user was found in the current node. ${pub}`, 'warning');
+      //  showToast(`No user was found in the current node. ${pub}`, 'warning');
         return null;
       }
       await new Promise(resolve => setTimeout(resolve, 2000));
@@ -2542,9 +2373,6 @@ async function deleteOldAvatar(pubKey: string): Promise<void> {
     // console.log('禁用 Peer，使用默认第一个 Peer');
   }
 
-  // async function checkEnabledPeer(): Promise<boolean> {
-  //   return pingNetworkAndPeers();
-  // }
 
   function listenFriendSignature(pub: string): void {
     gun.get('users').get(pub).get('signature').on(async (val: string) => {
@@ -2556,7 +2384,7 @@ async function deleteOldAvatar(pubKey: string): Promise<void> {
   }
   async function clearAllChats(): Promise<void> {
     if (!currentUserPub.value) {
-      showToast('Not logged in', 'warning');
+     // showToast('Not logged in', 'warning');
       return;
     }
     const myPub = currentUserPub.value;
@@ -2595,13 +2423,12 @@ async function deleteOldAvatar(pubKey: string): Promise<void> {
           setTimeout(resolve, 1000); 
         });
   
-        // 可选：清理 deleted 标记
-       // gun.get('chats').get(chatId).get('deleted').get(myPub).put(null);
+  
       }
   
       showToast('All chat records have been completely cleared', 'success');
     } catch (err) {
-      console.error('Failed to clear all chats:', err);
+   //   console.error('Failed to clear all chats:', err);
       showToast('Failed to clear all chats', 'error');
     }
   }
@@ -2640,7 +2467,7 @@ async function deleteOldAvatar(pubKey: string): Promise<void> {
           signature: null,
           buddy: null,
           blacklist: null,
-          deleted: true, // 添加 deleted 标记
+          deleted: true,
         }, (ack: any) => {
           if (ack.err) {
             console.error('无法标记账户为已删除:', ack.err);
@@ -2669,7 +2496,7 @@ async function deleteOldAvatar(pubKey: string): Promise<void> {
       currentUserPub.value = null;
       currentUserAlias.value = null;
       currentUserAlias1.value = null;
-      currentUserPair = null;
+      // currentUserPair = null;
       loginError.value = null;
       buddyList.value = [];
       receivedRequests.value = [];
@@ -2769,17 +2596,21 @@ async function loadRequestsViewedState() {
     });
   }
 
-  // setupNetworkListener();
+
+
+ 
+
   loadRequestsViewedState();
 
   return {
+    getMyKeyPair,
+    Gun,
     exportDataToGun,
     importDataFromGun,
     exportProgress,
     importProgress,
     deactivateAccount,
     clearAllChats,
-    // checkEnabledPeer,
     storageServ,
     lastReadTimestamps,
     UserCardMode,
@@ -2787,7 +2618,6 @@ async function loadRequestsViewedState() {
     listenChat,
     listenUserAlias,
     listenUserAvatar,
-    // listenUserData,
     getFriendSignature,
     currentUserAlias1,
     newAliasInput1,
@@ -2872,7 +2702,6 @@ async function loadRequestsViewedState() {
     updatePeers,
     prioritizePeer,
     enabledPeer,
-    // restartGun,
     disablePeer,
     refreshBuddyList,
     getAliasRealtime1,
@@ -2888,8 +2717,6 @@ async function loadRequestsViewedState() {
     panelContent,
     selectedFriendPub,
     setSelectedFriendPub,
-    // restoreLoginState1,
-    // pingNetworkAndPeers,
     requestsViewed,
     loadRequestsViewedState,
     saveRequestsViewedState,
@@ -2914,6 +2741,30 @@ async function loadRequestsViewedState() {
     switchTo,
     setupListeners,
     aiAutoReply,
+    decryptMessageWithMyEpub,
+    user,
+    isAccountDeactivated,
+    restoreChatPreviews,
+    router,
+    deleteOldAvatar,
+    temppub,
+
+    newGroupName,
+    joinGroupKey,
+    groups,
+    currentGroup,
+    currentGroupName,
+    messagesByGroup,
+    membersByGroup,
+    votesByGroup,
+    newMessage,
+    tempKeyPair,
+    encryptMessages,
+    decryptMessages,
+    simpleLogin,
+    ensurePeerAvailable
+    // generateKeyPairFaceId,
+    // importKeyPairFaceId
   };
 }
 
@@ -2929,7 +2780,5 @@ export function getTalkFlowCore() {
 }
 
 export default getTalkFlowCore;
-
-
 
 
