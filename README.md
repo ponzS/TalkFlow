@@ -1,6 +1,6 @@
 
 New Peer for TalkFlow : https://a.talkflow.team/gun
-
+or use https://github.com/ponzS/Gun-Ollama-Relay
 
 ![talkflowcyber](https://github.com/user-attachments/assets/fce54f43-5f3a-4aba-8fd8-4596318a41b5)
 
