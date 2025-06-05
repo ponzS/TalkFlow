@@ -1,4 +1,4 @@
-
+V1.3.3
 New Peer for TalkFlow : https://a.talkflow.team/gun
 or use https://github.com/ponzS/Gun-Ollama-Relay
 
@@ -44,7 +44,7 @@ There are more! Forgive me for not more time to write a description! Because the
 install ollama client
 https://github.com/ollama/ollama
 
-iOS:
+iOS: v1.3.9
 
 AppStore:TalkFlow
 
