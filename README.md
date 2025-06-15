@@ -41,6 +41,9 @@ There are more! Forgive me for not more time to write a description! Because the
 
 # Quick Start 
 
+Relay and AI server 
+https://github.com/ponzS/Gun-Ollama-Relay
+
 install ollama client
 https://github.com/ollama/ollama
 
