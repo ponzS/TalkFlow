@@ -4,6 +4,8 @@ import 'gun/sea'
 import { useToast } from '@/composables/useToast'
 import { getTalkFlowCore } from '@/composables/TalkFlowCore'
 
+以下是一段概念性的代码，非真正的实现，同时也没有真正在项目中使用，用于给愿意帮助媒体流模块开发的开发者一些思路，在稳定版本模块完成后这个文件会被覆盖。
+
 const { showToast } = useToast()
 
 // 房间密钥对接口
