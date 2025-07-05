@@ -1,3 +1,6 @@
+The code of the new version has been completely rewritten. Please wait for me to upload a new library. But the old version is still safe, but it is not so functional, and it will not automatically empty the network data.
+
+
 V1.3.3
 New Peer for TalkFlow : https://a.talkflow.team/gun
 or use https://github.com/ponzS/Gun-Ollama-Relay
