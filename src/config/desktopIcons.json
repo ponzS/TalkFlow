@@ -1,0 +1,58 @@
+{
+  "icons": [
+    {
+      "id": "ai-setting",
+      "name": "D-AI-Set",
+      "icon": "pulseOutline",
+      "route": "/AiSetting",
+      "component": "AiSetting",
+      "order": 1,
+      "visible": true
+    },
+    {
+      "id": "ai-chat",
+      "name": "D-AI-MCP",
+      "icon": "pulseOutline", 
+      "route": "/AiChat",
+      "component": "AiChat",
+      "order": 2,
+      "visible": true
+    },
+    {
+      "id": "qr-code",
+      "name": "QR Code",
+      "icon": "qrCodeOutline",
+      "route": "/qrpage",
+      "component": "QrPage",
+      "order": 3,
+      "visible": true
+    },
+    {
+      "id": "html-tools",
+      "name": "Web Tools",
+      "icon": "codeSlashOutline",
+      "route": "/htmlpage",
+      "component": "HtmlPage",
+      "order": 4,
+      "visible": true
+    },
+    {
+      "id": "browser",
+      "name": "Browser",
+      "icon": "browsersOutline",
+      "route": "/browser",
+      "component": "Browser",
+      "order": 5,
+      "visible": true
+    },
+    {
+      "id": "relay",
+      "name": "Relay",
+      "icon": "rocketOutline",
+      "route": "/relaypage",
+      "component": "RelayPage",
+      "order": 6,
+      "visible": true
+    }
+  ]
+} 
