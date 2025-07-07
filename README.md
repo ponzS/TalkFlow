@@ -95,7 +95,7 @@ node start.js
 
 
 # composables
-You only need to pay attention to the implementation of LisenChat and SentChat when expanding the controller.
+You only need to pay attention to the implementation of ListenChat and SentChat when expanding the controller.
 
 ```base
 listenChat(pubKey: string)
