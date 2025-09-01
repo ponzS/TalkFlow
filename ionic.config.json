@@ -1,0 +1,7 @@
+{
+  "name": "talkflow",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}
