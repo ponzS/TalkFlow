@@ -1,12 +1,11 @@
-// src/composables/useLanguage.ts
 import { ref, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { Directory, Encoding, Filesystem } from '@capacitor/filesystem';
-
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
 interface Language {
   code: string;
   name: string;
-  flag: string; // 添加 flag 属性
+  flag: string;
 }
 
 const languages: Language[] = [
@@ -24,7 +23,7 @@ const languages: Language[] = [
 
 export function useLanguage() {
   const { locale } = useI18n();
-  const selectedLanguage = ref<string>(locale.value || 'en'); // 默认英语
+  const selectedLanguage = ref<string>(locale.value || 'en'); 
   const SETTINGS_FILE = 'language_settings.json';
 
   // 加载语言设置
@@ -43,7 +42,13 @@ export function useLanguage() {
       return 'en';
     }
   }
-
+  async function triggerLightHaptic(): Promise<void> {
+    try {
+      await Haptics.impact({ style: ImpactStyle.Light });
+    } catch (error) {
+      // console.error('Failed to trigger haptic feedback:', error);
+    }
+  }
   // 保存语言设置
   async function saveLanguageSettings(langCode: string): Promise<void> {
     try {
@@ -71,6 +76,7 @@ export function useLanguage() {
     selectedLanguage.value = lang.code;
     locale.value = lang.code;
     await saveLanguageSettings(lang.code);
+    await triggerLightHaptic();
   }
 
   // 监听语言变化

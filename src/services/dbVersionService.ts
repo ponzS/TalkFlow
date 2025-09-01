@@ -7,12 +7,12 @@ class DbVersionService implements IDbVersionService {
   
     setDbVersion(dbName: string, version: number) {
       this.dbNameVersionDict.set(dbName, version);
-    //  console.log(`设置数据库 ${dbName} 版本为: ${version}`);
+    //  设置数据库版本
     }
   
     getDbVersion(dbName: string): number | undefined {
       const version = this.dbNameVersionDict.get(dbName);
-    //  console.log(`获取数据库 ${dbName} 版本: ${version}`);
+    //  获取数据库版本
       return version;
     }
   }

@@ -75,55 +75,7 @@
   "versiontalk1": "Esta versión no incluye todas las funciones; por favor, espere actualizaciones. Las funciones en desarrollo incluyen: notificaciones en pantalla de bloqueo APNs - transferencia confiable de archivos grandes cifrados - comunicación de voz y video en tiempo real cifrada y confiable - puerto portátil para servidores de juegos - un puerto de escritorio más potente para Windows, Linux y macOS basado en ollama - versiones Pro y de control por gestos en realidad mixta para Oculus Quest y Pico - comunidad de nodos públicos (esta función podría no pasar la revisión, por lo que está en espera) - chat grupal (actualmente implementado pero no estable, podría estar disponible en la próxima versión; la comunicación privada tiene un nivel de cifrado más alto). La comunicación cifrada privada en la versión actual es confiable. Puede conectarse a un cliente de escritorio con una IA privada o un dron. El puerto de escritorio ha abierto interfaces de IA y controladores; simplemente configure el nodo y añada la IA como amigo para comunicarse con su IA privada a través de una red descentralizada."
 
 
-  ,    "eula": {
-    "title": "最终用户许可协议",
-    "lastUpdated": "最后更新：2025年3月12日",
-    "sections": {
-      "acceptance": {
-        "title": "1. 接受条款",
-        "content": "使用 TalkFlow（以下简称“本应用”）即表示您同意受本最终用户许可协议（以下简称“EULA”）的约束。如果您不同意，请勿使用本应用。"
-      },
-      "license": {
-        "title": "2. 许可授予",
-        "content": "TalkFlow 授予您非独占、不可转让的许可，允许您出于个人或商业目的使用本应用，但须遵守本 EULA 的条款。本应用基于去中心化网络运行，您对数据和密钥的管理由您自行负责。"
-      },
-      "conduct": {
-        "title": "3. 用户行为",
-        "content": "您同意不将本应用用于以下用途：<br>- 发布、分享或传输任何不当内容，包括但不限于仇恨言论、骚扰、暴力、色情或非法内容。<br>- 对其他用户实施滥用行为，例如发送垃圾信息、挑衅、威胁或恶意干扰网络节点。<br>- 违反任何适用法律或法规，包括但不限于数据隐私法和通信法规。"
-      },
-      "moderation": {
-        "title": "4. 内容审查",
-        "content": "对于通过公共公开节点网络传输的内容，TalkFlow 保留监控、审查和屏蔽违反本 EULA 的用户生成内容的权利。对于私人节点或对等连接中的内容，您自行负责管理。如发现不当内容，您可以通过应用内举报功能或邮箱 zhangguoai888@gmail.com 联系我们进行报告。"
-      },
-      "termination": {
-        "title": "5. 终止",
-        "content": "如果您违反本 EULA，我们可能会在通知或不通知的情况下暂停或终止您对本应用的访问权限。去中心化网络中的数据可能仍由其他节点保留，我们对此不承担责任。"
-      },
-      "warranty": {
-        "title": "6. 无担保",
-        "content": "本应用按“现状”提供，不提供任何明示或暗示的担保，包括但不限于对去中心化网络稳定性和数据传输可靠性的担保。由于其去中心化特性，服务可用性可能受网络状况影响。"
-      },
-      "liability": {
-        "title": "7. 责任限制",
-        "content": "TalkFlow 对因您使用本应用而产生的任何损害（包括但不限于数据丢失、密钥丢失或第三方行为）不承担责任。本应用不提供密钥找回服务，因其去中心化属性，密钥丢失将导致无法访问相关加密数据，请妥善保管您的密钥。"
-      },
-      "changes": {
-        "title": "8. EULA 修改",
-        "content": "我们可能会随时更新本 EULA，更新后的版本将在应用内或通过官方渠道发布。继续使用本应用即表示您接受更新后的条款。"
-      },
-      "contact": {
-        "title": "9. 联系方式",
-        "content": "如有疑问或需要支持，请通过 zhangguoai888@gmail.com 联系我们。由于本应用去中心化特性，部分问题可能需要您自行排查节点或密钥相关设置。"
-      },
-      "agreement": {
-        "content": "点击“我同意”即表示您已阅读、理解并同意本 EULA 的所有条款，并愿意承担使用去中心化实时通信服务所带来的责任与风险。"
-      }
-    },
-    "buttons": {
-      "agree": "我同意",
-      "decline": "拒绝"
-    }
-  },
+  ,   
   "help1" : "Esta es una aplicación de comunicación con prioridad offline.",
 "help2" : "Todos los datos se almacenan únicamente en tu disco local y se actualizan de manera incremental a través de los últimos datos de instantáneas de una red distribuida solo cuando es necesario.",
 "help3" : "Esto significa que tu lista de contactos y datos privados no aparecerán en ningún lugar que no hayas configurado manualmente.",
@@ -173,7 +125,489 @@
     "dAi6": "No hemos integrado Ollama en la aplicación porque aumentaría el tamaño del paquete de instalación. Además, es posible que ya hayas instalado Ollama.",
     "dAi7": "Código Abierto",
     "dAi8": "Hemos abierto el código fuente. Puedes construirlo y ejecutarlo directamente a través del código fuente según el contenido de la documentación del repositorio, o puedes construir el paquete de instalación por ti mismo. O simplemente descarga el paquete de instalación oficial para la instalación.",
-    "dAi9": "Permitimos expandir funciones y mejoras basadas en el código, y damos la bienvenida a la presentación de PR y a la participación en el desarrollo para convertirte en un colaborador de código abierto. Si necesitas redistribuir la aplicación, debes especificar en la aplicación que la infraestructura proviene de los equipos TalkFlow y Gun, y marcar la fuente del código. Por favor, cumple con nuestro protocolo de código abierto. Proporcionaremos asistencia técnica a largo plazo y servicios de seguridad. Puedes contactarnos a través de X para enviar una notificación urgente, y tomaremos medidas dentro de 1 día."
+    "dAi9": "Permitimos expandir funciones y mejoras basadas en el código, y damos la bienvenida a la presentación de PR y a la participación en el desarrollo para convertirte en un colaborador de código abierto. Si necesitas redistribuir la aplicación, debes especificar en la aplicación que la infraestructura proviene de los equipos TalkFlow y Gun, y marcar la fuente del código. Por favor, cumple con nuestro protocolo de código abierto. Proporcionaremos asistencia técnica a largo plazo y servicios de seguridad. Puedes contactarnos a través de X para enviar una notificación urgente, y tomaremos medidas dentro de 1 día.",
 
-
+  "userGuide": {
+    "title": "Guía del Usuario",
+    "back": "Volver",
+    "welcome": "Bienvenido a TalkFlow",
+    "description": "Tu guía completa para la comunicación potenciada por IA con generación y reconocimiento de imágenes",
+    "guideButton": "Guía del Usuario",
+    "features": {
+      "title": "Características Principales",
+      "chat": {
+        "title": "Chat IA",
+        "description": "Conversaciones inteligentes con modelos de IA avanzados que soportan texto e imágenes"
+      },
+      "imageGen": {
+        "title": "Generación de Imágenes",
+        "description": "Crea imágenes impresionantes usando IA en la nube o Stable Diffusion local"
+      },
+      "imageRec": {
+        "title": "Reconocimiento de Imágenes",
+        "description": "Sube imágenes para análisis y descripción por IA usando modelos de visión"
+      },
+      "templates": {
+        "title": "Plantillas de Mensajes",
+        "description": "Acceso rápido a prompts predefinidos e iniciadores de conversación"
+      }
+    },
+    "gettingStarted": {
+      "title": "Comenzando",
+      "steps": [
+        {
+          "title": "Seleccionar Modelo IA",
+          "description": "Ve a configuración y elige tu modelo de IA preferido de las opciones disponibles"
+        },
+        {
+          "title": "Configurar Ajustes",
+          "description": "Ajusta temperatura, modo streaming y otras preferencias según tus necesidades"
+        },
+        {
+          "title": "Comenzar a Chatear",
+          "description": "Escribe tu mensaje o sube una imagen para comenzar tu conversación con IA"
+        },
+        {
+          "title": "Explorar Características",
+          "description": "Prueba la generación de imágenes, usa plantillas y experimenta con diferentes capacidades de IA"
+        }
+      ]
+    },
+    "imageFeatures": {
+      "title": "Características de Imágenes",
+      "upload": {
+        "title": "Subida y Reconocimiento de Imágenes",
+        "description": "Sube imágenes directamente en el chat para análisis y descripción por IA",
+        "tips": [
+          "Arrastra y suelta imágenes en cualquier lugar del chat",
+          "Soporte para formatos PNG, JPEG y WebP",
+          "Tamaño máximo de archivo: 10MB por imagen",
+          "Usa modelos de visión como llama3.2-vision para mejores resultados"
+        ]
+      },
+      "generation": {
+        "title": "Generación de Imágenes",
+        "description": "Crea imágenes personalizadas usando herramientas de generación potenciadas por IA",
+        "tips": [
+          "Modo nube: usa servicios de IA externos",
+          "Modo local: requiere Stable Diffusion WebUI",
+          "Sé específico en tus prompts para mejores resultados",
+          "Las imágenes generadas pueden enviarse directamente al chat"
+        ]
+      }
+    },
+    "settings": {
+      "title": "Configuración y Ajustes",
+      "items": [
+        {
+          "title": "Modelo IA",
+          "description": "Elige entre los modelos disponibles. Se recomiendan modelos de visión para reconocimiento de imágenes."
+        },
+        {
+          "title": "Modo Chat",
+          "description": "Alterna entre modo Chat para conversaciones y modo Generar para respuestas únicas."
+        },
+        {
+          "title": "Respuesta en Streaming",
+          "description": "Habilita streaming en tiempo real para respuestas inmediatas de IA mientras se generan."
+        },
+        {
+          "title": "Temperatura",
+          "description": "Controla la creatividad de respuestas. Valores bajos (0.1-0.3) para respuestas enfocadas, altos (0.7-1.0) para creativas."
+        }
+      ]
+    },
+    "tips": {
+      "title": "Consejos y Trucos",
+      "items": [
+        {
+          "title": "Atajos de Teclado",
+          "description": "Presiona Enter para enviar mensajes, Shift+Enter para nuevas líneas"
+        },
+        {
+          "title": "Contexto de Imágenes",
+          "description": "La IA recuerda las imágenes subidas durante toda la conversación"
+        },
+        {
+          "title": "Modo Debug",
+          "description": "Habilita modo debug para resolver problemas de conexión o reconocimiento"
+        },
+        {
+          "title": "Plantillas",
+          "description": "Ahorra tiempo con prompts predefinidos para tareas y conversaciones comunes"
+        }
+      ]
+    },
+    "troubleshooting": {
+      "title": "Solución de Problemas",
+      "items": [
+        {
+          "question": "¿La IA no responde a las imágenes?",
+          "answer": "Asegúrate de usar un modelo con capacidades de visión como llama3.2-vision. Revisa el modo debug para información detallada de errores."
+        },
+        {
+          "question": "¿Problemas de conexión?",
+          "answer": "Verifica tu URL de API en configuración. Comprueba si el servicio ollama está funcionando y es accesible."
+        },
+        {
+          "question": "¿Respuestas lentas?",
+          "answer": "Intenta reducir temperatura, usar un modelo más pequeño o habilitar modo streaming para mejor rendimiento percibido."
+        },
+        {
+          "question": "¿La generación de imágenes no funciona?",
+          "answer": "Para generación local, asegúrate de que Stable Diffusion WebUI esté funcionando. Para modo nube, revisa tu configuración de API."
+        }
+      ]
+    },
+    "contact": {
+      "title": "Soporte y Comentarios",
+      "description": "¿Necesitas ayuda o tienes sugerencias? Estamos aquí para mejorar tu experiencia con TalkFlow.",
+      "github": "Repositorio GitHub",
+      "feedback": "Enviar Comentarios"
+    }
+  },
+  "inputMomentContent": "Por favor, introduce el contenido del momento",
+  "momentPublished": "Momento publicado exitosamente",
+  "momentPublishFailed": "Error al publicar momento",
+  "sent": "Enviado",
+  "sendFailed": "Falló el envío, intenta de nuevo",
+  "forwarded": "Reenviado",
+  "forwardFailed": "Falló el reenvío, intenta de nuevo",
+  "likeSuccess": "Me gusta exitoso",
+  "unlikeSuccess": "No me gusta exitoso",
+  "commentSuccess": "Comentario publicado exitosamente",
+  "replySuccess": "Respuesta publicada exitosamente",
+  "commentDeleted": "Comentario eliminado exitosamente",
+  "pleaseLogin": "Por favor, inicia sesión primero",
+  "invalidOperation": "Operación inválida",
+  "momentNotFound": "Momento no encontrado",
+  "loadMoreSuccess": "Más historial cargado exitosamente",
+  "loadMoreFailed": "Error al cargar más historial",
+  "momentHidden": "Momento ocultado",
+  "momentPublic": "Momento hecho público",
+  "momentDeleteSuccess": "Momento eliminado exitosamente",
+  "momentDeleteFailed": "Error al eliminar momento",
+  "likeFailed": "Error al dar me gusta",
+  "unlikeFailed": "Error al quitar me gusta",
+  "originalMomentNotFound": "Momento original no encontrado",
+  "cannotForwardForward": "No se puede reenviar un momento reenviado",
+  "commentFailed": "Error al comentar",
+  "replyFailed": "Error al responder",
+  "deleteCommentFailed": "Error al eliminar comentario",
+  "noPermissionDelete": "Sin permisos para eliminar este comentario",
+  "databaseWriteError": "Error de escritura en base de datos",
+  "unknownError": "Error desconocido",
+  "sayPlaceholder": "Di algo...",
+  "post": "Publicar",
+  "loading": "Cargando...",
+  "noCommentsYet": "Aún no hay comentarios. ¡Sé el primero en comentar!",
+  "reply": "Responder",
+  "delete": "Eliminar",
+  "replyingTo": "Respondiendo a",
+  "inputValueNull": "Valor de entrada vacío",
+  "errorAboutId": "Error con el ID",
+  "searchingUser": "Buscando usuario...",
+  "userNotFound": "Usuario no encontrado",
+  "searchFailed": "Búsqueda fallida, intenta de nuevo",
+  "failedOpenProfile": "Error al abrir perfil",
+  "copied": "Copiado",
+  "pullToRefresh": "Desliza hacia abajo para actualizar",
+  "loadingMore": "Cargando más...",
+  "noMoreData": "No hay más datos",
+  "invalidDate": "Fecha inválida",
+  "me": "Yo",
+  "loadingText": "Cargando...",
+  "forwardContentTooLong": "El contenido del reenvío no puede exceder 280 caracteres",
+  "postingMoment": "Publicando tu momento...",
+  "failedLoadImage": "Error al cargar imagen",
+  "failedReadFile": "Error al leer archivo",
+  "failedCompressImage": "Error al comprimir imagen",
+  "refreshMomentsFailed": "Error al actualizar momentos",
+  "loadMoreMomentsFailed": "Error al cargar más momentos",
+  "refreshMomentsSuccess": "Lista de momentos actualizada exitosamente",
+  "refreshMomentsFail": "Error al actualizar lista de momentos",
+  "forwardPost": "Reenviar publicación",
+  "forwarding": "Reenviando...",
+  "forwardedFrom": "Reenviado de",
+  "forward": "Reenviar",
+  "clickToViewOriginal": "Haz clic para ver el original",
+  "originalMomentDeleted": "Momento original eliminado",
+  "themes": "Temas",
+  "customizeColors": "Personaliza tu experiencia",
+  "userAgreement": "Acuerdo de Usuario",
+  "termsAndFeaturesGuide": "Términos y Guía de Características",
+  "successfulLoginImpliesAgreement": "El inicio de sesión exitoso implica acuerdo con todos los términos",
+  "userAgreementAndFeatures": "Acuerdo de Usuario y Características",
+  "loginToTalkFlow": "Iniciar sesión en TalkFlow",
+  "createNewAccount": "Crear Nueva Cuenta",
+  "colorThemes": "Temas de Color",
+  "generateAvatar": "Generar Avatar",
+  "regenerateAvatar": "Regenerar",
+  "key": "Clave",
+  "keyColon": "Clave:",
+  "copy": "Copiar",
+  "decentralizedDesign": "Diseño Descentralizado",
+  "decentralizedDesignDesc": "TalkFlow opera en una red peer-to-peer usando Gun.js. Tus datos están distribuidos entre nodos, asegurando que no haya un único punto de falla. Mantienes control completo sobre tu identidad digital y comunicaciones.",
+  "endToEndEncryption": "Cifrado de Extremo a Extremo",
+  "endToEndEncryptionDesc": "Todos los mensajes, archivos y comunicaciones están cifrados usando criptografía SEA. Solo tú y tus destinatarios previstos pueden descifrar y leer tu contenido. Tu privacidad está matemáticamente garantizada.",
+  "aiIntegration": "Integración de IA",
+  "aiIntegrationDesc": "Mejorado con capacidades de IA locales y en la nube, soportando conversaciones inteligentes, generación de imágenes y reconocimiento de contenido. El procesamiento de IA se ejecuta de forma segura sin comprometer tu privacidad.",
+  "userConductGuidelines": "Directrices de Conducta del Usuario",
+  "userConductGuidelinesDesc": "Aceptas no: publicar contenido inapropiado (discurso de odio, acoso, violencia, pornografía), participar en comportamiento abusivo (spam, amenazas, interferencia maliciosa), o violar las leyes aplicables.",
+  "privacyAndSecurity": "Privacidad y Seguridad",
+  "privacyAndSecurityDesc": "No almacenamos tus claves privadas ni accedemos a tus datos cifrados. Eres responsable de la gestión de claves y seguridad. Las claves perdidas no pueden recuperarse - tus datos serán permanentemente inaccesibles.",
+  "contentModeration": "Moderación de Contenido",
+  "contentModerationDesc": "Para canales dinámicos públicos, nos reservamos el derecho de monitorear y bloquear contenido que viole las normas. Para nodos privados y funciones de comunicación, gestionas el contenido tú mismo. Si descubres comportamiento inapropiado, repórtalo a zhangguoai888@gmail.com.",
+  "legalTerms": "Términos Legales",
+  "legalTermsDesc": "TalkFlow se proporciona \"tal como está\" sin garantías. No somos responsables por pérdida de datos, pérdida de claves, o acciones de terceros. La disponibilidad del servicio puede variar debido a condiciones de red.",
+  "agreementUpdates": "Actualizaciones del Acuerdo",
+  "agreementUpdatesDesc": "Podemos actualizar estos términos en cualquier momento. El uso continuo constituye aceptación de los términos actualizados. Los cambios se publicarán a través de canales oficiales.",
+  "importantNotice": "Aviso Importante",
+  "importantNoticeDesc": "El inicio de sesión exitoso implica aceptación de todos los términos y condiciones. Al continuar iniciando sesión, confirmas comprensión y acuerdo con estos términos.",
+  "privacyProtection": "Protección de Privacidad",
+  "privacyProtectionDesc": "TalkFlow emplea tecnología de cifrado de extremo a extremo. Todos tus mensajes, archivos y comunicaciones se cifran localmente antes de la transmisión. No podemos ni accedemos al contenido de tus comunicaciones privadas.",
+  "dataCollection": "Recolección de Datos",
+  "dataCollectionDesc": "No recolectamos información personal, registros de chat, o contenido de mensajes. La arquitectura descentralizada asegura que tus datos permanezcan distribuidos entre los nodos de red que elijas conectar.",
+  "networkInformation": "Información de Red",
+  "networkInformationDesc": "Para funcionalidad de red, podemos procesar metadatos de conexión (direcciones IP, estado de nodos). Esta información técnica es necesaria para comunicación peer-to-peer pero no se asocia con tu identidad.",
+  "keyManagement": "Gestión de Claves",
+  "keyManagementDesc": "Tus claves de cifrado se generan y almacenan localmente en tu dispositivo. No podemos acceder a tus claves privadas, por lo tanto no podemos descifrar tus datos o recuperar claves perdidas.",
+  "serviceAvailability": "Disponibilidad del Servicio",
+  "serviceAvailabilityDesc": "TalkFlow opera en una red descentralizada. La disponibilidad del servicio depende de nodos de red mantenidos por la comunidad. Nos esforzamos por alta disponibilidad pero no podemos garantizar acceso ininterrumpido.",
+  "dataPersistence": "Persistencia de Datos",
+  "dataPersistenceDesc": "Tus datos están distribuidos entre nodos de red. La persistencia de datos depende de operadores de nodos y salud de la red. Recomendamos respaldos regulares de información importante y claves criptográficas.",
+  "serviceLimitations": "Limitaciones del Servicio",
+  "serviceLimitationsDesc": "Si hay comportamiento abusivo, nos reservamos el derecho de restringir acceso a nodos de retransmisión públicos. Los nodos privados permanecen bajo tu control completo. Limitaciones de tamaño de archivo y transferencia pueden aplicar basadas en condiciones de red.",
+  "technicalSupport": "Soporte Técnico",
+  "technicalSupportDesc": "Soporte impulsado por la comunidad está disponible a través de canales oficiales. Para problemas técnicos, revisa primero la documentación o contacta: zhangguoai888@gmail.com",
+  "disclaimer": "Descargo de Responsabilidad",
+  "disclaimerDesc": "TalkFlow se proporciona \"tal como está\" y \"según disponibilidad\" sin garantías de ningún tipo, ya sean expresas o implícitas. No garantizamos que el servicio será ininterrumpido, libre de errores, o seguro.",
+  "limitationOfLiability": "Limitación de Responsabilidad",
+  "limitationOfLiabilityDesc": "En ningún caso los desarrolladores de TalkFlow serán responsables por daños directos, indirectos, incidentales, especiales, o consecuentes resultantes del uso o la incapacidad de usar el servicio.",
+  "applicableLaw": "Ley Aplicable",
+  "applicableLawDesc": "Estos términos se rigen por la ley internacional aplicable. Las disputas se resolverán a través de arbitraje. Si algún término se encuentra inválido, los términos restantes continuarán siendo efectivos.",
+  "finalAgreement": "Acuerdo Final",
+  "finalAgreementDesc": "Usar TalkFlow significa que has leído, entendido, y aceptas estar vinculado por todos los términos y condiciones descritos en este acuerdo. Esto constituye el acuerdo completo entre tú y TalkFlow.",
+  "talkflowTheme": "TalkFlow",
+  "purpleTheme": "Morado",
+  "neonTheme": "Neón",
+  "auroraTheme": "Aurora",
+  "blackWhiteTheme": "Blanco y Negro",
+  "deepSpaceTheme": "Espacio Profundo",
+  "fireTheme": "Fuego",
+  "oceanTheme": "Océano",
+  "forestTheme": "Bosque",
+  "cosmicTheme": "Cósmico",
+  "goldTheme": "Oro",
+  "roseTheme": "Rosa",
+  "emeraldTheme": "Esmeralda",
+  "mysticalTheme": "Místico",
+  "glacierTheme": "Glaciar",
+  "volcanicTheme": "Volcánico",
+  "currentNode": "Nodo actual:",
+  "noNodeSelected": "Ningún nodo seleccionado",
+  "connectionStatus": "Estado de conexión:",
+  "online": "En línea",
+  "offline": "Fuera de línea",
+  "note": "Nota:",
+  "mode": "Modo:",
+  "singleNodeConnection": "Conexión de nodo único",
+  "initialSpeedTesting": "Prueba de velocidad inicial...",
+  "testAllSpeed": "Probar toda la velocidad",
+  "testing": "Probando...",
+  "gunRelays": "Relés Gun",
+  "currentlyInUse": "Actualmente en uso",
+  "testingLatency": "Probando...",
+  "notTested": "Sin probar",
+  "switchToThisNode": "Cambiar a este nodo",
+  "testLatency": "Probar latencia",
+  "removeRelay": "Eliminar relé",
+  "relayURL": "URL del relé",
+  "status": "Estado",
+  "connectionLatency": "Latencia de conexión",
+  "enterRelayURL": "Ingrese URL del relé",
+  "searchRelays": "Buscar relés...",
+  "checking": "Verificando",
+  "close": "Cerrar",
+  "enableThisNode": "Habilitar este nodo",
+  "enabled": "Habilitado",
+  "nodesEnabled": "nodos habilitados",
+  "networkAvailable": "Red disponible",
+  "networkUnavailable": "Red no disponible",
+  "verifiedStatus": "Verificado",
+  "syncingStatus": "Sincronizando...",
+  "unverifiedStatus": "No verificado",
+  "relationshipVerified": "Relación verificada",
+  "verifying": "Verificando...",
+  "relationshipUnverified": "Relación no verificada",
+  "startGroupChat": "Iniciar chat grupal",
+  "addFriendTitle": "Añadir amigo",
+  "groupName": "Nombre del grupo",
+  "enterGroupName": "Introduce el nombre del grupo",
+  "searchContacts": "Buscar contactos",
+  "contacts": "Contactos",
+  "noContacts": "No hay contactos",
+  "sendGroupInvitation": "Enviar invitación al grupo",
+  "pinnedChats": "Chats anclados",
+  "recentChats": "Chats recientes",
+  "noMessagesYet": "Aún no hay mensajes",
+  "areYouSure": "¿Estás seguro?",
+  "groupCreatedSuccessfully": "Grupo creado con éxito",
+  "failedToCreateGroup": "Error al crear el grupo",
+  "pleaseEnterGroupName": "Por favor, introduce un nombre para el grupo",
+  "pleaseEnterGroupKey": "Por favor, introduce una clave de grupo",
+  "joinedGroupSuccessfully": "Te has unido al grupo con éxito",
+  "failedToJoinGroup": "Error al unirse al grupo",
+  "keyPairCopied": "Par de claves copiado",
+  "failedToCopyKeyPair": "Error al copiar el par de claves",
+  "confirmDelete": "Confirmar eliminación",
+  "confirmDeleteGroup": "¿Estás seguro de que quieres eliminar el grupo {groupName}? Esta acción no se puede deshacer.",
+  "cancel": "Cancelar",
+  "groupDeleted": "Grupo eliminado",
+  "failedToDeleteGroup": "Error al eliminar el grupo",
+  "createGroupFailedGetKeyPair": "Error al crear el grupo, no se pudo obtener el par de claves",
+  "invitationSent": "Grupo '{groupName}' creado con éxito, y se ha enviado una invitación a {count} contactos",
+  "invitationFailed": "Error al crear el grupo o enviar la invitación, por favor, inténtalo de nuevo",
+  "Chats": "Chats",
+  "Rooms": "Salas",
+  "keyPair": "Par de claves",
+  "loadingKeyPair": "Cargando par de claves...",
+  "encryptedKeyPairWarning": "Este es tu par de claves cifrado. ¡Guárdalo bien!",
+  "relayToast": "Relé: {url}",
+  "noStrangerRelays": "No hay relés desconocidos para añadir.",
+  "keyPairCopiedToClipboard": "Par de claves copiado al portapapeles",
+  "copyFailed": "Copia fallida",
+  "keyPairLoadedFromCredentials": "Par de claves cargado desde las credenciales",
+  "noEncryptedKeyPairFound": "No se encontró ningún par de claves cifrado",
+  "GunOS": "GunOS",
+  "relaySettings": "Ajustes del relé",
+  "aiSettings": "Ajustes de IA",
+  "aiChat": "Chat de IA",
+  "clickToViewAll": "Haz clic para ver todo",
+  "newMoment": "Nuevo momento",
+  "addImages": "Añadir imágenes",
+  "requestTimedOut": "La solicitud ha caducado",
+  "storageMonitor": "Monitor de almacenamiento",
+  "cacheStatus": "Estado de la caché",
+  "cacheSize": "Tamaño de la caché",
+  "cacheMemory": "Memoria caché",
+  "clearing": "Borrando...",
+  "clearCache": "Limpiar caché",
+  "dbContents": "Contenidos de la base de datos",
+  "totalRecords": "Total de registros",
+  "allRecords": "Todos los registros",
+  "userData": "Datos de usuario",
+  "chatsData": "Datos de chats",
+  "fetching": "Obteniendo...",
+  "refreshRecords": "Actualizar registros",
+  "clearDb": "Limpiar base de datos",
+  "noDbRecords": "No se encontraron registros en la base de datos.",
+  "logs": "Registros",
+  "Room": "Sala",
+  "currentChatFriendInfo": "Información del amigo de chat actual",
+  "friendName": "Nombre del amigo",
+  "noFriendSelected": "Ningún amigo seleccionado",
+  "currentFriendRemoteNotificationConfig": "Configuración de notificación remota del amigo actual",
+  "updateFromUrl": "Actualizar desde URL",
+  "saveConfig": "Guardar configuración",
+  "deleteConfig": "Eliminar configuración",
+  "testSend": "Envío de prueba",
+  "myRemoteNotificationConfig": "Mi configuración de notificación remota",
+  "myBarkConfig": "Mi configuración de Bark",
+  "enterYourBarkUrl": "Ingresa tu URL de Bark",
+  "note": "Nota",
+  "barkDescription": "Bark es una aplicación de notificaciones push que te permite recibir notificaciones personalizadas en dispositivos iOS. Necesitas descargar la aplicación Bark desde la App Store y obtener tu clave de dispositivo.",
+  "currentChatFriend": "Amigo de chat actual",
+  "nickname": "Apodo",
+  "publicKey": "Clave pública",
+  "remoteNotificationCertificate": "Certificado de notificación remota",
+  "configured": "Configurado",
+  "notConfigured": "No configurado",
+  "remoteNotificationContent": "Contenido de notificación remota",
+  "enterCustomContent": "Ingresar contenido personalizado",
+  "sendRemoteNotification": "Enviar notificación remota",
+  "sendMyNotificationCertificateToFriend": "Enviar mi certificado de notificación al amigo",
+  "revokeOtherNotificationCertificate": "Revocar otro certificado de notificación",
+  "myConfigStatus": "Estado de mi configuración",
+  "myBarkUrlLabel": "Mi URL de Bark",
+  "barkUrlPlaceholder": "Ingresar URL completa de Bark",
+  "notificationServerDomain": "Dominio del servidor de notificaciones",
+  "deviceKey": "Clave del dispositivo",
+  "saveMyConfig": "Guardar mi configuración",
+  "testMyNotification": "Probar mi notificación",
+  "notificationSwitchInBarkApp": "Habilitar interruptor de notificaciones en la aplicación Bark",
+  "deviceKeyFromBarkApp": "La clave del dispositivo se puede obtener desde la aplicación Bark",
+  "supportCustomNotificationServer": "Soporte para servidor de notificaciones personalizado",
+  "pleaseConfigureFriendNotification": "Por favor configura primero la notificación remota de tu amigo",
+  "youHaveNewMessage": "Tienes un nuevo mensaje",
+  "talkflowMessage": "Mensaje de TalkFlow",
+  "remoteNotificationSentSuccessfully": "Notificación remota enviada exitosamente",
+  "failedToSendRemoteNotification": "Error al enviar notificación remota",
+  "pleaseConfigureYourNotification": "Por favor configura primero tu notificación remota",
+  "notificationCertificateSentSuccessfully": "Certificado de notificación enviado exitosamente",
+  "failedToSendCertificate": "Error al enviar certificado",
+  "pleaseSelectChatFriend": "Por favor selecciona primero un amigo de chat",
+  "otherNotificationCertificateRevoked": "Otro certificado de notificación revocado",
+  "failedToRevokeCertificate": "Error al revocar certificado",
+  "pleaseEnterValidBarkUrl": "Por favor ingresa primero una URL de Bark válida",
+  "myConfigSavedSuccessfully": "Mi configuración guardada exitosamente",
+  "failedToSaveConfig": "Error al guardar configuración",
+  "talkflowTest": "Prueba de TalkFlow",
+  "thisIsTestNotification": "Esta es una notificación de prueba",
+  "testNotificationSentSuccessfully": "Notificación de prueba enviada exitosamente",
+  "testNotificationFailed": "Notificación de prueba falló",
+  "unableToSendMissingChatOrConfig": "No se puede enviar: falta destino de chat o configuración",
+  "remoteNotificationCertificateSent": "Certificado de notificación remota enviado",
+  "sendFailedPleaseTryAgain": "Envío falló, por favor intenta de nuevo",
+  "unableToSendDeleteRequestMissingInfo": "No se puede enviar solicitud de eliminación: falta información requerida",
+  "deleteCertificateRequestSent": "Solicitud de eliminación de certificado enviada",
+  "sendDeleteRequestFailedPleaseTryAgain": "Envío de solicitud de eliminación falló, por favor intenta de nuevo",
+  "pleaseEnterBarkUrl": "Ingresar URL de Bark",
+  "configNotEnabled": "Configuración no habilitada",
+  "testNotification": "Notificación de prueba",
+  "testNotificationSendFailed": "Envío de notificación de prueba falló",
+  "friendConfigNotEnabled": "Configuración de amigo no habilitada",
+  "chatPageRemoteNotificationCertificate": "Certificado de notificación remota",
+  "chatPageAcceptedRemoteNotificationCertificate": "Certificado de configuración de notificación remota aceptado",
+  "chatPageSecurityCertificateDeleted": "Certificado de seguridad eliminado",
+  "chatPageRemoteNotificationCertificateDeleted": "Certificado de notificación remota eliminado",
+  "chatPageClickToAcceptRemoteNotification": "Haz clic para aceptar y configurar notificaciones remotas",
+  "chatPageAccept": "Aceptar",
+  "chatPageRevokeRemoteNotificationCertificate": "Revocar certificado de notificación remota",
+  "chatPageRemoteNotificationCertificateSuccessfullyRevoked": "Certificado de notificación remota revocado exitosamente",
+  "chatPageRemoteNotification": "Notificación remota",
+  "chatPageJoinGroup": "Unirse al grupo",
+  
+  "notificationSettingsTitle": "Guía de configuración de notificaciones remotas",
+  "aboutRemoteNotifications": "Acerca de las notificaciones remotas",
+  "iosNotificationDescription": "En iOS, una mejor experiencia de notificaciones requiere APNs, mientras que nos esforzamos por hacer que todo sea auto-hospedable por los usuarios. Por lo tanto, utilizamos Bark por defecto como la herramienta principal de notificaciones remotas en iOS.",
+  "linuxAndroidPwaDescription": "En las versiones Linux-Android-PWA, puedes configurar controladores de hardware, lo que significa que las notificaciones recibidas pueden ser procesadas por otros dispositivos sin enviarlas a servidores de terceros.",
+  "privacyConsiderationDescription": "Por consideraciones de privacidad, hacemos que las notificaciones remotas sean una opción independiente, ya que los mensajes con notificaciones remotas se enviarán al servidor de notificaciones remotas, que luego los envía a tu dispositivo e invoca APIs gestionadas por hardware para hacer vibrar el dispositivo y mostrar contenido. Para versiones no iOS, las notificaciones remotas solo pasan por tu propio servidor.",
+  "respectConsiderationDescription": "Además, por respeto, no forzamos que cada mensaje incluya notificaciones remotas. Puedes enviar mensajes privados completamente cifrados a otros.",
+  "finalReminderLabel": "Recordatorio final:",
+  "finalReminderDescription": "El contenido de las notificaciones remotas se enviará al servidor de notificaciones que elijas para redirección, mientras que los mensajes sin notificaciones remotas se envían a través del cifrado punto a punto de la red mesh.",
+  "barkConfigurationSteps": "Pasos de configuración de Bark",
+  "step1Title": "Descargar e instalar la aplicación Bark",
+  "step1Description": "Busca y descarga la aplicación \"Bark\" en la App Store, es una herramienta gratuita de notificaciones push para iOS.",
+  "goToAppStore": "Ir a la App Store",
+  "goToGitHub": "Ir a GitHub",
+  "step2Title": "Obtener clave del dispositivo",
+  "step2Description1": "Abre la aplicación Bark, y verás una URL como esta:",
+  "step2Description2": "Copia esta URL completa, esta es tu dirección push de Bark.",
+  "deviceKeyNote": "La clave del dispositivo es única, por favor manténla segura",
+  "step3Title": "Configurar en TalkFlow",
+  "step3Description": "Pega la URL de Bark copiada en el campo de entrada de URL de API en el módulo de configuración de notificaciones remotas en la esquina superior derecha de la lista de chats de TalkFlow, luego envía el certificado de notificaciones remotas a la otra parte para comenzar a recibir notificaciones remotas.",
+  "features": "Características",
+  "privacyProtectionFeature": "Protección de privacidad",
+  "privacyProtectionDescription": "Soporta servidores auto-hospedados, los datos están completamente bajo tu control",
+  "instantNotificationFeature": "Notificaciones instantáneas",
+  "instantNotificationDescription": "Recibe notificaciones push de mensajes en tiempo real, no te pierdas información importante",
+  "certificateControlFeature": "Permisos de notificaciones remotas controlados por certificado",
+  "certificateControlDescription": "Solo aquellos que autorizas pueden enviarte notificaciones remotas, respetando tu privacidad y libertad.",
+  "endToEndEncryptionFeature": "Cifrado de extremo a extremo",
+  "endToEndEncryptionDescription": "Utiliza suites criptográficas de estándares de seguridad de grado militar y protocolos de comunicación cifrada, los mensajes utilizan transmisión cifrada doble punto a punto innovadora",
+  "needHelp": "¿Necesitas ayuda?",
+  "helpDescription": "Si encuentras problemas durante la configuración, puedes consultar los siguientes recursos:",
+  "barkOfficialDocs": "Documentación oficial de Bark",
+  "talkFlowHelp": "Ayuda de TalkFlow"
 }

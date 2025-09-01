@@ -1,4 +1,11 @@
 {
+  "name": "TalkFlow",
+  "short_name": "TalkFlow",
+  "description": "TalkFlow is a platform for creating and sharing AI-powered conversations.",
+  "start_url": "./",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#000000",
   "icons": [
     {
       "src": "assets/icons/icon-48.webp",

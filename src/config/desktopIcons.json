@@ -1,0 +1,41 @@
+{
+  "icons": [
+    {
+      "id": "ai-setting",
+      "name": "Auto Reply",
+      "icon": "pulseOutline",
+      "route": "/AiSetting",
+      "component": "AiSetting",
+      "order": 1,
+      "visible": true
+    },
+    {
+      "id": "qr-code",
+      "name": "QR Tool",
+      "icon": "qrCodeOutline",
+      "route": "/qrpage",
+      "component": "QrPage",
+      "order": 2,
+      "visible": true
+    },
+    {
+      "id": "html-tools",
+      "name": "Web Tool",
+      "icon": "codeSlashOutline",
+      "route": "/htmlpage",
+      "component": "HtmlPage",
+      "order": 3,
+      "visible": true
+    },
+    {
+      "id": "browser",
+      "name": "Browser",
+      "icon": "browsersOutline",
+      "route": "/browser",
+      "component": "Browser",
+      "order": 4,
+      "visible": true
+    }
+    
+  ]
+} 

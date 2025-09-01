@@ -3,7 +3,7 @@
       <ion-header :translucent="true"  collapse="fade">
         <ion-toolbar>
           <ion-buttons slot="start">
-            <ion-back-button color="dark"></ion-back-button>
+           <ion-back-button :text="$t('back')" ></ion-back-button>
           </ion-buttons>
           <ion-title>Report Violation</ion-title>
         </ion-toolbar>
@@ -104,7 +104,7 @@
       // 如果跳转失败，显示错误提示
       isErrorAlertOpen.value = true;
       showToast('Failed to open email app.', 'error');
-      console.error(err);
+      // console.error(err);
     }
   };
   </script>

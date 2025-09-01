@@ -1,840 +1,13 @@
-<template>
-
-
-    <ion-header :translucent="true" collapse="fade" style=" --background: transparent">
-      <ion-toolbar  :translucent="true" collapse="fade"  class="liquid-toolbar" style=" --background: transparent">
-  
-        <ion-buttons slot="end">
-          <ion-button color="dark" @click="showPanel('pubkey')">
-            <ion-icon :icon="keyOutline"  />
-          </ion-button>
-          <ion-button color="dark" @click="showPanel('qrcode')">
-            <ion-icon :icon="qrCodeOutline" />
-          </ion-button>
-          <ion-button color="dark" @click="goToScan">
-            <ion-icon :icon="scanSharp"  />
-          </ion-button>
-     
-        
-          <ion-button color="dark" @click="openEndMenu" >
-            <ion-icon :icon="settingsOutline"  />
-            
-          </ion-button>
-          <!-- <ion-menu-button color="dark" >
-          <ion-icon :icon="settingsOutline" style="font-size: 25px;"/>
-          </ion-menu-button> -->
-        </ion-buttons>
-       
-      </ion-toolbar>
-      
-    </ion-header>
-
-
-    <ion-menu side="end" contentId="main-content" menuId="end" type="push" style="z-index: 9999;">
-<Settings/>
-</ion-menu>
-
-
-  <ion-content :fullscreen="true" ref="contentRef" class="cosmic-content" id="main-content">
-
-
-
-
-<div class="profile-gesture-container1">
-
-  <img
-      v-if="userAvatars[currentUserPub!]"
-      :src="userAvatars[currentUserPub!]"
-      alt=""
-      class="avatar-glow1"
-    />
-    <img
-            v-else
-            :src="avatarurl"
-    
-            class="avatar-glow1"
-            
-          />
-  <!-- <object
-  v-else
-	class="avatar-glow1"
-	type="image/svg+xml"
-  :src="avatarurl"
-	:key="currentUserPub!"
-	:data="
-		gunAvatar({
-			pub: currentUserPub,
-			svg: true,
-       round: false, 
-      dark: isDark, 
- 
-      p3: true,
-
-
-   
-		})
-	"
-></object> -->
-
-
-<div class="gradient-mask"></div>
-<div class="profile-header1">
-    <div class="avatar-wrapper">
-          <img
-      v-if="userAvatars[currentUserPub!]"
-      :src="userAvatars[currentUserPub!]"
-      alt=""
-      class="avatar-glow"
-    />
-   
-    <!-- <object
-    v-else
-	 class="avatar-glow"
-	type="image/svg+xml"
-	:key="currentUserPub!"
-	:data="
-		gunAvatar({
-			pub: currentUserPub,
-			svg: true,
-			size: 1000,
-			dark: isDark,
-		})
-	"
-></object> -->
-<img
-            v-else
-            :src="avatarurl"
-    
-            class="avatar-glow"
-            
-          />
-
-
-    <!-- @click.stop="activateAvatar"  :class="{ 'avatar-active': isAvatarActive }"  -->
-          <img
-            v-if="userAvatars[currentUserPub!]"
-            :src="userAvatars[currentUserPub!]"
-            alt=""
-            class="avatar"
-      
-            :style="avatarStyle"
-           
-            @touchstart.stop
-          />
-    
-          
-          <object
-    v-else
-	 class="avatar"
-   style="z-index: 9999;"
-   :style="avatarStyle"
-	type="image/svg+xml"
-	:key="currentUserPub!"
-	:data="
-		gunAvatar({
-			pub: currentUserPub,
-		   svg: 'interactive',
-      // svg: true,
-			size: 1000,
-			dark: isDark,
-      p3: true,
-      embed: true,
-      
-		})
-	"
-
-></object>
-
-        </div>
-        <h1 class="username">{{ currentUserAlias || 'No Name' }}</h1>
-        <p>{{ currentUserAlias1 || '' }}</p>
-
-      </div>
-        </div>
-
-
-    <div
-      class="profile-gesture-container"
-      @touchstart="onTouchStart"
-      @touchmove="onTouchMove"
-      @touchend="onTouchEnd"
-    >
-      <div class="profile-header" :style="headerTransform" :class="{ 'no-transition': isDragging }">
-     
-      </div>
-
-      <div class="cards-container" :style="cardsTransform">
-        <div class="cards-wrapper cards-row-1">
-          <div class="modules-container">
-            <div class="module pubkey-module cosmic-item" @click="showPanel('pubkey')">
-              <ion-icon :icon="keyOutline" class="cosmic-icon" />
-            </div>
-            <div class="module qr-module cosmic-item" @click="showPanel('qrcode')">
-              <ion-icon :icon="qrCodeOutline" class="cosmic-icon" />
-            </div>
-          </div>
-        </div>
-        <div class="cards-wrapper cards-row-2">
-          <div class="modules-container">
-            <div class="module settings-module cosmic-item" @click="showPanel('keypair')">
-              <ion-icon :icon="keySharp" class="cosmic-icon" />
-            </div>
-            <!-- @click="showPanel('resetpassword')" -->
-            <div class="module pubkey-module cosmic-item" @click="goToScan">
-              <ion-icon :icon="scanSharp" class="cosmic-icon" />
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <ion-modal
-        :is-open="panelVisible"
-        css-class="profile-modal"
-        :breakpoints="[0, 0.5, 0.8]"
-        :initial-breakpoint="0.5"
-        @didDismiss="hidePanel"
-      >
-        <ion-content class="modal-content">
-          <div class="panel-header">
-            <span>{{ panelContent === 'pubkey' ? 'PubKey' : panelContent === 'qrcode' ? 'QR' : panelContent === 'keypair' ? 'Key Pair' : 'Reset Password' }}</span>
-            <ion-icon
-              color="dark"
-              :icon="closeCircleSharp"
-              style="font-size: 29px;"
-              @click="hidePanel"
-            ></ion-icon>
-          </div>
-
-          <div class="panel-content">
-            <div v-if="panelContent === 'pubkey'" class="pubkey-display">
-              <div class="content-with-copy">
-                <p>{{ currentUserPub }}</p>
-                <ion-icon
-                  :icon="copyOutline"
-                  class="copy-icon"
-                  @click="copyPub(currentUserPub)"
-                ></ion-icon>
-              </div>
-            </div>
-            <div v-else-if="panelContent === 'qrcode'" class="qr-display">
-              <QrShow :data="'pubkey:' + currentUserPub" />
-            </div>
-            <div v-else-if="panelContent === 'keypair'" class="keypair-display">
-             
-              <ion-button color="dark" expand="block" class="keypair-btn" @click="showEncryptedKeyPair">
-                <ion-icon slot="start" :icon="showKeyPair ? 'eye-off-outline' : 'eye-outline'"></ion-icon>
-                {{ showKeyPair ? 'Hide Key Pair' : 'Show Key Pair' }}
-              </ion-button>
-              <div v-if="showKeyPair" class="keypair-content-wrapper">
-                <div v-if="!encryptedPair" class="keypair-loading">
-                  <ion-spinner name="dots"></ion-spinner>
-                  <p>Loading key pair...</p>
-                </div>
-                <template v-else>
-             
-                  <div class="keypair-data">
-                    <div class="content-with-copy">
-                      <pre class="keypair-content">{{ encryptedPair }}</pre>
-                      <ion-icon
-                        :icon="copyOutline"
-                        class="copy-icon"
-                        @click="copyEncryptedKeyPair"
-                      ></ion-icon>
-                    </div>
-                  </div>
-                  <div class="keypair-warning-box">
-                    <ion-icon :icon="warningOutline"></ion-icon>
-                    <p>This is your encrypted key pair. Keep it safe!</p>
-                  </div>
-                  <!-- <p class="keypair-tip">This encrypted key pair can be used for account recovery. Save it in a secure location.</p> -->
-                </template>
-              </div>
-            
-            </div>
-            
-            <div v-else-if="panelContent === 'resetpassword'" class="reset-password-display">
-             
-          
-            </div>
-          </div>
-          
-        </ion-content>
-      </ion-modal>
-    </div>
-
-    <div class="gradient-mask"></div>
-  </ion-content>
-</template>
-
-<script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { IonContent, IonIcon, IonModal, IonItem, IonLabel, IonInput, IonButton, IonSpinner,
-  IonMenu,
-  IonMenuButton,
-  IonMenuToggle,
-  IonHeader,
-  IonTabBar,
-  IonToolbar,
-  IonButtons
- } from '@ionic/vue';
-import { closeCircleSharp, copyOutline, keyOutline, qrCodeOutline, keySharp, lockClosedOutline, eyeOutline, eyeOffOutline, refreshCircleOutline, warningOutline, lockOpenOutline, checkmarkCircleOutline, alertCircleOutline,scanSharp, menuOutline, settingsOutline } from 'ionicons/icons';
-import { gunAvatar } from "gun-avatar";
-
-
-const chatFlowStore = getTalkFlowCore();
-const router = useRouter();
-import { menuController } from '@ionic/vue';
-const {
-  copyPub,
-  currentUserPub,
-  currentUserAlias,
-  currentUserAlias1,
-  userAvatars,
-  storageServ,
-  gun,
-  isDragging,
-  startY,
-  translateY,
-  cardsTranslateY,
-  velocity,
-  lastTouchTime,
-  lastTouchY,
-  panelVisible: _panelVisible,
-  panelContent: _panelContent,
-
-  showToast,
- 
-} = chatFlowStore;
-
-function openEndMenu() {
-  menuController.open('end');
-  
-}
-type PanelContentType = 'pubkey' | 'qrcode' | 'keypair' | 'resetpassword' | null;
-const localPanelContent = ref<PanelContentType>(null);
-const localPanelVisible = ref(false);
-
-const panelVisible = computed({
-  get: () => localPanelVisible.value,
-  set: (value) => { localPanelVisible.value = value; _panelVisible.value = value; }
-});
-
-const panelContent = computed({
-  get: () => localPanelContent.value,
-  set: (value) => {
-    localPanelContent.value = value;
-    if (value === 'pubkey' || value === 'qrcode' || value === null) _panelContent.value = value;
-  }
-});
-
-import { useTheme } from '@/composables/useTheme';
-const { isDark } = useTheme();
-
-const avatarurl = computed(() => 
-gunAvatar({ 
-  pub: currentUserPub.value, 
-  round: false, 
-  dark: isDark.value, 
-  // svg: true,
-  p3: true,
-  embed: true,
-}));
-
-function goToScan() { router.push('/ScanPage') }
-const maxPullDown = 60;
-const maxPushUp = 50;
-const midPoint = 0;
-const dampingFactor = 1;
-const boundaryThreshold = 1;
-const midThreshold = 1;
-
-const positionState = ref('middle');
-const isAnimating = ref(false);
-
-
-const headerTransform = computed(() => ({
-  transform: `translateY(${translateY.value}px)`,
-}));
-
-const cardsTransform = computed(() => ({
-  transform: `translateY(${cardsTranslateY.value}px)`,
-}));
-
-const encryptedPair = ref('');
-const showKeyPair = ref(false);
-
-
-const avatarStyle = ref({});
-const decryptPassphrase = ref('');
-
-const decryptMessage = ref('');
-
-const showDecryptedKeyPair = ref(false);
-const decryptedPair = ref('');
-
-function generateRandomBorderRadius() {
-  const generateRoundValue = () => Math.floor(Math.random() * 50 + 40) + '%';
-  const values = Array.from({ length: 8 }, generateRoundValue);
-  const randomIndex = Math.floor(Math.random() * 8);
-  values[randomIndex] = Math.floor(Math.random() * 25 + 40) + '%';
-  return `${values[0]} ${values[1]} ${values[2]} ${values[3]} / ${values[4]} ${values[5]} ${values[6]} ${values[7]}`;
-}
-
-
-function copyEncryptedKeyPair() {
-  if (encryptedPair.value) {
-    navigator.clipboard.writeText(encryptedPair.value)
-      .then(() => showToast('Key pair copied to clipboard', 'success'))
-      .catch(err => showToast('Copy failed', 'error'));
-  }
-}
-
-
-
-async function showEncryptedKeyPair() {
-  if (showKeyPair.value) {
-    showKeyPair.value = false;
-    return;
-  }
-  showKeyPair.value = true;
-  const userData = await storageServ.getUser(currentUserPub.value!);
-  if (userData && userData.encryptedKeyPair) {
-    encryptedPair.value = userData.encryptedKeyPair;
-  } else {
-    const encryptedKeyPair = await checkCredentials();
-    if (encryptedKeyPair) {
-      encryptedPair.value = encryptedKeyPair;
-      showToast('Key pair loaded from credentials', 'success');
-    } else {
-      showToast('No encrypted key pair found', 'warning');
-    }
-  }
-}
-
-
-
-
-
-async function checkCredentials() {
-  const result = await storageServ.query("SELECT * FROM credentials WHERE key = 'userCredentials'");
-  if (result.values && result.values.length > 0) {
-    const encryptedData = result.values[0].value;
-    const decryptedData = encryptedData;
-    if (decryptedData) {
-      const credentials = JSON.parse(decryptedData);
-      if (credentials.encryptedKeyPair) return credentials.encryptedKeyPair;
-    }
-  }
-  return null;
-}
-
-
-
-
-
-function onTouchStart(e: TouchEvent) {
-  if (e.touches.length !== 1 || isAnimating.value) return;
-  velocity.value = 0;
-  isDragging.value = true;
-  startY.value = e.touches[0].clientY;
-  lastTouchTime.value = Date.now();
-  lastTouchY.value = startY.value;
-}
-
-function onTouchMove(e: TouchEvent) {
-  if (!isDragging.value || e.touches.length !== 1 || isAnimating.value) return;
-  const currentY = e.touches[0].clientY;
-  let deltaY = currentY - startY.value;
-  lastTouchTime.value = Date.now();
-  lastTouchY.value = currentY;
-  let resistance = 1;
-  let cardsResistance = 1;
-  if (deltaY > 0) {
-    if (positionState.value === 'top') {
-      resistance = midThreshold;
-      translateY.value = Math.min(translateY.value + deltaY * dampingFactor * resistance, midPoint);
-      cardsTranslateY.value = Math.min(cardsTranslateY.value + deltaY * dampingFactor * resistance * 1.5, 0);
-    } else if (positionState.value === 'middle') {
-      resistance = translateY.value >= maxPullDown * 0.7 ? boundaryThreshold : midThreshold;
-      translateY.value = Math.min(translateY.value + deltaY * dampingFactor * resistance, maxPullDown);
-      cardsResistance = cardsTranslateY.value >= window.innerHeight * 0.7 ? boundaryThreshold : midThreshold;
-      cardsTranslateY.value = Math.min(cardsTranslateY.value + deltaY * 1.5 * cardsResistance, window.innerHeight);
-    } else if (positionState.value === 'bottom') {
-      translateY.value = maxPullDown;
-      cardsTranslateY.value = window.innerHeight;
-    }
-  } else {
-    const upDistance = Math.abs(deltaY);
-    if (positionState.value === 'bottom') {
-      resistance = midThreshold;
-      translateY.value = Math.max(translateY.value - upDistance * dampingFactor * resistance, midPoint);
-      cardsTranslateY.value = Math.max(cardsTranslateY.value - upDistance * dampingFactor * resistance * 1.5, 0);
-    } else if (positionState.value === 'middle') {
-      resistance = translateY.value <= -maxPushUp * 0.7 ? boundaryThreshold : midThreshold;
-      translateY.value = Math.max(translateY.value - upDistance * dampingFactor * resistance, -maxPushUp);
-      cardsResistance = cardsTranslateY.value <= -maxPushUp * 1.7 ? boundaryThreshold : midThreshold;
-      cardsTranslateY.value = Math.max(cardsTranslateY.value - upDistance * 1.2 * cardsResistance, -maxPushUp * 2);
-    } else if (positionState.value === 'top') {
-      translateY.value = -maxPushUp;
-      cardsTranslateY.value = -maxPushUp * 2;
-    }
-  }
-  e.preventDefault();
-}
-
-function onTouchEnd() {
-  if (isAnimating.value) return;
-  isDragging.value = false;
-  snapToClosestPosition();
-}
-
-function snapToClosestPosition() {
-  const distToTop = Math.abs(translateY.value - (-maxPushUp));
-  const distToMiddle = Math.abs(translateY.value - midPoint);
-  const distToBottom = Math.abs(translateY.value - maxPullDown);
-  let targetY, targetCardsY;
-  if (positionState.value === 'top') {
-    if (distToMiddle < distToTop * 0.8 && translateY.value > -maxPushUp / 2) {
-      targetY = midPoint;
-      targetCardsY = 0;
-      positionState.value = 'middle';
-    } else {
-      targetY = -maxPushUp;
-      targetCardsY = -maxPushUp * 2;
-    }
-  } else if (positionState.value === 'bottom') {
-    if (distToMiddle < distToBottom * 0.8 && translateY.value < maxPullDown / 2) {
-      targetY = midPoint;
-      targetCardsY = 0;
-      positionState.value = 'middle';
-    } else {
-      targetY = maxPullDown;
-      targetCardsY = window.innerHeight;
-    }
-  } else {
-    let minDist = Math.min(distToTop, distToMiddle, distToBottom);
-    if (minDist === distToTop && translateY.value < -5) {
-      targetY = -maxPushUp;
-      targetCardsY = -maxPushUp * 2;
-      positionState.value = 'top';
-    } else if (minDist === distToBottom && translateY.value > 5) {
-      targetY = maxPullDown;
-      targetCardsY = window.innerHeight;
-      positionState.value = 'bottom';
-    } else {
-      targetY = midPoint;
-      targetCardsY = 0;
-      positionState.value = 'middle';
-    }
-  }
-  Haptics.impact({ style: ImpactStyle.Light });
-  translateY.value = Math.round(targetY);
-  cardsTranslateY.value = Math.round(targetCardsY);
-}
-
-
-function showPanel(content: PanelContentType) {
-  panelContent.value = content;
-  panelVisible.value = true;
-}
-
-function hidePanel() {
-  panelVisible.value = false;
-  panelContent.value = null;
-  showDecryptedKeyPair.value = false;
-  decryptedPair.value = '';
-  decryptPassphrase.value = '';
-  decryptMessage.value = '';
-}
-
-onMounted(async () => {
-  positionState.value = 'middle';
-  translateY.value = midPoint;
-  cardsTranslateY.value = 0;
-  if (currentUserPub.value) {
-    const userData = await storageServ.getUser(currentUserPub.value);
-    if (userData) {
-      currentUserAlias.value = userData.alias || '';
-      userAvatars.value[currentUserPub.value] = userData.avatar || '';
-      encryptedPair.value = userData.encryptedKeyPair || '';
-    }
-    gun.get('users').get(currentUserPub.value).once((data: any) => {
-      if (data?.alias) currentUserAlias.value = data.alias;
-      if (data?.signature) currentUserAlias1.value = data.signature;
-      if (data?.avatar) userAvatars.value[currentUserPub.value!] = data.avatar;
-    });
-  }
-});
-</script>
-
 <style scoped>
-.liquid-toolbar {
-  --border-color: transparent;
-  --background-color: transparent;
-}
-.blur-background{
-  width: 100vw; height: 100vh; 
-  backdrop-filter: blur(20px);
-  z-index: -1;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  /* pointer-events: none; */
-}
-.gradient-mask {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  width: 100vw;
-  height: 10vh;
-  background: linear-gradient(to top, var(--ion-background-color) 0%, rgba(0, 0, 0, 0) 100%);
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 1;
-}
-
-.cosmic-content {
-  --background: transparent;
-  position: relative;
-  overflow: visible;
-}
-
-.profile-gesture-container {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: transparent;
-}
-.profile-gesture-container1 {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  background: transparent;
-}
-.profile-header {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  transition: none;
-  margin-top: 200px;
-  text-align: center;
-  width: 100%;
-}
-.profile-header1 {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  transition: none;
-  margin-top: 200px;
-  text-align: center;
-  width: 100%;
-}
-
-.profile-header.no-transition {
-  transition: none !important;
-}
-
-.avatar-wrapper {
-  position: relative;
-  /* width: 150px;
-  height: 150px; */
-  margin: 0 auto 1rem;
-
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: visible;
- 
-}
-
-.avatar-glow1 {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  /* object-fit: cover; */
-  /* border-radius: 50%; */
-  filter: blur(20px);
-  /* transform: scale(1.5); */
-  opacity: 0.3;
-  overflow: visible;
-  /* animation: defaultMorph 6s ease-in-out infinite; */
-  z-index: 3;
-  pointer-events: none;
-}
-
-.avatar-glow {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 150px;
-  height: 150px;
-  /* object-fit: cover; */
-  border-radius: 50%;
-  filter: blur(20px);
-  transform: scale(1);
-  opacity: 0.6;
-  
-  overflow: visible;
-  z-index: 1;
-  pointer-events: none;
-  mix-blend-mode: screen;
-  
-}
-
-/* 顶层真实头像 */
-.avatar {
-  position: relative;
-  width: 150px;
-  height: 150px;
-  object-fit: cover;
-  border-radius: 50%;
-  /* box-shadow: 0 8px 24px rgba(0,0,0,0.15); */
-  transition: transform 0.3s ease, border-radius 0.2s ease;
-  z-index: 9999;
-  cursor: pointer;
-  user-select: none;
-  overflow: visible;
-  opacity: 0.6;
-  /* animation: defaultMorph 8s ease-in-out infinite; */
-
-}
-
-/* 点击时的放大动画保持不变 */
-.avatar-active {
-  transform: scale(1.2);
-  z-index: 3;
-  animation: none;
-}
-
-.username {
-  font-size: 50px;
-  font-weight: bold;
-  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
-  color: #2c3e50;
-}
-
-.cards-container {
-  position: absolute;
-  bottom: -70px;
-  left: 0;
-  right: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-  padding: 0 10px;
-  transition: none;
-  /* z-index: 9999; */
-}
-
-.cards-wrapper {
-  display: flex;
-  justify-content: center;
-  width: 100%;
-  
-}
-
-.cards-row-1 .modules-container,
-.cards-row-2 .modules-container {
-  display: flex;
-  justify-content: center;
-  gap: 15px;
-  width: 100%;
-  max-width: 600px;
-  
-}
-
-.module.cosmic-item {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border: 1px solid rgba(0, 255, 213, 0.136);
-  border-radius: 12px;
-  padding: 15px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  overflow: visible;
-
-}
-
-.module.cosmic-item:active {
-  transform: scale(1.05);
-}
-
-.cosmic-icon {
-  font-size: 39px;
-  color: rgb(42, 125, 112);
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 1;
-}
-
-.cosmic-icon::before {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 100%;
-  height: 100%;
-  transform: translate(-50%, -50%);
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(42, 125, 112, 0.6) 0%, rgba(42, 125, 112, 0) 70%);
-  opacity: 0;
-  transition: opacity 0.3s ease;
-  z-index: -1;
-  pointer-events: none;
-}
-
-.cosmic-item:hover .cosmic-icon {
-  transform: scale(1.1);
-}
-
-.cosmic-item:hover .cosmic-icon::before {
-  opacity: 1;
-}
-
-/* @media (prefers-color-scheme: dark) {
-  .cosmic-icon::before {
-    background: radial-gradient(circle, rgba(42, 125, 112, 0.8) 0%, rgba(42, 125, 112, 0) 70%);
-  }
-  .cosmic-item:hover .cosmic-icon::before {
-    opacity: 1;
-  }
-}
-
-@media (prefers-color-scheme: light) {
-  .cosmic-icon::before {
-    background: radial-gradient(circle, rgba(42, 125, 112, 0.6) 0%, rgba(42, 125, 112, 0) 70%);
-  }
-  .cosmic-item:hover .cosmic-icon::before {
-    opacity: 1;
-  }
-} */
-
-.cards-row-1 .pubkey-module { flex: 2; }
-.cards-row-1 .qr-module { flex: 1; }
-.cards-row-2 .settings-module { flex: 1; }
-.cards-row-2 .pubkey-module { flex: 2; }
 
 .profile-modal {
   border-radius: 16px 16px 0 0;
 }
 
-.modal-content { padding: 20px; }
+.modal-content { 
+  padding: 20px;
+  
+ }
 
 .panel-header {
   display: flex;
@@ -853,7 +26,10 @@ onMounted(async () => {
   padding: 0 20px;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  /* align-items: center; */
+  /* max-width: 300px;
+  margin:0 auto; */
+
 }
 
 .pubkey-display { width: 100%; text-align: center; max-height: 200px; overflow-y: auto; word-break: break-all; }
@@ -881,7 +57,10 @@ onMounted(async () => {
 
 .copy-icon:hover { color: var(--ion-color-primary); opacity: 1; }
 
-.qr-display { display: flex; justify-content: center; }
+.qr-display { display: flex; justify-content: center; 
+padding: 10px;
+
+}
 
 .keypair-display, .reset-password-display {
   width: 100%;
@@ -935,25 +114,892 @@ onMounted(async () => {
 
 .message-box ion-icon { font-size: 24px; margin-right: 8px; }
 
-@keyframes defaultMorph {
+/* 全屏模态窗口样式 */
+.fullscreen-modal {
+  --height: 100%;
+  --width: 100%;
+}
+
+.fullscreen-content {
+  --background: var(--ion-background-color);
+}
+
+.fullscreen-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  padding: 0;
+  margin: 0;
+  overflow: hidden;
+}
+
+.fullscreen-container h1 {
+  font-size: 2.5rem;
+  margin-bottom: 20px;
+  color: var(--ion-color-primary);
+}
+
+.fullscreen-container p {
+  font-size: 1.2rem;
+  margin-bottom: 15px;
+  color: var(--ion-text-color);
+  opacity: 0.8;
+}
+
+.fullscreen-demo-content {
+  margin-top: 40px;
+  width: 100%;
+  max-width: 300px;
+}
+
+/* 模态窗口中的DiscoverS组件样式 */
+.fullscreen-container DiscoverS,
+.fullscreen-container .cosmic-content {
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.fullscreen-container .card-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 15px !important;
+  padding: 10px !important;
+  margin-bottom: 20px !important;
+  min-height: 200px !important;
+}
+
+.fullscreen-container .cosmic-card {
+  display: grid !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  border: 1px solid rgba(0, 255, 213, 0.3) !important;
+  border-radius: 12px !important;
+  padding: 15px !important;
+  min-height: 120px !important;
+  width: 100% !important;
+  cursor: pointer !important;
+  z-index: 10 !important;
+  pointer-events: auto !important;
+  position: relative !important;
+}
+
+.fullscreen-container .cosmic-card:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(0, 255, 213, 0.5) !important;
+  transform: translateY(-2px) !important;
+}
+
+.fullscreen-container .cosmic-card:active {
+  background: rgba(42, 125, 112, 0.3) !important;
+  transform: scale(0.98) !important;
+}
+
+/* 动态组件容器样式 */
+.fullscreen-container > * {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+/* 确保各个页面组件在模态窗口中正确显示 */
+.fullscreen-container ion-page {
+  display: block !important;
+  position: relative !important;
+}
+
+.fullscreen-container ion-content {
+  --background: transparent !important;
+  height: 100% !important;
+  position: relative;
+}
+
+/* 强制显示DiscoverS组件中的选项列表 */
+.fullscreen-container .card-grid {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 15px !important;
+  padding: 10px !important;
+  margin-bottom: 20px !important;
+  min-height: 200px !important;
+  width: 100% !important;
+  position: relative !important;
+  z-index: 1000 !important;
+}
+
+.fullscreen-container .cosmic-card {
+  display: grid !important;
+  grid-template-rows: auto 1fr !important;
+  grid-template-columns: auto 1fr !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(10px) !important;
+  border-radius: 12px !important;
+  padding: 15px !important;
+  border: 1px solid rgba(0, 255, 213, 0.3) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.3s ease !important;
+  cursor: pointer !important;
+  position: relative !important;
+  overflow: visible !important;
+  min-height: 120px !important;
+  width: 100% !important;
+  z-index: 1001 !important;
+  margin-bottom: 10px !important;
+  pointer-events: auto !important;
+}
+
+.fullscreen-container .cosmic-card:hover {
+  background: rgba(255, 255, 255, 0.2) !important;
+  border-color: rgba(0, 255, 213, 0.5) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 4px 16px rgba(0, 255, 213, 0.2) !important;
+}
+
+.fullscreen-container .cosmic-card:active {
+  background: rgba(42, 125, 112, 0.2) !important;
+  transform: scale(0.98) !important;
+}
+
+/* 确保图标和标签在模态窗口中正确显示 */
+.fullscreen-container .cosmic-icon {
+  grid-row: 1 !important;
+  grid-column: 1 !important;
+  font-size: 32px !important;
+  color: rgb(42, 125, 112) !important;
+  transition: all 0.3s ease !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+.fullscreen-container .cosmic-label {
+  grid-row: 2 !important;
+  grid-column: 2 !important;
+  font-size: 16px !important;
+  color: var(--ion-text-color) !important;
+  text-align: right !important;
+  transition: all 0.3s ease !important;
+  position: relative !important;
+  z-index: 1 !important;
+  align-self: end !important;
+  justify-self: end !important;
+  font-weight: 500 !important;
+}
+
+/* 模态组件样式 */
+.modal-component {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 简洁的淡入缩放过渡效果 */
+.fade-scale-enter-active,
+.fade-scale-leave-active {
+  transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+.fade-scale-enter-from,
+.fade-scale-leave-to {
+  opacity: 0;
+  transform: scale(0.95);
+}
+
+/* 其他复杂动画已简化 */
+
+/* 模态窗口整体动画 */
+.fullscreen-modal {
+  animation: modalSlideUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes modalSlideUp {
   0% {
-    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-  }
-  20% {
-    border-radius: 60% 40% 65% 35% / 35% 60% 40% 65%;
-  }
-  40% {
-    border-radius: 70% 30% 50% 60% / 60% 35% 65% 40%;
-  }
-  60% {
-    border-radius: 35% 65% 40% 70% / 70% 60% 30% 50%;
-  }
-  80% {
-    border-radius: 50% 60% 30% 65% / 40% 70% 60% 35%;
+    opacity: 0;
+    transform: translateY(100%);
   }
   100% {
-    border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
+/* 头部导航动画 */
+.fullscreen-modal ion-header {
+  animation: headerFadeIn 0.5s ease-out 0.2s both;
+}
+
+
+/* 按钮交互动画 */
+.fullscreen-modal ion-button {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.fullscreen-modal ion-button:hover {
+  transform: scale(1.05);
+}
+
+.fullscreen-modal ion-button:active {
+  transform: scale(0.95);
+}
+
+/* 返回按钮特殊动画 */
+.fullscreen-modal ion-buttons[slot="start"] ion-button {
+  animation: buttonSlideIn 0.3s ease-out 0.3s both;
+}
+
+@keyframes buttonSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateX(-30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* 关闭按钮特殊动画 */
+.fullscreen-modal ion-buttons[slot="end"] ion-button {
+  animation: buttonFadeIn 0.3s ease-out 0.4s both;
+}
+
+@keyframes buttonFadeIn {
+  0% {
+    opacity: 0;
+    transform: rotate(90deg) scale(0.8);
+  }
+  100% {
+    opacity: 1;
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+/* 标题动画 */
+.fullscreen-modal ion-title {
+  animation: titleSlideIn 0.4s ease-out 0.25s both;
+}
+
+@keyframes titleSlideIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 新增 user-details 样式 */
+.user-details {
+  display: flex;
+  flex-direction: column;
+  align-items: start; 
+  justify-content: start;
+  text-align: center;
+}
+
+/* 内容区域样式优化 */
+.profile-content {
+  --background: transparent;
+}
+
+.profile-content::part(scroll) {
+  padding: 0;
+  margin: 0;
+}
+
+.canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+ 
+}
+
+.user-info-overlay {
+  position: absolute;
+  top: 15%;
+  left: 10px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 6px;
+  border-radius: 12px;
+  backdrop-filter: blur(5px);
+}
+
+.avatar-wrapper {
+  position: relative;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  margin-left: 10px;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 50%;
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  z-index: 2;
+  border: 2px solid var(--ion-text-color);
+}
+
+.avatar-glow {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  filter: blur(10px);
+  transform: scale(1.1);
+  opacity: 0.6;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.user-text-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-left: 10px;
+}
+
+.username {
+  font-weight: bold;
+  font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+  font-size: 1.1rem; /* smaller */
+  margin: 0;
+  color: var(--ion-text-color);
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+}
+
+.signature-text {
+  font-size: 0.7rem !important; /* smaller */
+  font-weight: 500;
+  color: rgba(145, 145, 145, 0.703);
+}
+
+/* For RadiantText */
+.user-info-overlay .inline-flex {
+  padding: 0 !important;
+}
+
+.controls-overlay {
+  position: absolute;
+  top: 15%;
+  right: 10px;
+  z-index: 10;
+
+ 
+ 
+  gap: 8px;
+}
+
+/* 分层动画关键帧已移除 */
+ion-header {
+  z-index: 1000;
+}
+
+.top-toolbar ion-buttons {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+
+
+ion-icon {
+  font-size: 24px;
+  color: var(--ion-text-color);
+}
+
+/* 3D网络Canvas样式 */
+.network-canvas {
+  width: 100% !important;
+  height: 100% !important;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 1;
+  cursor: grab;
+}
+
+.network-canvas:active {
+  cursor: grabbing;
+}
+
+.stranger-relay-modal .relay-item {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  border-bottom: 1px solid var(--ion-border-color, rgba(0,0,0,0.1));
+}
+
+.stranger-relay-modal .relay-url {
+  font-family: monospace;
+  font-size: 0.9em;
+}
+
+.stranger-relay-modal ion-button {
+  --padding-start: 8px;
+  --padding-end: 8px;
+}
+
+/* 地球canvas样式 */
+/* .globe-canvas {
+  position: absolute;
+  top: 60%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90vw;
+  height: 90vw;
+  max-width: 500px;
+  max-height: 500px;
+  z-index: 2;
+  pointer-events: auto;
+  opacity: 0;
+  transition: opacity 0.5s ease-in-out;
+  background: transparent;
+} */
+
+.legend-panel {
+  position: absolute;
+  top: unset;
+  right: 10px;
+  margin-top: 8px;
+  z-index: 10;
+  background: rgba(20, 20, 20, 0.8);
+  backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  padding: 12px;
+  color: white;
+  width: 200px;
+}
+
+.legend-title {
+  font-weight: bold;
+  margin-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  padding-bottom: 4px;
+}
+
+.legend-panel ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.legend-panel li {
+  display: flex;
+  align-items: center;
+  margin-bottom: 6px;
+  font-size: 0.9em;
+}
+
+.legend-panel li:last-child {
+  margin-bottom: 0;
+}
+
+.legend-color-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.canvas-buttons {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 10;
+  display: flex;
+  gap: 8px;
+}
+
+.legend-button, .stranger-list-button, .refresh-canvas-button {
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
+  height: 36px;
+  width: 36px;
+  margin-right: 10px;
+}
+
+.legend-button ion-icon, .stranger-list-button ion-icon {
+  font-size: 24px;
+}
+
+.friend-label {
+  color: white; /* 默认白色文字 */
+  font-size: 0.7em; /* 字体大小 */
+  font-weight: bold;
+  background: rgba(0, 0, 0, 0.5); /* 半透明黑色背景 */
+  padding: 3px 6px;
+  border-radius: 4px;
+  pointer-events: none; /* 确保不影响鼠标事件 */
+  white-space: nowrap; /* 防止换行 */
+  transform: translateY(-100%); /* 向上偏移，使其位于球体上方 */
+}
+
+.user-label, .relay-label {
+  color: white;
+  font-size: 0.65em;
+  font-weight: bold;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 2px 5px;
+  border-radius: 3px;
+  pointer-events: none;
+  white-space: nowrap;
+  transform: translateY(-100%);
+}
+
+html.dark .friend-label, html.dark .user-label, html.dark .relay-label {
+  color: #eee;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+html.light .friend-label, html.light .user-label, html.light .relay-label {
+  color: #333;
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.canvas-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
 </style>
+
+<template>
+  <div class="canvas-container" >
+    <!-- 3D网络拓扑图组件 -->
+        <NetworkCanvas 
+          ref="networkCanvasComponent" 
+          @view-mode-changed="onViewModeChanged"
+        />
+  </div>
+  <!-- 顶部栏 -->
+  <ion-header :translucent="true"  collapse="fade">
+    <ion-toolbar >
+      <!-- 左侧按钮组 -->
+      <ion-buttons slot="start">
+            <ion-button  fill="clear" @click="openStrangerRelayModal">
+          <ion-icon :icon="cloudDownloadOutline"></ion-icon>
+        </ion-button>
+        <ion-button fill="clear" @click="toggleLegend">
+          <ion-icon :icon="helpCircleOutline"></ion-icon>
+        </ion-button>
+     
+             <ion-button fill="clear" @click="router.push('/settingspage')">
+          <ion-icon :icon="settingsOutline"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+      
+      <!-- 右侧按钮组 -->
+      <ion-buttons slot="end">
+     
+        <ion-button fill="clear" @click="showPanel('qrcode')">
+          <ion-icon :icon="qrCodeOutline"></ion-icon>
+        </ion-button>
+        <ion-button fill="clear" @click="goToScan">
+          <ion-icon :icon="scanSharp"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+    </ion-toolbar>
+
+    <ion-toolbar style="--background: transparent; gap:8px;" >
+      <!-- 左侧按钮组 -->
+      <ion-buttons slot="start">
+                <div class="avatar-wrapper" @click="gotomyset">
+          <img
+            v-if="userAvatars[currentUserPub!]"
+            :src="userAvatars[currentUserPub!]"
+            alt=""
+            class="avatar"
+            :style="avatarStyle"
+          />
+          <img
+            v-else
+            :src="avatarurl"
+            class="avatar"
+            
+          /> 
+        </div>
+        
+        <div class="user-text-info">
+          <h1 class="username">{{ currentUserAlias || '' }}</h1>
+        </div>
+    
+      </ion-buttons>
+      
+      <!-- 右侧按钮组 -->
+      <ion-buttons slot="end">
+           <!-- 网格模式切换开关 - 只在showCover为false时显示 -->
+        <div v-if="!networkCanvasComponent?.showCover" class="grid-mode-toggle" style="margin: 0 15px;">
+          <ion-toggle 
+            :checked="isPersonalView" 
+            @ionChange="toggleGridMode"
+            color="primary"
+          ></ion-toggle>
+          <!-- <span class="toggle-label">{{ isPersonalView ? '全部' : '个人' }}</span> -->
+        </div>
+      </ion-buttons>
+    </ion-toolbar>
+  </ion-header>
+
+  
+  <!-- 内容区域 -->
+  <ion-content :fullscreen="true" :scroll-y="false" class="profile-content">
+
+  </ion-content>
+
+  <ion-modal
+    :is-open="panelVisible"
+    css-class="profile-modal"
+    :breakpoints="[0, 1]"
+    :initial-breakpoint="0.8"
+    @didDismiss="hidePanel"
+  >
+
+  <ion-header :translucent="true"   collapse="fade">
+    <ion-toolbar>
+      <ion-title>Sacn the code to add friends</ion-title>
+   <ion-buttons slot="end">
+            <ion-button fill="clear" @click="hidePanel">
+              <ion-icon :icon="closeOutline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+    </ion-toolbar>
+    
+  </ion-header>
+    <ion-content class="modal-content">
+ 
+    <ion-header collapse="condense" >
+          <ion-toolbar>
+            <h1 style="margin: 0px 10px;font-weight: 900;font-size: 19px;">
+        Sacn the code to add friends
+            </h1>
+          </ion-toolbar>
+        </ion-header>
+
+      <div class="panel-content">
+        <div v-if="panelContent === 'qrcode'">
+          <div class="qr-display">
+           
+            <QrShow :data="'pubkey:' + currentUserPub" />
+          </div>
+
+          <div class="content-with-copy pubkey-display">
+            <p>PubKey: {{ currentUserPub }}</p>
+            <ion-icon
+              :icon="copyOutline"
+              class="copy-icon"
+              @click="copyPub(currentUserPub)"
+            ></ion-icon>
+          </div>
+          
+          <div v-if="showKeyPair" class="keypair-content-wrapper">
+            <div v-if="!encryptedPair" class="keypair-loading">
+              <ion-spinner name="dots"></ion-spinner>
+              <p>Loading key pair...</p>
+            </div>
+            <template v-else>
+              <div class="keypair-data">
+                <div class="content-with-copy">
+                  <pre class="keypair-content">{{ encryptedPair }}</pre>
+                  <ion-icon
+                    :icon="copyOutline"
+                    class="copy-icon"
+                    @click="copyEncryptedKeyPair"
+                  ></ion-icon>
+                </div>
+              </div>
+              <div class="keypair-warning-box">
+                <ion-icon :icon="warningOutline"></ion-icon>
+                <p>This is your encrypted key pair. Keep it safe!</p>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </ion-content>
+  </ion-modal>
+
+    
+
+</template>
+
+<script lang="ts" setup>
+import { cn } from "@/lib/utils";
+import { useSpring } from "vue-use-spring";
+import { ref, shallowRef, onMounted, onUnmounted, watch, computed } from 'vue';
+import { useTheme } from '@/composables/useTheme';
+import { useI18n } from 'vue-i18n';
+import NetworkCanvas from './NetworkCanvas.vue';
+// useNetworkStatus现在在NetworkCanvas组件中使用
+
+
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { chatbubblesOutline, chatbubbleOutline, peopleOutline, personOutline, planetOutline, settingsOutline, rocketOutline, browsersOutline, atOutline, sparklesOutline, chatbubbleEllipsesOutline, compassOutline, walletOutline, reorderFourOutline, reorderThreeOutline, appsOutline, serverOutline, happyOutline } from 'ionicons/icons';
+import { IonFooter, IonToolbar, IonContent, IonIcon, IonHeader, IonMenu, IonSplitPane, IonTitle,menuController,} from '@ionic/vue';
+import { gunAvatar } from "gun-avatar";
+import ChatSpad from '../ipad/ChatSpad.vue';
+import RelayMode from '../GUNtest/RelayMode.vue';
+import { useRouter } from 'vue-router';
+import { IonModal, IonItem, IonLabel, IonInput, IonButton, IonSpinner, IonButtons, IonToggle } from '@ionic/vue';
+import { closeCircleSharp, copyOutline, keyOutline, qrCodeOutline, keySharp, lockClosedOutline, eyeOutline, eyeOffOutline, refreshCircleOutline, warningOutline, lockOpenOutline, checkmarkCircleOutline, alertCircleOutline, scanSharp, menuOutline, expandOutline, arrowBackOutline, refreshOutline, helpCircleOutline, cloudDownloadOutline,closeOutline  } from 'ionicons/icons';
+import { getTalkFlowCore, autoSaveStorageServ } from '@/composables/TalkFlowCore';
+
+const iscanvas = ref(false);
+
+const { isDark } = useTheme();
+const chatFlowStore = getTalkFlowCore();
+const router = useRouter();
+const { t } = useI18n();
+// @ts-ignore
+const {
+  copyPub, currentUserPub, currentUserAlias, currentUserAlias1, userAvatars, storageServ, gun, isDragging, startY, translateY, cardsTranslateY, velocity, lastTouchTime, lastTouchY, panelVisible: _panelVisible, panelContent: _panelContent, encryptData, decryptData, showToast, currentComponent, previousComponent, switchTo,
+  fullscreenModalVisible,
+  buddyList, 
+} = chatFlowStore;
+
+const avatarurl = computed(() => gunAvatar({ pub: currentUserPub.value, round: false, dark: isDark.value, svg: true } as any));
+
+// NetworkCanvas组件引用
+const networkCanvasComponent = ref<InstanceType<typeof NetworkCanvas> | null>(null);
+
+// 网格模式状态
+const isPersonalView = ref(false); // 默认为个人网格模式
+
+// 切换网格模式
+const toggleGridMode = (event: CustomEvent) => {
+  isPersonalView.value = event.detail.checked;
+  // 通知NetworkCanvas组件切换模式
+  if (networkCanvasComponent.value) {
+    networkCanvasComponent.value.setViewMode(isPersonalView.value);
+  }
+};
+
+// 接收NetworkCanvas发射的viewModeChanged事件
+const onViewModeChanged = (newMode: boolean) => {
+  isPersonalView.value = newMode;
+};
+
+
+// Other existing variables and functions remain unchanged
+type PanelContentType = 'pubkey' | 'qrcode' | 'keypair' | 'resetpassword' | null;
+const localPanelContent = ref<PanelContentType>(null);
+const localPanelVisible = ref(false);
+
+const panelVisible = computed({
+  get: () => localPanelVisible.value,
+  set: (value) => { localPanelVisible.value = value; _panelVisible.value = value; }
+});
+
+const panelContent = computed({
+  get: () => localPanelContent.value,
+  set: (value) => {
+    localPanelContent.value = value;
+    if (value === 'pubkey' || value === 'qrcode' || value === null) {
+      _panelContent.value = value as 'pubkey' | 'qrcode' | null;
+    }
+  }
+});
+
+function goToScan() { router.push('/ScanPage'); }
+
+function gotomyset() { router.push('/myself'); }
+
+
+const midPoint = 0;
+
+const positionState = ref('middle');
+const encryptedPair = ref('');
+const showKeyPair = ref(false);
+const avatarStyle = ref({});
+const decryptPassphrase = ref('');
+const decryptMessage = ref('');
+const showDecryptedKeyPair = ref(false);
+const decryptedPair = ref('');
+
+
+// Canvas刷新功能现在由NetworkCanvas组件处理
+const refreshCanvas = () => {
+  if (networkCanvasComponent.value) {
+    networkCanvasComponent.value.refreshCanvas();
+  }
+};
+
+// 图例切换功能
+const toggleLegend = () => {
+  if (networkCanvasComponent.value) {
+    networkCanvasComponent.value.toggleLegend();
+  }
+};
+
+// 陌生节点模态窗口功能
+const openStrangerRelayModal = () => {
+  if (networkCanvasComponent.value) {
+    networkCanvasComponent.value.openStrangerRelayModal();
+  }
+};
+
+
+function copyEncryptedKeyPair() {
+  if (encryptedPair.value) {
+    navigator.clipboard.writeText(encryptedPair.value)
+      .then(() => showToast(t('keyPairCopiedToClipboard'), 'success'))
+      .catch(err => showToast(t('copyFailed'), 'error'));
+  }
+}
+
+
+
+function showPanel(content: PanelContentType) {
+  panelContent.value = content;
+  panelVisible.value = true;
+}
+
+function hidePanel() {
+  panelVisible.value = false;
+  panelContent.value = null;
+  showDecryptedKeyPair.value = false;
+  decryptedPair.value = '';
+  decryptPassphrase.value = '';
+  decryptMessage.value = '';
+}
+
+onMounted(async () => {
+  positionState.value = 'middle';
+  translateY.value = midPoint;
+  cardsTranslateY.value = 0;
+  if (currentUserPub.value) {
+    const userData = await autoSaveStorageServ.getUser(currentUserPub.value);
+    if (userData) {
+      currentUserAlias.value = userData.alias || '';
+      userAvatars.value[currentUserPub.value] = userData.avatar || '';
+      encryptedPair.value = userData.encryptedKeyPair || '';
+    }
+    gun.get('users').get(currentUserPub.value).once((data: any) => {
+      if (data?.alias) currentUserAlias.value = data.alias;
+      if (data?.signature) currentUserAlias1.value = data.signature;
+      if (data?.avatar) userAvatars.value[currentUserPub.value!] = data.avatar;
+    });
+  }
+});
+
+
+</script>

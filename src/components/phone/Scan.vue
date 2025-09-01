@@ -59,7 +59,7 @@
   import { toastController } from '@ionic/vue';
   const router = useRouter();
   const chatFlowStore = getTalkFlowCore();
-  const { searchUserProfile, buddyList } = chatFlowStore;
+  const { searchUserProfile, buddyList,gun } = chatFlowStore;
   
   const scanning = ref(false);
   const isSearching = ref(false);
@@ -221,24 +221,54 @@
   async function handlePublicKey(content: string) {
     const pub = content.replace('pubkey:', '');
     isSearching.value = true;
+    
+    console.log('🔍 扫码智能路由，目标 pub:', pub.slice(0, 8));
+
     try {
-      const userExists = await searchUserProfile(pub);
-      if (userExists) {
-        const isFriend = buddyList.value.some(b => b.pub === pub);
-        if (isFriend) {
-          router.push({ path: '/friend-profile', query: { pub } });
-        } else {
-          router.push({ path: '/stranger-profile', query: { pub } });
-        }
+      // 🎯 立即检查本地通讯录（无网络延迟）
+      const isExistingFriend = buddyList.value.some(b => b.pub === pub);
+
+      if (isExistingFriend) {
+        // ✅ 已是好友 → 直接进入好友主页
+        console.log('📱 好友已存在，导航到好友主页');
+        router.push({ path: '/friend-profile', query: { pub } });
       } else {
-        showModal('error', 'No user');
+        // 🆕 陌生人 → 进入陌生人主页，开始渐进式数据同步
+        console.log('🔍 陌生人检测，导航到陌生人主页并启动渐进式加载');
+        router.push({ path: '/stranger-profile', query: { pub } });
       }
+      
+      // 📡 后台启动数据同步（无论是否为好友，都尝试更新数据）
+      startBackgroundSync(pub);
+      
     } catch (err) {
-      showModal('error', 'check you net please');
-      // console.error('搜索用户失败:', err);
+      console.error('处理公钥失败:', err);
+      // 🔄 即使出错也要导航到陌生人主页，让其内部处理同步
+      router.push({ path: '/stranger-profile', query: { pub } });
     } finally {
       isSearching.value = false;
     }
+  }
+
+  // 🔄 后台数据同步函数
+  function startBackgroundSync(pub: string) {
+    console.log(`🔄 启动后台数据同步: ${pub.slice(0, 8)}`);
+    
+    // 非阻塞式数据获取
+    setTimeout(() => {
+      gun.get('users').get(pub).once((data: any) => {
+        if (data) {
+          console.log(`📥 后台同步成功: ${pub.slice(0, 8)}`, {
+            alias: data.alias,
+            hasAvatar: !!data.avatar,
+            hasSignature: !!data.signature,
+            hasEpub: !!data.epub
+          });
+        } else {
+          console.log(`📭 后台同步无数据: ${pub.slice(0, 8)}`);
+        }
+      });
+    }, 100); // 延迟100ms避免阻塞UI
   }
   
   async function handleKeyPair(content: string) {

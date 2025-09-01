@@ -1,11 +1,11 @@
 import { BehaviorSubject } from 'rxjs';
 import { CapacitorSQLite, SQLiteDBConnection } from '@capacitor-community/sqlite';
+import { Capacitor } from '@capacitor/core';
 import { getCurrentInstance } from 'vue';
 import { ISQLiteService } from './sqliteService';
 import { IDbVersionService } from './dbVersionService';
 import { LocalChatMessage, MessageStatus, MessageType, ChatPreview } from '../composables/TalkFlowCore';
 
-// 核心类型
 export interface Buddy {
   pub: string;
   addedByMe: boolean;
@@ -26,31 +26,9 @@ export interface FileData {
   timestamp: number;
 }
 
-export interface MomentV2 {
-  momentId: string;
-  userPub: string;
-  content: string;
-  timestamp: number;
-  isHidden: number;
-  mediaUrl?: string;
-  mediaType?: 'image' | 'video' | 'audio';
-}
 
-export interface LikeV2 {
-  momentId: string;
-  userPub: string;
-  timestamp: number;
-}
 
-export interface CommentV2 {
-  commentId: string;
-  momentId: string;
-  userPub: string;
-  content: string;
-  timestamp: number;
-  replyToCommentId?: string;
-  isDeleted?: number;
-}
+
 
 export interface IStorageService {
   initializeDatabase(): Promise<void>;
@@ -59,7 +37,6 @@ export interface IStorageService {
   saveBuddy(
     userPub: string,
     buddyPub: string,
-    addedByMe: boolean,
     timestamp: number,
     alias?: string,
     avatar?: string,
@@ -83,17 +60,43 @@ export interface IStorageService {
   getBlacklist(): Promise<string[]>;
   saveFriendRemark(userPub: string, friendPub: string, remark: string, remarkInfo: string): Promise<void>;
   getFriendRemarks(userPub: string): Promise<Record<string, { remark: string; remarkInfo: string }>>;
-  saveMoment(moment: MomentV2): Promise<void>;
-  getMoments(userPubs: string[], limit: number, beforeTimestamp?: number): Promise<MomentV2[]>;
-  updateMomentVisibility(momentId: string, isHidden: boolean): Promise<void>;
-  deleteMoment(momentId: string): Promise<void>;
-  saveLike(like: LikeV2): Promise<void>;
-  removeLike(momentId: string, userPub: string): Promise<void>;
-  getLikes(momentId: string): Promise<string[]>;
-  saveComment(comment: CommentV2): Promise<void>;
-  getComments(momentId: string): Promise<CommentV2[]>;
+
+  getDatabaseName(): string;
   saveEpub(pub: string, epub: string): Promise<void>;
   getEpub(pub: string): Promise<string | null>;
+  cleanupInvalidEpubs(): Promise<number>;
+
+  // 模态窗口状态持久化
+  saveModalState(userPub: string, component: string, history: string[]): Promise<void>;
+  getModalState(userPub: string): Promise<{ component: string; history: string[] } | null>;
+
+  // Group Methods
+  saveGroup(group: { group_pub: string; name: string; key_pair_json: string; joined_at?: number }): Promise<void>;
+  getGroup(group_pub: string): Promise<any | null>;
+  getAllGroups(): Promise<any[]>;
+  deleteGroup(group_pub: string): Promise<void>;
+
+  // Group Member Methods
+  saveGroupMember(member: { group_pub: string; member_pub: string; alias: string; joined_at: number }): Promise<void>;
+  getGroupMembers(group_pub: string): Promise<any[]>;
+  deleteGroupMember(group_pub: string, member_pub: string): Promise<void>;
+
+  // Group Message Methods
+  insertGroupMessage(message: any): Promise<any>; // Returns the inserted message with its new 'id'
+  updateGroupMessageStatus(msg_id: string, status: 'sent' | 'failed'): Promise<void>;
+  getGroupMessages(group_pub: string, limit: number, beforeId?: number): Promise<any[]>;
+  clearGroupMessages(group_pub: string): Promise<void>;
+  cleanupInvalidGroupMessages(group_pub: string): Promise<void>; // 新增：清理无效消息
+
+  // Group Preview Methods
+  updateGroupPreview(group_pub: string, content: string, timestamp: number): Promise<void>;
+  getGroupPreview(group_pub: string): Promise<{ last_msg: string; last_time: number } | null>;
+  getAllGroupPreviews(): Promise<Array<{ group_pub: string; last_msg: string; last_time: number }>>;
+  deleteGroupPreview(group_pub: string): Promise<void>;
+  
+  versionUpgrades,
+  loadToVersion
+  
 }
 
 class StorageService implements IStorageService {
@@ -198,15 +201,8 @@ class StorageService implements IStorageService {
     `CREATE TABLE IF NOT EXISTS ai_settings (
       key TEXT PRIMARY KEY,
       value TEXT
-    );`
-  
-      ],
-    },
-    {
-      toVersion: 2,
-      statements: [
-      
-        `CREATE TABLE IF NOT EXISTS network_peers (
+    );
+    CREATE TABLE IF NOT EXISTS network_peers (
           id INTEGER PRIMARY KEY AUTOINCREMENT,
           url TEXT UNIQUE,
           is_enabled INTEGER DEFAULT 0,
@@ -218,77 +214,112 @@ class StorageService implements IStorageService {
           value TEXT NOT NULL,
           timestamp INTEGER DEFAULT (strftime('%s', 'now'))
         );`,
-        
-         `CREATE TABLE IF NOT EXISTS groups (
-           groupId TEXT PRIMARY KEY,
+        `CREATE TABLE IF NOT EXISTS modal_states (
+          userPub TEXT PRIMARY KEY,
+          currentComponent TEXT NOT NULL,
+          componentHistory TEXT NOT NULL,
+          updatedAt INTEGER DEFAULT (strftime('%s', 'now'))
+        );`,
+        `CREATE TABLE IF NOT EXISTS group_messages (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          msgId TEXT UNIQUE NOT NULL,
+          groupPub TEXT NOT NULL,
+          fromPub TEXT NOT NULL,
+          fromAlias TEXT,
+          type TEXT NOT NULL DEFAULT 'text',
+          content TEXT,
+          timestamp INTEGER NOT NULL,
+          sent BOOLEAN DEFAULT 0,
+          status TEXT DEFAULT 'pending',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );`,
+     
+        `CREATE INDEX IF NOT EXISTS idx_group_messages_group_timestamp 
+          ON group_messages(groupPub, timestamp DESC);`,
+
+          `CREATE TABLE IF NOT EXISTS groups (
+            group_pub TEXT PRIMARY KEY,
             name TEXT NOT NULL,
-             creator TEXT NOT NULL,
-           createdAt INTEGER NOT NULL,
-            members TEXT NOT NULL,
-             pub TEXT,
-           priv TEXT,
-          epub TEXT,
-           epriv TEXT
-);
-      CREATE TABLE IF NOT EXISTS group_messages (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        groupId TEXT NOT NULL,
-        msgId TEXT NOT NULL UNIQUE,
-        sender TEXT NOT NULL,
-        type TEXT NOT NULL,
-        text TEXT,
-        audioUrl TEXT,
-        fileId TEXT,
-        signature TEXT,
-        hash TEXT,
-        timestamp INTEGER NOT NULL,
-        status TEXT NOT NULL,
-        FOREIGN KEY (groupId) REFERENCES groups(groupId)
-      );`,
+            key_pair_json TEXT NOT NULL,
+            created_at INTEGER DEFAULT (strftime('%s', 'now'))
+        );`,
+  
+  
+          `CREATE TABLE IF NOT EXISTS group_members (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            group_pub TEXT NOT NULL,
+            member_pub TEXT NOT NULL,
+            alias TEXT,
+            role TEXT DEFAULT 'member',
+            joined_at INTEGER,
+            FOREIGN KEY (group_pub) REFERENCES groups (group_pub) ON DELETE CASCADE,
+            UNIQUE(group_pub, member_pub)
+        );`,
+  
+          `DROP TABLE IF EXISTS group_messages;`,
+          `CREATE TABLE IF NOT EXISTS group_messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            msg_id TEXT UNIQUE,
+            group_pub TEXT NOT NULL,
+            sender_pub TEXT NOT NULL,
+            sender_alias TEXT,
+            content TEXT,
+            content_type TEXT DEFAULT 'text',
+            timestamp INTEGER NOT NULL,
+            status TEXT DEFAULT 'pending',
+            FOREIGN KEY (group_pub) REFERENCES groups (group_pub) ON DELETE CASCADE
+        );`,
+  
+      
+          `CREATE INDEX IF NOT EXISTS idx_group_members_group ON group_members (group_pub);`,
+          `CREATE INDEX IF NOT EXISTS idx_group_messages_group_id ON group_messages (group_pub, id DESC);`,
 
-
-
-
+          `CREATE TABLE IF NOT EXISTS group_previews (
+            group_pub TEXT PRIMARY KEY,
+            last_msg TEXT,
+            last_time INTEGER,
+            FOREIGN KEY (group_pub) REFERENCES groups (group_pub) ON DELETE CASCADE
+          );`,
+          `CREATE INDEX IF NOT EXISTS idx_group_previews_time ON group_previews(last_time DESC);`,
+          `
+          CREATE TABLE IF NOT EXISTS message_queue (
+            id TEXT PRIMARY KEY,
+            chatId TEXT NOT NULL,
+            networkMsg TEXT NOT NULL,
+            retryCount INTEGER DEFAULT 0,
+            nextRetryTime INTEGER NOT NULL,
+            createdAt INTEGER NOT NULL,
+            lastAttempt INTEGER DEFAULT 0,
+            error TEXT
+          );
+          
+          CREATE INDEX IF NOT EXISTS idx_message_queue_retry_time 
+          ON message_queue(nextRetryTime);
+          
+          CREATE INDEX IF NOT EXISTS idx_message_queue_chat_id 
+          ON message_queue(chatId);
+        `
       ],
     },
-  ];
-
-  momentsUpgrade = [
     {
       toVersion: 2,
       statements: [
-        `CREATE TABLE IF NOT EXISTS moments_v2 (
-          momentId TEXT PRIMARY KEY,
-          userPub TEXT,
-          content TEXT,
-          timestamp INTEGER,
-          isHidden INTEGER DEFAULT 0,
-          mediaUrl TEXT,
-          mediaType TEXT
-        );`,
-        `CREATE TABLE IF NOT EXISTS likes_v2 (
-          momentId TEXT,
-          userPub TEXT,
-          timestamp INTEGER,
-          PRIMARY KEY (momentId, userPub)
-        );`,
-        `CREATE TABLE IF NOT EXISTS comments_v2 (
-          commentId TEXT PRIMARY KEY,
-          momentId TEXT,
-          userPub TEXT,
-          content TEXT,
-          timestamp INTEGER,
-          replyToCommentId TEXT,
-          isDeleted INTEGER DEFAULT 0
-        );`,
-        `CREATE INDEX IF NOT EXISTS idx_moments_userPub_timestamp ON moments_v2 (userPub, timestamp);`,
-        `CREATE INDEX IF NOT EXISTS idx_comments_momentId_timestamp ON comments_v2 (momentId, timestamp);`,
+        `ALTER TABLE group_messages ADD COLUMN duration INTEGER;`
       ],
     },
+    {
+      toVersion: 3,
+      statements: [
+        `ALTER TABLE groups ADD COLUMN joined_at INTEGER DEFAULT 0;`,
+        `UPDATE groups SET joined_at = strftime('%s', 'now') * 1000 WHERE joined_at = 0;`
+      ],
+    },
+ 
+   
   ];
 
-  loadToVersion = 1;
-  momentsVersion = 2;
+  loadToVersion = 3;
+
   db!: SQLiteDBConnection;
   database: string = 'talkflowdb';
   sqliteServ!: ISQLiteService;
@@ -297,99 +328,121 @@ class StorageService implements IStorageService {
   appInstance = getCurrentInstance();
   platform!: string;
   private isInitialized = false;
+ 
 
   constructor(sqliteService: ISQLiteService, dbVersionService: IDbVersionService) {
     this.sqliteServ = sqliteService;
     this.dbVerServ = dbVersionService;
-    this.platform = this.appInstance?.appContext.config.globalProperties.$platform || 'web';
+    this.platform = Capacitor.getPlatform();
+    // console.log(`[StorageService] 平台检测: ${this.platform}`);
+    this.setupPageLifecycleHandlers();
   }
 
+  // 自动保存到存储（仅在web平台需要）
+  private async autoSaveToStore(): Promise<void> {
+    if (this.platform === 'web') {
+      try {
+        await this.sqliteServ.saveToStore(this.database);
+       // console.log('✅ [StorageService] Data automatically saved to IndexedDB');
+      } catch (error) {
+        // console.warn('⚠️ [StorageService] Failed to auto-save to IndexedDB:', error);
+        // 不抛出错误，避免影响主要操作
+      }
+    }
+  }
+
+  // 设置页面生命周期处理器
+  private setupPageLifecycleHandlers(): void {
+    if (this.platform === 'web') {
+      // 页面卸载前保存数据
+      window.addEventListener('beforeunload', this.handlePageUnload.bind(this));
+      // 页面隐藏时保存数据
+      document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
+      // 页面失去焦点时保存数据
+      window.addEventListener('blur', this.handlePageBlur.bind(this));
+    }
+  }
+
+  // 处理页面卸载
+  private async handlePageUnload(): Promise<void> {
+    try {
+      await this.autoSaveToStore();
+     // console.log('✅ [StorageService] Data saved on page unload');
+    } catch (error) {
+     // console.warn('⚠️ [StorageService] Failed to save data on page unload:', error);
+    }
+  }
+
+  // 处理页面可见性变化
+  private async handleVisibilityChange(): Promise<void> {
+    if (document.hidden) {
+      try {
+        await this.autoSaveToStore();
+     // console.log('✅ [StorageService] Data saved on page hidden');
+      } catch (error) {
+       // console.warn('⚠️ [StorageService] Failed to save data on page hidden:', error);
+      }
+    }
+  }
+
+  // 处理页面失去焦点
+  private async handlePageBlur(): Promise<void> {
+    try {
+      await this.autoSaveToStore();
+    // console.log('✅ [StorageService] Data saved on page blur');
+    } catch (error) {
+     // console.warn('⚠️ [StorageService] Failed to save data on page blur:', error);
+    }
+  }
+  getDatabaseName(): string {
+    return this.database;
+  }
   async initializeDatabase(): Promise<void> {
+  // console.log('🔧 [StorageService] Starting database initialization...');
+    
     if (this.isInitialized) {
-    //  console.log('数据库已初始化，跳过重复调用');
+    // console.log('✅ [StorageService] Database already initialized, skipping...');
       return;
     }
 
     try {
-     // console.log('开始初始化数据库:', this.database);
-      await this.sqliteServ.addUpgradeStatement({
-        database: this.database,
-        upgrade: this.versionUpgrades,
-      });
-    //  console.log('核心升级语句已添加');
+     // console.log(`📊 [StorageService] Database name: ${this.database}`);
+      // console.log(`📊 [StorageService] Target version: ${this.loadToVersion}`);
+      
+      // 检查数据库连接是否已经存在
+       const isConnected = await this.sqliteServ.isConnection(this.database, false);
+       // console.log(`🔍 [StorageService] Database connection exists: ${isConnected}`);
+       
+       if (!isConnected) {
+         // console.log('🔧 [StorageService] No existing connection, adding upgrade statements...');
+         await this.sqliteServ.addUpgradeStatement({
+           database: this.database,
+           upgrade: this.versionUpgrades,
+         });
+         // console.log('✅ [StorageService] Upgrade statements added');
+       }
 
-      this.db = await this.sqliteServ.openDatabase(this.database, this.loadToVersion, false);
-   //  console.log('数据库已打开，目标版本:', this.loadToVersion);
+       // console.log('🔧 [StorageService] Opening/retrieving database connection...');
+       this.db = await this.sqliteServ.openDatabase(this.database, this.loadToVersion, false);
+       // console.log('✅ [StorageService] Database connection established');
 
-      const currentVersionResult = await this.db.getVersion();
-      const currentVersion: number = currentVersionResult.version ?? 0;
-    //  console.log('当前数据库版本:', currentVersion);
-
-      for (const upgrade of this.versionUpgrades) {
-      //  console.log(`执行核心升级到版本 ${upgrade.toVersion}`);
-        for (const stmt of upgrade.statements) {
-          try {
-            await this.db.execute(stmt);
-      //      console.log('执行语句成功:', stmt);
-          } catch (err) {
-      //      console.error('执行语句失败:', stmt, err);
-            throw err;
-          }
-        }
-      }
+      // console.log('🔧 [StorageService] Setting database version...');
       this.dbVerServ.setDbVersion(this.database, this.loadToVersion);
-      //console.log('核心数据库版本已设置为:', this.loadToVersion);
+      // console.log('✅ [StorageService] Database version set');
 
-      await this.initializeMoments();
-
-      if (this.platform === 'web') {
-        try {
-          await this.sqliteServ.saveToStore(this.database);
-       //   console.log('数据库已保存到 Web 存储');
-        } catch (err) {
-       //   console.warn('Web 存储保存失败（非致命错误）:', err);
-        }
-      }
-
-      const tablesAfter = await this.db.query("SELECT name FROM sqlite_master WHERE type='table'");
-     // console.log('初始化后的表:', tablesAfter.values);
       this.isInitCompleted.next(true);
       this.isInitialized = true;
-   //   console.log('SQLite 数据库初始化成功');
+      // console.log('🎉 [StorageService] Database initialization completed successfully!');
     } catch (error: any) {
-    //  console.error(`storageService.initializeDatabase: ${error.message || error}`, error);
+      // console.error('❌ [StorageService] Database initialization failed:', error);
+      // console.error('📋 [StorageService] Error details:', {
+      //   message: error.message,
+      //   stack: error.stack,
+      //   name: error.name,
+      //   database: this.database,
+      //   loadToVersion: this.loadToVersion
+      // });
       throw new Error(`storageService.initializeDatabase: ${error.message || error}`);
-    }
-  }
-
-  private async initializeMoments(): Promise<void> {
-  //  console.log('开始初始化朋友圈模块');
-    await this.sqliteServ.addUpgradeStatement({
-      database: this.database,
-      upgrade: this.momentsUpgrade,
-    });
-   // console.log('朋友圈升级语句已添加');
-
-    const currentVersionResult = await this.db.getVersion();
-    const currentVersion: number = currentVersionResult.version ?? 0;
-
-    if (currentVersion < this.momentsVersion) {
-      for (const upgrade of this.momentsUpgrade.filter(u => u.toVersion > currentVersion)) {
-     //   console.log(`执行朋友圈升级到版本 ${upgrade.toVersion}`);
-        for (const stmt of upgrade.statements) {
-          try {
-            await this.db.execute(stmt);
-          //  console.log('执行朋友圈语句成功:', stmt);
-          } catch (err) {
-           // console.error('执行朋友圈语句失败:', stmt, err);
-            throw err;
-          }
-        }
-      }
-      this.dbVerServ.setDbVersion(this.database, this.momentsVersion);
-    //  console.log('朋友圈数据库版本已设置为:', this.momentsVersion);
-    } else {
-     // console.log('朋友圈版本已是最新，无需升级');
     }
   }
 
@@ -400,9 +453,10 @@ class StorageService implements IStorageService {
     `;
     try {
       await this.db.run(sql, [pubKey, alias || null, avatar || null, encryptedKeyPair || null]);
-   //   console.log(`用户信息保存成功: ${pubKey}`);
+      await this.autoSaveToStore();
+      // console.log(`用户信息保存成功: ${pubKey}`);
     } catch (err) {
-   //   console.error(`保存用户 ${pubKey} 失败:`, err);
+      // console.error(`保存用户 ${pubKey} 失败:`, err);
       throw err;
     }
   }
@@ -422,7 +476,7 @@ class StorageService implements IStorageService {
       }
       return null;
     } catch (err) {
-     // console.error(`查询用户 ${pubKey} 失败:`, err);
+      // console.error(`查询用户 ${pubKey} 失败:`, err);
       throw err;
     }
   }
@@ -430,24 +484,45 @@ class StorageService implements IStorageService {
   async saveBuddy(
     userPub: string,
     buddyPub: string,
-    addedByMe: boolean,
-    timestamp: number,
+    timestamp: number = Date.now(),
     alias?: string,
     avatar?: string,
     epub?: string
   ): Promise<void> {
     const sql = `
-      INSERT OR REPLACE INTO buddies (userPub, buddyPub, addedByMe, timestamp, alias, avatar)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT OR REPLACE INTO buddies (userPub, buddyPub, timestamp, alias, avatar)
+      VALUES (?, ?, ?, ?, ?)
     `;
     try {
-      await this.db.run(sql, [userPub, buddyPub, addedByMe ? 1 : 0, timestamp, alias || null, avatar || null]);
+      // 强制转换所有参数为String类型，避免undefined错误
+      const safeUserPub = String(userPub || '');
+      const safeBuddyPub = String(buddyPub || '');
+      const safeTimestamp = String(timestamp || Date.now());
+      const safeAlias = alias ? String(alias) : null;
+      const safeAvatar = avatar ? String(avatar) : null;
+      
+      // console.log(`[StorageService] saveBuddy 参数分析:`, {
+      //   userPub: safeUserPub ? `${safeUserPub.slice(0,8)}...` : 'empty',
+      //   buddyPub: safeBuddyPub ? `${safeBuddyPub.slice(0,8)}...` : 'empty', 
+      //   timestamp: safeTimestamp,
+      //   alias: safeAlias || 'null',
+      //   avatar: safeAvatar ? '有头像' : 'null',
+      //   epub: epub ? '有epub' : 'null'
+      // });
+      
+      // 使用强制转换后的安全参数
+      const params = [safeUserPub, safeBuddyPub, safeTimestamp, safeAlias, safeAvatar];
+      // console.log(`[StorageService] SQL参数详情:`, params.map((p, i) => `${i}: ${p === null ? 'null' : (p === undefined ? 'UNDEFINED' : typeof p)}`));
+      
+      await this.db.run(sql, params);
+      
       if (epub) {
         await this.saveEpub(buddyPub, epub);
       }
-    //  console.log(`好友保存成功: ${userPub} -> ${buddyPub}, alias: ${alias}, avatar: ${avatar}, epub: ${epub}`);
+      await this.autoSaveToStore();
+      // console.log(`[StorageService] 好友保存成功: ${userPub} -> ${buddyPub}`);
     } catch (err) {
-   //   console.error(`Failed to save buddy ${buddyPub} for ${userPub}:`, err);
+      // console.error(`[StorageService] Failed to save buddy ${buddyPub} for ${userPub}:`, err);
       throw err;
     }
   }
@@ -469,10 +544,10 @@ class StorageService implements IStorageService {
         avatar: row.avatar,
         epub: row.epub,
       }));
-      //console.log(`从 SQLite 加载好友: ${userPub}, 数量: ${buddies.length}`, buddies);
+      // console.log(`从 SQLite 加载好友: ${userPub}, 数量: ${buddies.length}`, buddies);
       return buddies;
     } catch (err) {
-    //  console.error(`Failed to get buddies for ${userPub}:`, err);
+      // console.error(`Failed to get buddies for ${userPub}:`, err);
       return [];
     }
   }
@@ -505,28 +580,21 @@ class StorageService implements IStorageService {
         msg.hash || null,
         msg.sent ? 1 : 0,
       ]);
-    //   const insertedIdResult = await this.db.query('SELECT last_insert_rowid() as id');
-    //   const id = insertedIdResult.values![0].id;
-    //   console.log(`消息插入成功: ${chatID}, id: ${id}, msgId: ${msg.msgId}, timestamp: ${msg.timestamp}`);
-    //   return id;
-    // } catch (err) {
-    //   console.error(`插入消息 ${chatID} 失败:`, err);
-    //   throw err;
-    // }
-    // 检查是否插入成功（如果已存在，changes 为 0）
+  
     if (result.changes!.changes === 0) {
-     // console.log(`消息已存在，跳过插入: ${chatID}, msgId: ${msg.msgId}`);
+     // 消息已存在，跳过插入
       // 查询现有消息的 id
       const existing = await this.db.query('SELECT id FROM messages WHERE msgId = ?', [msg.msgId]);
       return existing.values![0].id;
     }
     const insertedIdResult = await this.db.query('SELECT last_insert_rowid() as id');
     const id = insertedIdResult.values![0].id;
-  //  console.log(`消息插入成功: ${chatID}, id: ${id}, msgId: ${msg.msgId}, timestamp: ${msg.timestamp}`);
+    await this.autoSaveToStore();
+  // 消息插入成功
     return id;
   } catch (err) {
-  //  console.error(`插入消息 ${chatID} 失败:`, err);
-    throw err; // 保留抛出，以便上层处理
+  // 插入消息失败
+    throw err; 
   }
   }
 
@@ -571,9 +639,10 @@ class StorageService implements IStorageService {
         chatID,
         msgId,
       ]);
-    //  console.log(`消息更新成功: ${chatID}, msgId: ${msgId}`);
+      await this.autoSaveToStore();
+    // 消息更新成功
     } catch (err) {
-      //console.error(`更新消息 ${chatID}:${msgId} 失败:`, err);
+      // 更新消息失败
       throw err;
     }
   }
@@ -624,7 +693,7 @@ class StorageService implements IStorageService {
         return message;
       });
     } catch (err) {
-     // console.error(`查询消息 ${chatID} 失败:`, err);
+     // 查询消息失败
       throw err;
     }
   }
@@ -633,9 +702,10 @@ class StorageService implements IStorageService {
     const sql = 'UPDATE messages SET deleted = 1 WHERE chatID = ? AND id = ?';
     try {
       await this.db.run(sql, [chatID, id]);
-     // console.log(`消息标记为删除: ${chatID}, id: ${id}`);
+      await this.autoSaveToStore();
+     // 消息标记为删除
     } catch (err) {
-     // console.error(`删除消息 ${chatID}:${id} 失败:`, err);
+     // 删除消息失败
       throw err;
     }
   }
@@ -656,9 +726,10 @@ class StorageService implements IStorageService {
         file.fileUrl,
         file.timestamp,
       ]);
-    //  console.log(`文件保存成功: ${file.fileId}, name: ${file.fileName}`);
+      await this.autoSaveToStore();
+    // 文件保存成功
     } catch (err) {
-     // console.error(`保存文件 ${file.fileId} 失败:`, err);
+     // 保存文件失败
       throw err;
     }
   }
@@ -682,7 +753,7 @@ class StorageService implements IStorageService {
       }
       return null;
     } catch (err) {
-    //  console.error(`查询文件 ${fileId} 失败:`, err);
+    // 查询文件失败
       throw err;
     }
   }
@@ -700,9 +771,10 @@ class StorageService implements IStorageService {
         preview.hidden ? 1 : 0,
         preview.hasNew ? 1 : 0,
       ]);
-    //  console.log(`会话预览保存成功: ${preview.pub}`);
+      await this.autoSaveToStore();
+    // 会话预览保存成功
     } catch (err) {
-     // console.error(`保存会话预览 ${preview.pub} 失败:`, err);
+     // 保存会话预览失败
       throw err;
     }
   }
@@ -723,7 +795,7 @@ class StorageService implements IStorageService {
       }
       return null;
     } catch (err) {
-    //  console.error(`查询会话预览 ${pub} 失败:`, err);
+    // 查询会话预览失败
       throw err;
     }
   }
@@ -740,7 +812,7 @@ class StorageService implements IStorageService {
         hasNew: row.hasNew === 1,
       }));
     } catch (err) {
-     // console.error('查询所有会话预览失败:', err);
+     // 查询所有会话预览失败
       throw err;
     }
   }
@@ -749,9 +821,10 @@ class StorageService implements IStorageService {
     const sql = 'DELETE FROM chat_previews WHERE pub = ?';
     try {
       await this.db.run(sql, [pub]);
-    //  console.log(`会话预览删除成功: ${pub}`);
+      await this.autoSaveToStore();
+    // 会话预览删除成功
     } catch (err) {
-     // console.error(`删除会话预览 ${pub} 失败:`, err);
+     // 删除会话预览失败
       throw err;
     }
   }
@@ -763,9 +836,10 @@ class StorageService implements IStorageService {
     `;
     try {
       await this.db.run(sql, [pub, isBlocked ? 1 : 0]);
-   //   console.log(`黑名单状态保存成功: ${pub}, isBlocked: ${isBlocked}`);
+      await this.autoSaveToStore();
+      // console.log(`黑名单状态保存成功: ${pub}, isBlocked: ${isBlocked}`);
     } catch (err) {
-    //  console.error(`保存黑名单 ${pub} 失败:`, err);
+    // 保存黑名单失败
       throw err;
     }
   }
@@ -776,7 +850,7 @@ class StorageService implements IStorageService {
       const result = await this.db.query(sql);
       return result.values!.map(row => row.pub);
     } catch (err) {
-    //  console.error('查询黑名单失败:', err);
+    // 查询黑名单失败
       throw err;
     }
   }
@@ -788,9 +862,10 @@ class StorageService implements IStorageService {
     `;
     try {
       await this.db.run(sql, [userPub, friendPub, remark || null, remarkInfo || null]);
-     // console.log(`备注信息保存成功: ${userPub} -> ${friendPub}, remark: ${remark}, remarkInfo: ${remarkInfo}`);
+      await this.autoSaveToStore();
+     // 备注信息保存成功
     } catch (err) {
-      //console.error(`保存备注 ${userPub} -> ${friendPub} 失败:`, err);
+      // 保存备注失败
       throw err;
     }
   }
@@ -806,177 +881,95 @@ class StorageService implements IStorageService {
           remarkInfo: row.remarkInfo || ''
         };
       });
-    //  console.log(`加载备注信息: ${userPub}, 数量: ${Object.keys(remarks).length}`, remarks);
+    // 加载备注信息
       return remarks;
     } catch (err) {
-    //  console.error(`加载备注 ${userPub} 失败:`, err);
+    // 加载备注失败
       throw err;
     }
   }
 
-  async saveMoment(moment: MomentV2): Promise<void> {
-    const sql = `
-      INSERT OR REPLACE INTO moments_v2 (momentId, userPub, content, timestamp, isHidden, mediaUrl, mediaType)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
-    try {
-      await this.db.run(sql, [
-        moment.momentId,
-        moment.userPub,
-        moment.content,
-        moment.timestamp,
-        moment.isHidden ? 1 : 0,
-        moment.mediaUrl || null,
-        moment.mediaType || null,
-      ]);
-   //   console.log(`新朋友圈动态保存成功: ${moment.momentId}`);
-    } catch (err) {
-    //  console.error(`保存动态 ${moment.momentId} 失败:`, err);
-      throw err;
-    }
-  }
-
-  async getMoments(userPubs: string[], limit: number, beforeTimestamp?: number): Promise<MomentV2[]> {
-    let sql = `SELECT * FROM moments_v2 WHERE userPub IN (${userPubs.map(() => '?').join(',')})`;
-    const params: any[] = [...userPubs];
-    if (beforeTimestamp !== undefined) {
-      sql += ' AND timestamp < ?';
-      params.push(beforeTimestamp);
-    }
-    sql += ' ORDER BY timestamp DESC LIMIT ?';
-    params.push(limit);
-    try {
-      const result = await this.db.query(sql, params);
-      const moments = result.values!.map(row => ({
-        momentId: row.momentId,
-        userPub: row.userPub,
-        content: row.content,
-        timestamp: row.timestamp,
-        isHidden: row.isHidden,
-        mediaUrl: row.mediaUrl,
-        mediaType: row.mediaType as 'image' | 'video' | 'audio' | undefined,
-      }));
-     // console.log('查询朋友圈动态:', moments);
-      return moments;
-    } catch (err) {
-     // console.error('查询朋友圈动态失败:', err);
-      return [];
-    }
-  }
-
-  async updateMomentVisibility(momentId: string, isHidden: boolean): Promise<void> {
-    const sql = 'UPDATE moments_v2 SET isHidden = ? WHERE momentId = ?';
-    try {
-      await this.db.run(sql, [isHidden ? 1 : 0, momentId]);
-    //  console.log(`新朋友圈动态可见性更新: ${momentId}, isHidden: ${isHidden}`);
-    } catch (err) {
-     // console.error(`更新动态可见性 ${momentId} 失败:`, err);
-      throw err;
-    }
-  }
-
-  async deleteMoment(momentId: string): Promise<void> {
-    try {
-      await this.db.run('DELETE FROM moments_v2 WHERE momentId = ?', [momentId]);
-      await this.db.run('DELETE FROM likes_v2 WHERE momentId = ?', [momentId]);
-      await this.db.run('DELETE FROM comments_v2 WHERE momentId = ?', [momentId]);
-    //  console.log(`新朋友圈动态删除成功: ${momentId}`);
-    } catch (err) {
-     // console.error(`删除动态 ${momentId} 失败:`, err);
-      throw err;
-    }
-  }
-
-  async saveLike(like: LikeV2): Promise<void> {
-    const sql = 'INSERT OR IGNORE INTO likes_v2 (momentId, userPub, timestamp) VALUES (?, ?, ?)';
-    try {
-      await this.db.run(sql, [like.momentId, like.userPub, like.timestamp]);
-    //  console.log(`新朋友圈点赞保存成功: ${like.momentId} by ${like.userPub}`);
-    } catch (err) {
-     // console.error(`保存点赞 ${like.momentId} 失败:`, err);
-      throw err;
-    }
-  }
-
-  async removeLike(momentId: string, userPub: string): Promise<void> {
-    const sql = 'DELETE FROM likes_v2 WHERE momentId = ? AND userPub = ?';
-    try {
-      await this.db.run(sql, [momentId, userPub]);
-    //  console.log(`新朋友圈取消点赞: ${momentId} by ${userPub}`);
-    } catch (err) {
-    //  console.error(`取消点赞 ${momentId} 失败:`, err);
-      throw err;
-    }
-  }
-
-  async getLikes(momentId: string): Promise<string[]> {
-    const sql = 'SELECT userPub FROM likes_v2 WHERE momentId = ?';
-    try {
-      const result = await this.db.query(sql, [momentId]);
-      const likes = result.values?.map((row: any) => row.userPub) || [];
-    //  console.log(`查询点赞 ${momentId}:`, likes);
-      return likes;
-    } catch (err) {
-   //   console.error(`查询点赞 ${momentId} 失败:`, err);
-      return [];
-    }
-  }
-
-  async saveComment(comment: CommentV2): Promise<void> {
-    const sql = `
-      INSERT OR REPLACE INTO comments_v2 (commentId, momentId, userPub, content, timestamp, replyToCommentId, isDeleted)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
-    try {
-      await this.db.run(sql, [
-        comment.commentId,
-        comment.momentId,
-        comment.userPub,
-        comment.content,
-        comment.timestamp,
-        comment.replyToCommentId || null,
-        comment.isDeleted ? 1 : 0,
-      ]);
-    //  console.log(`新朋友圈评论保存成功: ${comment.commentId}`);
-    } catch (err) {
-    //  console.error(`保存评论 ${comment.commentId} 失败:`, err);
-      throw err;
-    }
-  }
-
-  async getComments(momentId: string): Promise<CommentV2[]> {
-    const sql = 'SELECT * FROM comments_v2 WHERE momentId = ? ORDER BY timestamp DESC';
-    try {
-      const result = await this.db.query(sql, [momentId]);
-      const comments = result.values!.map(row => ({
-        commentId: row.commentId,
-        momentId: row.momentId,
-        userPub: row.userPub,
-        content: row.content,
-        timestamp: row.timestamp,
-        replyToCommentId: row.replyToCommentId,
-        isDeleted: row.isDeleted,
-      }));
-      console.log(`查询评论 ${momentId}:`, comments);
-      return comments;
-    } catch (err) {
-      console.error(`查询评论 ${momentId} 失败:`, err);
-      return [];
-    }
-  }
 
   async saveEpub(pub: string, epub: string): Promise<void> {
+    // 验证和清理 epub 数据
+    let cleanEpub = epub;
+    
+    // 如果 epub 是对象，尝试提取正确的 epub 值
+    if (typeof epub === 'object') {
+      console.warn('saveEpub received object instead of string:', epub);
+      
+      // 遍历对象的所有属性，寻找有效的 epub 值
+      const epubObj = epub as any;
+      let foundValidEpub = false;
+      
+      // 优先查找 epub 字段
+      if (epubObj.epub && typeof epubObj.epub === 'string' && this.isValidEpubFormat(epubObj.epub)) {
+        cleanEpub = epubObj.epub;
+        foundValidEpub = true;
+      } else {
+        // 如果没有找到有效的 epub 字段，遍历所有字符串属性
+        for (const [key, value] of Object.entries(epubObj)) {
+          if (typeof value === 'string' && this.isValidEpubFormat(value)) {
+            cleanEpub = value;
+            foundValidEpub = true;
+            console.log(`Found valid epub in field '${key}':`, value.substring(0, 50) + '...');
+            break;
+          }
+        }
+      }
+      
+      if (!foundValidEpub) {
+        console.error('No valid epub found in object:', Object.keys(epubObj));
+        throw new Error('No valid epub found in object');
+      }
+    }
+    
+    // 验证 epub 格式
+    if (typeof cleanEpub !== 'string' || cleanEpub.length < 20) {
+      console.error('Invalid epub format:', cleanEpub);
+      throw new Error('Invalid epub format');
+    }
+    
+    // 最终验证 epub 是否为有效格式
+    if (!this.isValidEpubFormat(cleanEpub)) {
+      console.error('Epub appears to be invalid data:', cleanEpub.substring(0, 100));
+      throw new Error('Epub appears to be invalid data');
+    }
+    
+    // 添加调试日志
+    console.log('saveEpub - Saving epub:', {
+      pub,
+      epubPreview: cleanEpub.substring(0, 50) + '...',
+      epubLength: cleanEpub.length
+    });
+    
     const sql = `
       INSERT OR REPLACE INTO epubs (pub, epub)
       VALUES (?, ?)
     `;
     try {
-      await this.db.run(sql, [pub, epub]);
-   //   console.log(`Epub 保存成功: ${pub}`);
+      await this.db.run(sql, [pub, cleanEpub]);
+      await this.autoSaveToStore();
+   // Epub 保存成功
     } catch (err) {
-    //  console.error(`保存 epub ${pub} 失败:`, err);
+    // 保存 epub 失败
       throw err;
     }
+  }
+  
+  private isValidEpubFormat(epub: string): boolean {
+    // 检查是否为有效的 epub 格式
+    return typeof epub === 'string' && 
+           epub.length >= 40 && 
+           !epub.includes('data:image') && 
+           !epub.includes('alias') && 
+           !epub.includes('avatar') && 
+           !epub.includes('message') && 
+           !epub.includes('timestamp') && 
+           // 检查是否包含 Gun.js 的加密公钥格式（通常包含点号分隔符）
+           epub.includes('.') &&
+           // 确保不是 Gun.js 的引用路径格式
+           !epub.startsWith('#');
   }
 
   async getEpub(pub: string): Promise<string | null> {
@@ -984,1009 +977,270 @@ class StorageService implements IStorageService {
     try {
       const result = await this.db.query(sql, [pub]);
       if (result.values!.length > 0) {
-       // console.log(`从本地获取 epub: ${pub}, 值: ${result.values![0].epub}`);
-        return result.values![0].epub;
+        const epub = result.values![0].epub;
+        
+        // 验证获取到的 epub 是否有效
+        if (this.isValidEpubFormat(epub)) {
+          // 从本地获取 epub
+          return epub;
+        } else {
+          // 如果数据无效，删除这条记录
+          console.warn('Found invalid epub data, removing:', { pub, epubPreview: epub?.substring(0, 50) });
+          await this.db.run('DELETE FROM epubs WHERE pub = ?', [pub]);
+          return null;
+        }
       }
-    //  console.log(`本地未找到 epub: ${pub}`);
+    // 本地未找到 epub
       return null;
     } catch (err) {
-    //  console.error(`查询 epub ${pub} 失败:`, err);
+    // 查询 epub 失败
       throw err;
     }
   }
+  
+  async cleanupInvalidEpubs(): Promise<number> {
+    const sql = `SELECT pub, epub FROM epubs`;
+    try {
+      const result = await this.db.query(sql, []);
+      let cleanedCount = 0;
+      
+      if (result.values && result.values.length > 0) {
+        for (const row of result.values) {
+          const { pub, epub } = row;
+          
+          // 检查 epub 是否无效
+          if (!epub || !this.isValidEpubFormat(epub)) {
+            
+            console.log('Cleaning invalid epub:', { pub, epubPreview: epub?.substring(0, 50) });
+            await this.db.run('DELETE FROM epubs WHERE pub = ?', [pub]);
+            cleanedCount++;
+          }
+        }
+      }
+      
+      if (cleanedCount > 0) {
+        await this.autoSaveToStore();
+        console.log(`Cleaned up ${cleanedCount} invalid epub records`);
+      }
+      
+      return cleanedCount;
+    } catch (err) {
+      console.error('Failed to cleanup invalid epubs:', err);
+      throw err;
+    }
+  }
+
+
+  
 
   async query(sql: string, params: any[] = []): Promise<any> {
     try {
       return await this.db.query(sql, params);
     } catch (err) {
-      ///console.error(`执行查询 ${sql} 失败:`, err);
+      // 执行查询失败
       throw err;
     }
   }
 
   async run(sql: string, params: any[] = []): Promise<any> {
     try {
-      return await this.db.run(sql, params);
+      const result = await this.db.run(sql, params);
+      // 检查是否是写入操作（INSERT, UPDATE, DELETE, REPLACE）
+      const isWriteOperation = /^\s*(INSERT|UPDATE|DELETE|REPLACE)/i.test(sql.trim());
+      if (isWriteOperation) {
+        await this.autoSaveToStore();
+      }
+      return result;
     } catch (err) {
-    //  console.error(`执行语句 ${sql} 失败:`, err);
+      // 执行语句失败
       throw err;
     }
   }
 
   async execute(sql: string): Promise<any> {
     try {
-      return await this.db.execute(sql);
+      const result = await this.db.execute(sql);
+      // 检查是否是写入操作（INSERT, UPDATE, DELETE, REPLACE）
+      const isWriteOperation = /^\s*(INSERT|UPDATE|DELETE|REPLACE)/i.test(sql.trim());
+      if (isWriteOperation) {
+        await this.autoSaveToStore();
+      }
+      return result;
     } catch (err) {
-   //   console.error(`执行语句 ${sql} 失败:`, err);
+   // 执行语句失败
       throw err;
     }
+  }
+
+  // 模态窗口状态持久化实现
+  async saveModalState(userPub: string, component: string, history: string[]): Promise<void> {
+    const sql = `
+      INSERT OR REPLACE INTO modal_states (userPub, currentComponent, componentHistory, updatedAt)
+      VALUES (?, ?, ?, ?)
+    `;
+    try {
+      const historyJson = JSON.stringify(history);
+      const timestamp = Math.floor(Date.now() / 1000);
+      await this.db.run(sql, [userPub, component, historyJson, timestamp]);
+      await this.autoSaveToStore();
+      // console.log(`模态窗口状态保存成功: ${userPub} -> ${component}`);
+    } catch (err) {
+      // 保存模态窗口状态失败
+      throw err;
+    }
+  }
+
+  async getModalState(userPub: string): Promise<{ component: string; history: string[] } | null> {
+    const sql = `SELECT currentComponent, componentHistory FROM modal_states WHERE userPub = ?`;
+    try {
+      const result = await this.db.query(sql, [userPub]);
+      if (result.values!.length > 0) {
+        const row = result.values![0];
+        const history = JSON.parse(row.componentHistory || '["DiscoverS"]');
+        return {
+          component: row.currentComponent,
+          history: history,
+        };
+      }
+      return null;
+    } catch (err) {
+      // 获取模态窗口状态失败
+      return null;
+    }
+  }
+
+  // Stubs for new group methods - to be implemented
+  async saveGroup(group: { group_pub: string; name: string; key_pair_json: string; joined_at?: number }): Promise<void> {
+    const sql = `INSERT OR REPLACE INTO groups (group_pub, name, key_pair_json, joined_at) VALUES (?, ?, ?, ?)`;
+    const joinedAt = group.joined_at || Date.now();
+    await this.db.run(sql, [group.group_pub, group.name, group.key_pair_json, joinedAt]);
+    await this.autoSaveToStore();
+  }
+  async getGroup(group_pub: string): Promise<any | null> {
+    const sql = `SELECT * FROM groups WHERE group_pub = ?`;
+    const result = await this.db.query(sql, [group_pub]);
+    return result.values!.length > 0 ? result.values![0] : null;
+  }
+  async getAllGroups(): Promise<any[]> {
+    const sql = `SELECT * FROM groups`;
+    const result = await this.db.query(sql);
+    return result.values || [];
+  }
+  async deleteGroup(group_pub: string): Promise<void> {
+    const sql = `DELETE FROM groups WHERE group_pub = ?`;
+    await this.db.run(sql, [group_pub]);
+    await this.autoSaveToStore();
+  }
+  async saveGroupMember(member: { group_pub: string; member_pub: string; alias: string; joined_at: number }): Promise<void> {
+    const sql = `INSERT OR REPLACE INTO group_members (group_pub, member_pub, alias, joined_at) VALUES (?, ?, ?, ?)`;
+    await this.db.run(sql, [member.group_pub, member.member_pub, member.alias, member.joined_at]);
+    await this.autoSaveToStore();
+  }
+  async getGroupMembers(group_pub: string): Promise<any[]> {
+    const sql = `SELECT * FROM group_members WHERE group_pub = ?`;
+    const result = await this.db.query(sql, [group_pub]);
+    return result.values || [];
+  }
+  async deleteGroupMember(group_pub: string, member_pub: string): Promise<void> {
+    const sql = `DELETE FROM group_members WHERE group_pub = ? AND member_pub = ?`;
+    await this.db.run(sql, [group_pub, member_pub]);
+    await this.autoSaveToStore();
+  }
+  async insertGroupMessage(message: any): Promise<any> {
+    const sql = `
+      INSERT INTO group_messages (msg_id, group_pub, sender_pub, sender_alias, content, content_type, timestamp, status, duration)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `;
+    const result = await this.db.run(sql, [
+      message.msg_id,
+      message.group_pub,
+      message.sender_pub,
+      message.sender_alias,
+      message.content,
+      message.content_type,
+      message.timestamp,
+      message.status,
+      message.duration || null,
+    ]);
+   // await this.autoSaveToStore(); 
+    const lastId = result.changes!.lastId;
+    return { ...message, id: lastId };
+  }
+  async updateGroupMessageStatus(msg_id: string, status: 'sent' | 'failed'): Promise<void> {
+    const sql = `UPDATE group_messages SET status = ? WHERE msg_id = ?`;
+    await this.db.run(sql, [status, msg_id]);
+    await this.autoSaveToStore();
+  }
+  async getGroupMessages(group_pub: string, limit: number, beforeId?: number): Promise<any[]> {
+    let sql = `SELECT * FROM group_messages WHERE group_pub = ?`;
+    const params: any[] = [group_pub];
+    if (beforeId) {
+      sql += ` AND id < ?`;
+      params.push(beforeId);
+    }
+    sql += ` ORDER BY id DESC LIMIT ?`;
+    params.push(limit);
+
+    const result = await this.db.query(sql, params);
+    return result.values || [];
+  }
+  async clearGroupMessages(group_pub: string): Promise<void> {
+    const sql = `DELETE FROM group_messages WHERE group_pub = ?`;
+    await this.db.run(sql, [group_pub]);
+    await this.autoSaveToStore();
+  }
+
+  async cleanupInvalidGroupMessages(group_pub: string): Promise<void> {
+    const sql = `
+      DELETE FROM group_messages 
+      WHERE group_pub = ? 
+      AND (
+        content IS NULL 
+        OR content = '' 
+        OR TRIM(content) = '' 
+        OR sender_pub IS NULL 
+        OR sender_pub = '' 
+        OR sender_alias IS NULL 
+        OR sender_alias = ''
+      )
+    `;
+    await this.db.run(sql, [group_pub]);
+    await this.autoSaveToStore();
+  }
+
+  // Group Preview Methods Implementation
+  async updateGroupPreview(group_pub: string, content: string, timestamp: number): Promise<void> {
+    // Truncate to 20 chars with ellipsis
+    const preview = content.length > 20 ? content.slice(0, 20) + '…' : content;
+    const sql = `INSERT OR REPLACE INTO group_previews (group_pub, last_msg, last_time) VALUES (?, ?, ?)`;
+    await this.db.run(sql, [group_pub, preview, timestamp]);
+    await this.autoSaveToStore();
+  }
+
+  async getGroupPreview(group_pub: string): Promise<{ last_msg: string; last_time: number } | null> {
+    const sql = `SELECT last_msg, last_time FROM group_previews WHERE group_pub = ?`;
+    const result = await this.db.query(sql, [group_pub]);
+    if (result.values && result.values.length > 0) {
+      return {
+        last_msg: result.values[0].last_msg,
+        last_time: result.values[0].last_time
+      };
+    }
+    return null;
+  }
+
+  async getAllGroupPreviews(): Promise<Array<{ group_pub: string; last_msg: string; last_time: number }>> {
+    const sql = `SELECT group_pub, last_msg, last_time FROM group_previews ORDER BY last_time DESC`;
+    const result = await this.db.query(sql);
+    return result.values || [];
+  }
+
+  async deleteGroupPreview(group_pub: string): Promise<void> {
+    const sql = `DELETE FROM group_previews WHERE group_pub = ?`;
+    await this.db.run(sql, [group_pub]);
+    await this.autoSaveToStore();
   }
 }
 
 export default StorageService;
 
-
-
-
-// import { BehaviorSubject } from 'rxjs';
-// import { CapacitorSQLite, SQLiteDBConnection } from '@capacitor-community/sqlite';
-// import { getCurrentInstance } from 'vue';
-// import { ISQLiteService } from './sqliteService';
-// import { IDbVersionService } from './dbVersionService';
-// import { LocalChatMessage, MessageStatus, MessageType, ChatPreview } from '../composables/TalkFlowCore';
-
-// // 核心类型
-// export interface Buddy {
-//   pub: string;
-//   addedByMe: boolean;
-//   timestamp: number;
-//   alias?: string;
-//   avatar?: string;
-//   epub?: string;
-// }
-
-// export interface FileData {
-//   fileId: string;
-//   chatID: string;
-//   sender: string;
-//   fileName: string;
-//   fileSize: number;
-//   fileType: string;
-//   fileUrl: string;
-//   timestamp: number;
-// }
-
-// export interface MomentV2 {
-//   momentId: string;
-//   userPub: string;
-//   content: string;
-//   timestamp: number;
-//   isHidden: number;
-//   mediaUrl?: string;
-//   mediaType?: 'image' | 'video' | 'audio';
-// }
-
-// export interface LikeV2 {
-//   momentId: string;
-//   userPub: string;
-//   timestamp: number;
-// }
-
-// export interface CommentV2 {
-//   commentId: string;
-//   momentId: string;
-//   userPub: string;
-//   content: string;
-//   timestamp: number;
-//   replyToCommentId?: string;
-//   isDeleted?: number;
-// }
-
-// export interface IStorageService {
-//   initializeDatabase(): Promise<void>;
-//   saveUser(pubKey: string, alias?: string, avatar?: string, encryptedKeyPair?: string): Promise<void>;
-//   getUser(pubKey: string): Promise<{ pubKey: string; alias?: string; avatar?: string; encryptedKeyPair?: string } | null>;
-//   saveBuddy(
-//     userPub: string,
-//     buddyPub: string,
-//     addedByMe: boolean,
-//     timestamp: number,
-//     alias?: string,
-//     avatar?: string,
-//     epub?: string
-//   ): Promise<void>;
-//   getBuddies(userPub: string): Promise<Buddy[]>;
-//   insertMessage(chatID: string, msg: LocalChatMessage): Promise<number>; // 使用 LocalChatMessage
-//   updateMessage(chatID: string, msgId: string, msg: LocalChatMessage): Promise<void>; // 使用 LocalChatMessage
-//   getMessages(chatID: string, limit?: number, beforeId?: number, order?: 'ASC' | 'DESC'): Promise<LocalChatMessage[]>;
-//   deleteMessage(chatID: string, id: number): Promise<void>;
-//   saveFile(file: FileData): Promise<void>;
-//   getFile(fileId: string): Promise<FileData | null>;
-//   saveChatPreview(preview: ChatPreview): Promise<void>;
-//   getChatPreview(pub: string): Promise<ChatPreview | null>;
-//   getAllChatPreviews(): Promise<ChatPreview[]>;
-//   deleteChatPreview(pub: string): Promise<void>;
-//   query(sql: string, params?: any[]): Promise<any>;
-//   run(sql: string, params?: any[]): Promise<any>;
-//   execute(sql: string): Promise<any>;
-//   saveBlacklist(pub: string, isBlocked: boolean): Promise<void>;
-//   getBlacklist(): Promise<string[]>;
-//   saveFriendRemark(userPub: string, friendPub: string, remark: string, remarkInfo: string): Promise<void>;
-//   getFriendRemarks(userPub: string): Promise<Record<string, { remark: string; remarkInfo: string }>>;
-//   saveMoment(moment: MomentV2): Promise<void>;
-//   getMoments(userPubs: string[], limit: number, beforeTimestamp?: number): Promise<MomentV2[]>;
-//   updateMomentVisibility(momentId: string, isHidden: boolean): Promise<void>;
-//   deleteMoment(momentId: string): Promise<void>;
-//   saveLike(like: LikeV2): Promise<void>;
-//   removeLike(momentId: string, userPub: string): Promise<void>;
-//   getLikes(momentId: string): Promise<string[]>;
-//   saveComment(comment: CommentV2): Promise<void>;
-//   getComments(momentId: string): Promise<CommentV2[]>;
-//   saveEpub(pub: string, epub: string): Promise<void>;
-//   getEpub(pub: string): Promise<string | null>;
-// }
-
-// class StorageService implements IStorageService {
-//   versionUpgrades = [
-//     {
-//       toVersion: 1,
-//       statements: [
-//         `CREATE TABLE IF NOT EXISTS users (
-//           id INTEGER PRIMARY KEY AUTOINCREMENT,
-//           pubKey TEXT UNIQUE,
-//           alias TEXT,
-//           avatar TEXT,
-//           encryptedKeyPair TEXT
-//         );`,
-//         `CREATE TABLE IF NOT EXISTS buddies (
-//           id INTEGER PRIMARY KEY AUTOINCREMENT,
-//           userPub TEXT,
-//           buddyPub TEXT,
-//           addedByMe INTEGER DEFAULT 1,
-//           timestamp INTEGER,
-//           alias TEXT,
-//           avatar TEXT,
-//           remark TEXT,
-//           remarkInfo TEXT,
-//           UNIQUE(userPub, buddyPub)
-//         );`,
-//         `CREATE TABLE IF NOT EXISTS messages (
-//           id INTEGER PRIMARY KEY AUTOINCREMENT,
-//           chatID TEXT NOT NULL,
-//           msgId TEXT UNIQUE,
-//           sender TEXT NOT NULL,
-//           type TEXT NOT NULL,
-//           content TEXT,
-//           timestamp INTEGER NOT NULL,
-//           deleted INTEGER DEFAULT 0,
-//           duration INTEGER,
-//           status TEXT DEFAULT 'pending',
-//           isSending INTEGER DEFAULT 0,
-//           fileId TEXT,
-//           textForBuddy TEXT,
-//           textForMe TEXT,
-//           audioForBuddy TEXT,
-//           audioForMe TEXT,
-//           signature TEXT,
-//           hash TEXT,
-//           sent INTEGER DEFAULT 0
-//         );`,
-//         `CREATE INDEX IF NOT EXISTS idx_messages_chatID_id ON messages (chatID, id);`,
-//         `CREATE INDEX IF NOT EXISTS idx_messages_chatID_timestamp ON messages (chatID, timestamp);`,
-//         `CREATE TABLE IF NOT EXISTS files (
-//           fileId TEXT PRIMARY KEY,
-//           chatID TEXT,
-//           sender TEXT,
-//           fileName TEXT,
-//           fileSize INTEGER,
-//           fileType TEXT,
-//           fileUrl TEXT,
-//           timestamp INTEGER
-//         );`,
-//         `CREATE TABLE IF NOT EXISTS credentials (
-//           key TEXT PRIMARY KEY,
-//           value TEXT
-//         );`,
-//         `CREATE TABLE IF NOT EXISTS sent_requests (
-//           id INTEGER PRIMARY KEY AUTOINCREMENT,
-//           fromPub TEXT,
-//           toPub TEXT,
-//           timestamp INTEGER
-//         );`,
-//         `CREATE TABLE IF NOT EXISTS chat_previews (
-//           pub TEXT PRIMARY KEY,
-//           lastMsg TEXT,
-//           lastTime TEXT,
-//           hidden INTEGER DEFAULT 0,
-//           hasNew INTEGER DEFAULT 0
-//         );`,
-//         `CREATE TABLE IF NOT EXISTS blacklist (
-//           pub TEXT PRIMARY KEY,
-//           isBlocked INTEGER DEFAULT 0
-//         );`,
-//         `CREATE TABLE IF NOT EXISTS friend_remarks (
-//           userPub TEXT,
-//           friendPub TEXT,
-//           remark TEXT,
-//           remarkInfo TEXT,
-//           PRIMARY KEY (userPub, friendPub)
-//         );`,
-//         `CREATE TABLE IF NOT EXISTS epubs (
-//           pub TEXT PRIMARY KEY,
-//           epub TEXT NOT NULL
-//         );`,
-//       ],
-//     },
-//   ];
-
-//   momentsUpgrade = [
-//     {
-//       toVersion: 2,
-//       statements: [
-//         `CREATE TABLE IF NOT EXISTS moments_v2 (
-//           momentId TEXT PRIMARY KEY,
-//           userPub TEXT,
-//           content TEXT,
-//           timestamp INTEGER,
-//           isHidden INTEGER DEFAULT 0,
-//           mediaUrl TEXT,
-//           mediaType TEXT
-//         );`,
-//         `CREATE TABLE IF NOT EXISTS likes_v2 (
-//           momentId TEXT,
-//           userPub TEXT,
-//           timestamp INTEGER,
-//           PRIMARY KEY (momentId, userPub)
-//         );`,
-//         `CREATE TABLE IF NOT EXISTS comments_v2 (
-//           commentId TEXT PRIMARY KEY,
-//           momentId TEXT,
-//           userPub TEXT,
-//           content TEXT,
-//           timestamp INTEGER,
-//           replyToCommentId TEXT,
-//           isDeleted INTEGER DEFAULT 0
-//         );`,
-//         `CREATE INDEX IF NOT EXISTS idx_moments_userPub_timestamp ON moments_v2 (userPub, timestamp);`,
-//         `CREATE INDEX IF NOT EXISTS idx_comments_momentId_timestamp ON comments_v2 (momentId, timestamp);`,
-//       ],
-//     },
-//   ];
-
-//   loadToVersion = 1;
-//   momentsVersion = 2;
-//   db!: SQLiteDBConnection;
-//   database: string = 'talkflowdb';
-//   sqliteServ!: ISQLiteService;
-//   dbVerServ!: IDbVersionService;
-//   isInitCompleted = new BehaviorSubject(false);
-//   appInstance = getCurrentInstance();
-//   platform!: string;
-//   private isInitialized = false;
-
-//   constructor(sqliteService: ISQLiteService, dbVersionService: IDbVersionService) {
-//     this.sqliteServ = sqliteService;
-//     this.dbVerServ = dbVersionService;
-//     this.platform = this.appInstance?.appContext.config.globalProperties.$platform || 'web';
-//   }
-
-//   async initializeDatabase(): Promise<void> {
-//     if (this.isInitialized) {
-//       console.log('数据库已初始化，跳过重复调用');
-//       return;
-//     }
-
-//     try {
-//       console.log('开始初始化数据库:', this.database);
-//       await this.sqliteServ.addUpgradeStatement({
-//         database: this.database,
-//         upgrade: this.versionUpgrades,
-//       });
-//       console.log('核心升级语句已添加');
-
-//       this.db = await this.sqliteServ.openDatabase(this.database, this.loadToVersion, false);
-//       console.log('数据库已打开，目标版本:', this.loadToVersion);
-
-//       const currentVersionResult = await this.db.getVersion();
-//       const currentVersion: number = currentVersionResult.version ?? 0;
-//       console.log('当前数据库版本:', currentVersion);
-
-//       for (const upgrade of this.versionUpgrades) {
-//         console.log(`执行核心升级到版本 ${upgrade.toVersion}`);
-//         for (const stmt of upgrade.statements) {
-//           try {
-//             await this.db.execute(stmt);
-//             console.log('执行语句成功:', stmt);
-//           } catch (err) {
-//             console.error('执行语句失败:', stmt, err);
-//             throw err;
-//           }
-//         }
-//       }
-//       this.dbVerServ.setDbVersion(this.database, this.loadToVersion);
-//       console.log('核心数据库版本已设置为:', this.loadToVersion);
-
-//       await this.initializeMoments();
-
-//       if (this.platform === 'web') {
-//         try {
-//           await this.sqliteServ.saveToStore(this.database);
-//           console.log('数据库已保存到 Web 存储');
-//         } catch (err) {
-//           console.warn('Web 存储保存失败（非致命错误）:', err);
-//         }
-//       }
-
-//       const tablesAfter = await this.db.query("SELECT name FROM sqlite_master WHERE type='table'");
-//       console.log('初始化后的表:', tablesAfter.values);
-//       this.isInitCompleted.next(true);
-//       this.isInitialized = true;
-//       console.log('SQLite 数据库初始化成功');
-//     } catch (error: any) {
-//       console.error(`storageService.initializeDatabase: ${error.message || error}`, error);
-//       throw new Error(`storageService.initializeDatabase: ${error.message || error}`);
-//     }
-//   }
-
-//   private async initializeMoments(): Promise<void> {
-//     console.log('开始初始化朋友圈模块');
-//     await this.sqliteServ.addUpgradeStatement({
-//       database: this.database,
-//       upgrade: this.momentsUpgrade,
-//     });
-//     console.log('朋友圈升级语句已添加');
-
-//     const currentVersionResult = await this.db.getVersion();
-//     const currentVersion: number = currentVersionResult.version ?? 0;
-
-//     if (currentVersion < this.momentsVersion) {
-//       for (const upgrade of this.momentsUpgrade.filter(u => u.toVersion > currentVersion)) {
-//         console.log(`执行朋友圈升级到版本 ${upgrade.toVersion}`);
-//         for (const stmt of upgrade.statements) {
-//           try {
-//             await this.db.execute(stmt);
-//             console.log('执行朋友圈语句成功:', stmt);
-//           } catch (err) {
-//             console.error('执行朋友圈语句失败:', stmt, err);
-//             throw err;
-//           }
-//         }
-//       }
-//       this.dbVerServ.setDbVersion(this.database, this.momentsVersion);
-//       console.log('朋友圈数据库版本已设置为:', this.momentsVersion);
-//     } else {
-//       console.log('朋友圈版本已是最新，无需升级');
-//     }
-//   }
-
-//   async saveUser(pubKey: string, alias?: string, avatar?: string, encryptedKeyPair?: string): Promise<void> {
-//     const sql = `
-//       INSERT OR REPLACE INTO users (pubKey, alias, avatar, encryptedKeyPair)
-//       VALUES (?, ?, ?, ?)
-//     `;
-//     try {
-//       await this.db.run(sql, [pubKey, alias || null, avatar || null, encryptedKeyPair || null]);
-//       console.log(`用户信息保存成功: ${pubKey}`);
-//     } catch (err) {
-//       console.error(`保存用户 ${pubKey} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async getUser(pubKey: string): Promise<{ pubKey: string; alias?: string; avatar?: string; encryptedKeyPair?: string } | null> {
-//     const sql = `SELECT * FROM users WHERE pubKey = ?`;
-//     try {
-//       const result = await this.db.query(sql, [pubKey]);
-//       if (result.values!.length > 0) {
-//         const user = result.values![0];
-//         return {
-//           pubKey: user.pubKey,
-//           alias: user.alias,
-//           avatar: user.avatar,
-//           encryptedKeyPair: user.encryptedKeyPair,
-//         };
-//       }
-//       return null;
-//     } catch (err) {
-//       console.error(`查询用户 ${pubKey} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async saveBuddy(
-//     userPub: string,
-//     buddyPub: string,
-//     addedByMe: boolean,
-//     timestamp: number,
-//     alias?: string,
-//     avatar?: string,
-//     epub?: string
-//   ): Promise<void> {
-//     const sql = `
-//       INSERT OR REPLACE INTO buddies (userPub, buddyPub, addedByMe, timestamp, alias, avatar)
-//       VALUES (?, ?, ?, ?, ?, ?)
-//     `;
-//     try {
-//       await this.db.run(sql, [userPub, buddyPub, addedByMe ? 1 : 0, timestamp, alias || null, avatar || null]);
-//       if (epub) {
-//         await this.saveEpub(buddyPub, epub);
-//       }
-//       console.log(`好友保存成功: ${userPub} -> ${buddyPub}, alias: ${alias}, avatar: ${avatar}, epub: ${epub}`);
-//     } catch (err) {
-//       console.error(`Failed to save buddy ${buddyPub} for ${userPub}:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async getBuddies(userPub: string): Promise<Buddy[]> {
-//     const sql = `
-//       SELECT b.*, e.epub
-//       FROM buddies b
-//       LEFT JOIN epubs e ON b.buddyPub = e.pub
-//       WHERE b.userPub = ?
-//     `;
-//     try {
-//       const result = await this.db.query(sql, [userPub]);
-//       const buddies: Buddy[] = result.values!.map((row) => ({
-//         pub: row.buddyPub,
-//         addedByMe: !!row.addedByMe,
-//         timestamp: row.timestamp,
-//         alias: row.alias,
-//         avatar: row.avatar,
-//         epub: row.epub,
-//       }));
-//       console.log(`从 SQLite 加载好友: ${userPub}, 数量: ${buddies.length}`, buddies);
-//       return buddies;
-//     } catch (err) {
-//       console.error(`Failed to get buddies for ${userPub}:`, err);
-//       return [];
-//     }
-//   }
-
-//   async insertMessage(chatID: string, msg: LocalChatMessage): Promise<number> {
-//     const sql = `
-//       INSERT INTO messages (
-//         chatID, msgId, sender, type, content, timestamp, duration, status, isSending, fileId,
-//         textForBuddy, textForMe, audioForBuddy, audioForMe, signature, hash, sent
-//       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-//     `;
-//     const content = msg.text || msg.audioUrl || msg.fileId || msg.content || '';
-//     try {
-//       const result = await this.db.run(sql, [
-//         chatID,
-//         msg.msgId,
-//         msg.from,
-//         msg.type,
-//         content,
-//         msg.timestamp,
-//         msg.duration || null,
-//         msg.status || 'pending',
-//         msg.isSending ? 1 : 0,
-//         msg.fileId || null,
-//         msg.textForBuddy || null,
-//         msg.textForMe || null,
-//         msg.audioForBuddy || null,
-//         msg.audioForMe || null,
-//         msg.signature || null,
-//         msg.hash || null,
-//         msg.sent ? 1 : 0,
-//       ]);
-//     //   const insertedIdResult = await this.db.query('SELECT last_insert_rowid() as id');
-//     //   const id = insertedIdResult.values![0].id;
-//     //   console.log(`消息插入成功: ${chatID}, id: ${id}, msgId: ${msg.msgId}, timestamp: ${msg.timestamp}`);
-//     //   return id;
-//     // } catch (err) {
-//     //   console.error(`插入消息 ${chatID} 失败:`, err);
-//     //   throw err;
-//     // }
-//     // 检查是否插入成功（如果已存在，changes 为 0）
-//     if (result.changes!.changes === 0) {
-//       console.log(`消息已存在，跳过插入: ${chatID}, msgId: ${msg.msgId}`);
-//       // 查询现有消息的 id
-//       const existing = await this.db.query('SELECT id FROM messages WHERE msgId = ?', [msg.msgId]);
-//       return existing.values![0].id;
-//     }
-//     const insertedIdResult = await this.db.query('SELECT last_insert_rowid() as id');
-//     const id = insertedIdResult.values![0].id;
-//     console.log(`消息插入成功: ${chatID}, id: ${id}, msgId: ${msg.msgId}, timestamp: ${msg.timestamp}`);
-//     return id;
-//   } catch (err) {
-//     console.error(`插入消息 ${chatID} 失败:`, err);
-//     throw err; // 保留抛出，以便上层处理
-//   }
-//   }
-
-//   async updateMessage(chatID: string, msgId: string, msg: LocalChatMessage): Promise<void> {
-//     const sql = `
-//       UPDATE messages SET
-//         sender = ?, 
-//         type = ?, 
-//         content = ?, 
-//         timestamp = ?, 
-//         duration = ?, 
-//         status = ?, 
-//         isSending = ?, 
-//         fileId = ?, 
-//         textForBuddy = ?, 
-//         textForMe = ?, 
-//         audioForBuddy = ?, 
-//         audioForMe = ?, 
-//         signature = ?, 
-//         hash = ?, 
-//         sent = ?
-//       WHERE chatID = ? AND msgId = ?
-//     `;
-//     const content = msg.text || msg.audioUrl || msg.fileId || msg.content || '';
-//     try {
-//       await this.db.run(sql, [
-//         msg.from,
-//         msg.type,
-//         content,
-//         msg.timestamp,
-//         msg.duration || null,
-//         msg.status || 'pending',
-//         msg.isSending ? 1 : 0,
-//         msg.fileId || null,
-//         msg.textForBuddy || null,
-//         msg.textForMe || null,
-//         msg.audioForBuddy || null,
-//         msg.audioForMe || null,
-//         msg.signature || null,
-//         msg.hash || null,
-//         msg.sent ? 1 : 0,
-//         chatID,
-//         msgId,
-//       ]);
-//       console.log(`消息更新成功: ${chatID}, msgId: ${msgId}`);
-//     } catch (err) {
-//       console.error(`更新消息 ${chatID}:${msgId} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async getMessages(chatID: string, limit: number = 10, beforeId?: number, order: 'ASC' | 'DESC' = 'ASC'): Promise<LocalChatMessage[]> {
-//     let sql = 'SELECT * FROM messages WHERE chatID = ? AND deleted = 0';
-//     const params: any[] = [chatID];
-//     if (beforeId !== undefined) {
-//       sql += order === 'ASC' ? ' AND id > ?' : ' AND id < ?';
-//       params.push(beforeId);
-//     }
-//     sql += ` ORDER BY id ${order} LIMIT ?`;
-//     params.push(limit);
-
-//     try {
-//       const result = await this.db.query(sql, params);
-//       return result.values!.map((row) => {
-//         const message: LocalChatMessage = {
-//           id: row.id,
-//           chatID: row.chatID,
-//           msgId: row.msgId,
-//           from: row.sender,
-//           type: row.type as MessageType,
-//           content: row.content,
-//           timestamp: row.timestamp,
-//           sent: row.sent === 1,
-//           status: row.status as MessageStatus,
-//           isSending: row.isSending === 1,
-//           duration: row.duration,
-//           fileId: row.fileId,
-//           textForBuddy: row.textForBuddy,
-//           textForMe: row.textForMe,
-//           audioForBuddy: row.audioForBuddy,
-//           audioForMe: row.audioForMe,
-//           signature: row.signature,
-//           hash: row.hash,
-//         };
-//         switch (row.type) {
-//           case 'text':
-//             message.text = row.content;
-//             break;
-//           case 'voice':
-//             message.audioUrl = row.content;
-//             break;
-//           case 'file':
-//             break;
-//         }
-//         return message;
-//       });
-//     } catch (err) {
-//       console.error(`查询消息 ${chatID} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async deleteMessage(chatID: string, id: number): Promise<void> {
-//     const sql = 'UPDATE messages SET deleted = 1 WHERE chatID = ? AND id = ?';
-//     try {
-//       await this.db.run(sql, [chatID, id]);
-//       console.log(`消息标记为删除: ${chatID}, id: ${id}`);
-//     } catch (err) {
-//       console.error(`删除消息 ${chatID}:${id} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async saveFile(file: FileData): Promise<void> {
-//     const sql = `
-//       INSERT OR REPLACE INTO files (fileId, chatID, sender, fileName, fileSize, fileType, fileUrl, timestamp)
-//       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-//     `;
-//     try {
-//       await this.db.run(sql, [
-//         file.fileId,
-//         file.chatID,
-//         file.sender,
-//         file.fileName,
-//         file.fileSize,
-//         file.fileType,
-//         file.fileUrl,
-//         file.timestamp,
-//       ]);
-//       console.log(`文件保存成功: ${file.fileId}, name: ${file.fileName}`);
-//     } catch (err) {
-//       console.error(`保存文件 ${file.fileId} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async getFile(fileId: string): Promise<FileData | null> {
-//     const sql = `SELECT * FROM files WHERE fileId = ?`;
-//     try {
-//       const result = await this.db.query(sql, [fileId]);
-//       if (result.values!.length > 0) {
-//         const row = result.values![0];
-//         return {
-//           fileId: row.fileId,
-//           chatID: row.chatID,
-//           sender: row.sender,
-//           fileName: row.fileName,
-//           fileSize: row.fileSize,
-//           fileType: row.fileType,
-//           fileUrl: row.fileUrl,
-//           timestamp: row.timestamp,
-//         };
-//       }
-//       return null;
-//     } catch (err) {
-//       console.error(`查询文件 ${fileId} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async saveChatPreview(preview: ChatPreview): Promise<void> {
-//     const sql = `
-//       INSERT OR REPLACE INTO chat_previews (pub, lastMsg, lastTime, hidden, hasNew)
-//       VALUES (?, ?, ?, ?, ?)
-//     `;
-//     try {
-//       await this.db.run(sql, [
-//         preview.pub,
-//         preview.lastMsg,
-//         preview.lastTime,
-//         preview.hidden ? 1 : 0,
-//         preview.hasNew ? 1 : 0,
-//       ]);
-//       console.log(`会话预览保存成功: ${preview.pub}`);
-//     } catch (err) {
-//       console.error(`保存会话预览 ${preview.pub} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async getChatPreview(pub: string): Promise<ChatPreview | null> {
-//     const sql = `SELECT * FROM chat_previews WHERE pub = ?`;
-//     try {
-//       const result = await this.db.query(sql, [pub]);
-//       if (result.values!.length > 0) {
-//         const row = result.values![0];
-//         return {
-//           pub: row.pub,
-//           lastMsg: row.lastMsg,
-//           lastTime: row.lastTime,
-//           hidden: row.hidden === 1,
-//           hasNew: row.hasNew === 1,
-//         };
-//       }
-//       return null;
-//     } catch (err) {
-//       console.error(`查询会话预览 ${pub} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async getAllChatPreviews(): Promise<ChatPreview[]> {
-//     const sql = `SELECT * FROM chat_previews`;
-//     try {
-//       const result = await this.db.query(sql);
-//       return result.values!.map((row) => ({
-//         pub: row.pub,
-//         lastMsg: row.lastMsg,
-//         lastTime: row.lastTime,
-//         hidden: row.hidden === 1,
-//         hasNew: row.hasNew === 1,
-//       }));
-//     } catch (err) {
-//       console.error('查询所有会话预览失败:', err);
-//       throw err;
-//     }
-//   }
-
-//   async deleteChatPreview(pub: string): Promise<void> {
-//     const sql = 'DELETE FROM chat_previews WHERE pub = ?';
-//     try {
-//       await this.db.run(sql, [pub]);
-//       console.log(`会话预览删除成功: ${pub}`);
-//     } catch (err) {
-//       console.error(`删除会话预览 ${pub} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async saveBlacklist(pub: string, isBlocked: boolean): Promise<void> {
-//     const sql = `
-//       INSERT OR REPLACE INTO blacklist (pub, isBlocked)
-//       VALUES (?, ?)
-//     `;
-//     try {
-//       await this.db.run(sql, [pub, isBlocked ? 1 : 0]);
-//       console.log(`黑名单状态保存成功: ${pub}, isBlocked: ${isBlocked}`);
-//     } catch (err) {
-//       console.error(`保存黑名单 ${pub} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async getBlacklist(): Promise<string[]> {
-//     const sql = `SELECT pub FROM blacklist WHERE isBlocked = 1`;
-//     try {
-//       const result = await this.db.query(sql);
-//       return result.values!.map(row => row.pub);
-//     } catch (err) {
-//       console.error('查询黑名单失败:', err);
-//       throw err;
-//     }
-//   }
-
-//   async saveFriendRemark(userPub: string, friendPub: string, remark: string, remarkInfo: string): Promise<void> {
-//     const sql = `
-//       INSERT OR REPLACE INTO friend_remarks (userPub, friendPub, remark, remarkInfo)
-//       VALUES (?, ?, ?, ?)
-//     `;
-//     try {
-//       await this.db.run(sql, [userPub, friendPub, remark || null, remarkInfo || null]);
-//       console.log(`备注信息保存成功: ${userPub} -> ${friendPub}, remark: ${remark}, remarkInfo: ${remarkInfo}`);
-//     } catch (err) {
-//       console.error(`保存备注 ${userPub} -> ${friendPub} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async getFriendRemarks(userPub: string): Promise<Record<string, { remark: string; remarkInfo: string }>> {
-//     const sql = `SELECT friendPub, remark, remarkInfo FROM friend_remarks WHERE userPub = ?`;
-//     try {
-//       const result = await this.db.query(sql, [userPub]);
-//       const remarks: Record<string, { remark: string; remarkInfo: string }> = {};
-//       result.values!.forEach(row => {
-//         remarks[row.friendPub] = {
-//           remark: row.remark || '',
-//           remarkInfo: row.remarkInfo || ''
-//         };
-//       });
-//       console.log(`加载备注信息: ${userPub}, 数量: ${Object.keys(remarks).length}`, remarks);
-//       return remarks;
-//     } catch (err) {
-//       console.error(`加载备注 ${userPub} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async saveMoment(moment: MomentV2): Promise<void> {
-//     const sql = `
-//       INSERT OR REPLACE INTO moments_v2 (momentId, userPub, content, timestamp, isHidden, mediaUrl, mediaType)
-//       VALUES (?, ?, ?, ?, ?, ?, ?)
-//     `;
-//     try {
-//       await this.db.run(sql, [
-//         moment.momentId,
-//         moment.userPub,
-//         moment.content,
-//         moment.timestamp,
-//         moment.isHidden ? 1 : 0,
-//         moment.mediaUrl || null,
-//         moment.mediaType || null,
-//       ]);
-//       console.log(`新朋友圈动态保存成功: ${moment.momentId}`);
-//     } catch (err) {
-//       console.error(`保存动态 ${moment.momentId} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async getMoments(userPubs: string[], limit: number, beforeTimestamp?: number): Promise<MomentV2[]> {
-//     let sql = `SELECT * FROM moments_v2 WHERE userPub IN (${userPubs.map(() => '?').join(',')})`;
-//     const params: any[] = [...userPubs];
-//     if (beforeTimestamp !== undefined) {
-//       sql += ' AND timestamp < ?';
-//       params.push(beforeTimestamp);
-//     }
-//     sql += ' ORDER BY timestamp DESC LIMIT ?';
-//     params.push(limit);
-//     try {
-//       const result = await this.db.query(sql, params);
-//       const moments = result.values!.map(row => ({
-//         momentId: row.momentId,
-//         userPub: row.userPub,
-//         content: row.content,
-//         timestamp: row.timestamp,
-//         isHidden: row.isHidden,
-//         mediaUrl: row.mediaUrl,
-//         mediaType: row.mediaType as 'image' | 'video' | 'audio' | undefined,
-//       }));
-//       console.log('查询朋友圈动态:', moments);
-//       return moments;
-//     } catch (err) {
-//       console.error('查询朋友圈动态失败:', err);
-//       return [];
-//     }
-//   }
-
-//   async updateMomentVisibility(momentId: string, isHidden: boolean): Promise<void> {
-//     const sql = 'UPDATE moments_v2 SET isHidden = ? WHERE momentId = ?';
-//     try {
-//       await this.db.run(sql, [isHidden ? 1 : 0, momentId]);
-//       console.log(`新朋友圈动态可见性更新: ${momentId}, isHidden: ${isHidden}`);
-//     } catch (err) {
-//       console.error(`更新动态可见性 ${momentId} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async deleteMoment(momentId: string): Promise<void> {
-//     try {
-//       await this.db.run('DELETE FROM moments_v2 WHERE momentId = ?', [momentId]);
-//       await this.db.run('DELETE FROM likes_v2 WHERE momentId = ?', [momentId]);
-//       await this.db.run('DELETE FROM comments_v2 WHERE momentId = ?', [momentId]);
-//       console.log(`新朋友圈动态删除成功: ${momentId}`);
-//     } catch (err) {
-//       console.error(`删除动态 ${momentId} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async saveLike(like: LikeV2): Promise<void> {
-//     const sql = 'INSERT OR IGNORE INTO likes_v2 (momentId, userPub, timestamp) VALUES (?, ?, ?)';
-//     try {
-//       await this.db.run(sql, [like.momentId, like.userPub, like.timestamp]);
-//       console.log(`新朋友圈点赞保存成功: ${like.momentId} by ${like.userPub}`);
-//     } catch (err) {
-//       console.error(`保存点赞 ${like.momentId} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async removeLike(momentId: string, userPub: string): Promise<void> {
-//     const sql = 'DELETE FROM likes_v2 WHERE momentId = ? AND userPub = ?';
-//     try {
-//       await this.db.run(sql, [momentId, userPub]);
-//       console.log(`新朋友圈取消点赞: ${momentId} by ${userPub}`);
-//     } catch (err) {
-//       console.error(`取消点赞 ${momentId} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async getLikes(momentId: string): Promise<string[]> {
-//     const sql = 'SELECT userPub FROM likes_v2 WHERE momentId = ?';
-//     try {
-//       const result = await this.db.query(sql, [momentId]);
-//       const likes = result.values?.map((row: any) => row.userPub) || [];
-//       console.log(`查询点赞 ${momentId}:`, likes);
-//       return likes;
-//     } catch (err) {
-//       console.error(`查询点赞 ${momentId} 失败:`, err);
-//       return [];
-//     }
-//   }
-
-//   async saveComment(comment: CommentV2): Promise<void> {
-//     const sql = `
-//       INSERT OR REPLACE INTO comments_v2 (commentId, momentId, userPub, content, timestamp, replyToCommentId, isDeleted)
-//       VALUES (?, ?, ?, ?, ?, ?, ?)
-//     `;
-//     try {
-//       await this.db.run(sql, [
-//         comment.commentId,
-//         comment.momentId,
-//         comment.userPub,
-//         comment.content,
-//         comment.timestamp,
-//         comment.replyToCommentId || null,
-//         comment.isDeleted ? 1 : 0,
-//       ]);
-//       console.log(`新朋友圈评论保存成功: ${comment.commentId}`);
-//     } catch (err) {
-//       console.error(`保存评论 ${comment.commentId} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async getComments(momentId: string): Promise<CommentV2[]> {
-//     const sql = 'SELECT * FROM comments_v2 WHERE momentId = ? ORDER BY timestamp DESC';
-//     try {
-//       const result = await this.db.query(sql, [momentId]);
-//       const comments = result.values!.map(row => ({
-//         commentId: row.commentId,
-//         momentId: row.momentId,
-//         userPub: row.userPub,
-//         content: row.content,
-//         timestamp: row.timestamp,
-//         replyToCommentId: row.replyToCommentId,
-//         isDeleted: row.isDeleted,
-//       }));
-//       console.log(`查询评论 ${momentId}:`, comments);
-//       return comments;
-//     } catch (err) {
-//       console.error(`查询评论 ${momentId} 失败:`, err);
-//       return [];
-//     }
-//   }
-
-//   async saveEpub(pub: string, epub: string): Promise<void> {
-//     const sql = `
-//       INSERT OR REPLACE INTO epubs (pub, epub)
-//       VALUES (?, ?)
-//     `;
-//     try {
-//       await this.db.run(sql, [pub, epub]);
-//       console.log(`Epub 保存成功: ${pub}`);
-//     } catch (err) {
-//       console.error(`保存 epub ${pub} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async getEpub(pub: string): Promise<string | null> {
-//     const sql = `SELECT epub FROM epubs WHERE pub = ?`;
-//     try {
-//       const result = await this.db.query(sql, [pub]);
-//       if (result.values!.length > 0) {
-//         console.log(`从本地获取 epub: ${pub}, 值: ${result.values![0].epub}`);
-//         return result.values![0].epub;
-//       }
-//       console.log(`本地未找到 epub: ${pub}`);
-//       return null;
-//     } catch (err) {
-//       console.error(`查询 epub ${pub} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async query(sql: string, params: any[] = []): Promise<any> {
-//     try {
-//       return await this.db.query(sql, params);
-//     } catch (err) {
-//       console.error(`执行查询 ${sql} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async run(sql: string, params: any[] = []): Promise<any> {
-//     try {
-//       return await this.db.run(sql, params);
-//     } catch (err) {
-//       console.error(`执行语句 ${sql} 失败:`, err);
-//       throw err;
-//     }
-//   }
-
-//   async execute(sql: string): Promise<any> {
-//     try {
-//       return await this.db.execute(sql);
-//     } catch (err) {
-//       console.error(`执行语句 ${sql} 失败:`, err);
-//       throw err;
-//     }
-//   }
-// }
-
-// export default StorageService;

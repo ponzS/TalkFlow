@@ -4,7 +4,7 @@
       <ion-header :translucent="true" collapse="fade">
         <ion-toolbar>
           <ion-buttons slot="start">
-            <ion-back-button @click="router.go(-1)" color="dark"></ion-back-button>
+            <ion-back-button :text="$t('back')" ></ion-back-button>
           </ion-buttons>
           <ion-title>{{ $t('sponsor6') }}</ion-title>
         </ion-toolbar>
@@ -65,7 +65,7 @@
       </ion-avatar>
                 <ion-label>
                   <h3>Daniel Raeder </h3>
-                  <p>P2PMesh Author - Let us achieve real e-to-equal media flow. These include audio streams and fast response data. He is a great open source developer.</p>
+                  <p>P2PMesh&PeerPigeon Author - Let us achieve real e-to-equal media flow. These include audio streams and fast response data. He is a great open source developer.</p>
                 </ion-label>
               </ion-item>
               <ion-item>
@@ -89,7 +89,7 @@
             <p class="tools-text">{{ $t('sponsor12') }}</p>
             <ul class="tools-list">
               <li><strong>{{ $t('sponsor13') }}</strong> TypeScript, JavaScript, Swift, Rust, Python</li>
-              <li><strong>{{ $t('sponsor14') }}</strong> GunDB, SQLite, IPFS</li>
+              <li><strong>{{ $t('sponsor14') }}</strong> GunDB, SQLite</li>
               <li><strong>{{ $t('sponsor15') }}</strong> VueJs, GunJs, ThreeJs, Capacitor, Ollama</li>
             </ul>
           </div>

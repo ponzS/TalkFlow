@@ -3,7 +3,7 @@
     <ion-header :translucent="true" collapse="fade">
       <ion-toolbar class="liquid-toolbar">
         <ion-buttons slot="start">
-          <ion-back-button color="dark"></ion-back-button>
+      <ion-back-button :text="$t('back')" ></ion-back-button>
         </ion-buttons>
         <ion-title>{{ $t('blacklist') }}</ion-title>
       </ion-toolbar>

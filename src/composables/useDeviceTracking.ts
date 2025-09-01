@@ -46,7 +46,7 @@ export function useDeviceTracking(gun: any) {
     try {
       const pair = await talkFlowCore.currentUserPair?.();
       if (pair) {
-        console.log('Retrieved key pair from core:', pair);
+        console.log('Retrieved key pair from core - pub:', pair.pub, 'has epub:', !!pair.epub);
         currentUserPair.value = pair as SEAKeyPair;
         return true;
       }
@@ -82,11 +82,11 @@ export function useDeviceTracking(gun: any) {
       }
 
       const credentialsData = result.values[0].value;
-      console.log('Retrieved credentials:', credentialsData);
+      console.log('Retrieved credentials from database');
       const credentials = JSON.parse(credentialsData);
 
       if (!credentials.encryptedKeyPair || !credentials.passphrase) {
-        console.log('Credentials missing encryptedKeyPair or passphrase:', credentials);
+        console.log('Credentials missing encryptedKeyPair or passphrase');
         showToast('Invalid user credentials', 'error');
         return false;
       }
@@ -100,7 +100,7 @@ export function useDeviceTracking(gun: any) {
 
       const keyPair = JSON.parse(keyPairString);
       if (!keyPair || !keyPair.epub) {
-        console.log('Recovered key pair is invalid:', keyPair);
+        console.log('Recovered key pair is invalid - missing epub or invalid structure');
         showToast('Invalid key pair recovered', 'error');
         return false;
       }

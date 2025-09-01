@@ -1,10 +1,9 @@
-<!-- src/views/FriendSettings.vue -->
 <template>
   <ion-page>
     <ion-header :translucent="true"  collapse="fade">
       <ion-toolbar class="liquid-toolbar">
         <ion-buttons slot="start">
-          <ion-back-button color="dark" @click="router.go(-1)"></ion-back-button>
+          <ion-back-button :text="$t('back')" ></ion-back-button>
         </ion-buttons>
         <ion-title>Setting</ion-title>
       </ion-toolbar>
@@ -37,10 +36,10 @@
             <ion-label>{{$t('addblacklist')}}</ion-label>
             <ion-toggle slot="end" v-model="isBlocked" @ionChange="toggleBlacklist"></ion-toggle>
           </ion-item>
-          <ion-item lines="none">
+          <!-- <ion-item lines="none">
             <ion-label>{{$t('colosenotify')}}</ion-label>
             <ion-toggle slot="end" v-model="isNotificationDisabled" @ionChange="toggleNotification"></ion-toggle>
-          </ion-item>
+          </ion-item> -->
         </div>
 
         <!-- Action Buttons -->
@@ -74,17 +73,17 @@ import {
   IonButtons,
   IonBackButton,
 } from '@ionic/vue';
-import { useNotification } from '@/composables/useNotification';
+
 const chatFlow = getTalkFlowCore();
 const { friendRemarks, updateFriendRemark, addToBlacklist, removeFromBlacklist, isInMyBlacklist, removeBuddy, storageServ } = chatFlow;
 const router = useRouter();
 const route = useRoute();
-const notification = useNotification();
+
 const friendPub = ref(route.query.pub as string);
 const newRemark = ref('');
 const newRemarkInfo = ref('');
 const isBlocked = ref(false);
-const isNotificationDisabled = ref(false);
+
 onMounted(async () => {
   if (!friendPub.value) {
     router.back();
@@ -117,9 +116,7 @@ function deleteFriend() {
     router.push('/index');
   }
 }
-async function toggleNotification() {
-  await notification.toggleFriendNotification(friendPub.value, isNotificationDisabled.value);
-}
+
 </script>
 
 <style scoped>

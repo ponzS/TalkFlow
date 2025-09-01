@@ -76,9 +76,9 @@ interface GunAdapter {
 }
 
 export interface IGunSQLiteAdapter {
-  initialize(): Promise<void>;
+ 
   getAdapter(): GunAdapter;
-  isReady: Ref<boolean>;
+
 }
 
 // 单例实例
@@ -91,63 +91,24 @@ export function useGunSQLiteAdapter(
 ): IGunSQLiteAdapter {
   if (instance) return instance;
 
-  const isReady: Ref<boolean> = ref(false);
+
   const storageServ = storageService;
   let queue: RequestQueue | null = null;
 
-  async function initialize() {
-    if (isReady.value) return;
-    try {
-      //log.info('Initializing Gun SQLite adapter...');
-      // 检查 StorageService 是否已初始化数据库
-      if (!storageServ.db) {
-        //log.warn('StorageService database not initialized, initializing now...');
-        const dbName = 'talkflowdb';
-        const loadToVersion = storageServ.loadToVersion || 2;
-        storageServ.db = await sqliteService.openDatabase(dbName, loadToVersion, false);
-      } else {
-        const isOpen = await storageServ.db.isDBOpen();
-        if (!isOpen) {
-          //log.warn('Database not open, reopening...');
-          await storageServ.db.open();
-        }
-      }
 
-      // 创建 gun_nodes 表
-      const result = await storageServ.execute(`
-        CREATE TABLE IF NOT EXISTS gun_nodes (
-          key TEXT PRIMARY KEY NOT NULL,
-          value TEXT NOT NULL,
-          timestamp INTEGER DEFAULT (strftime('%s', 'now'))
-        )
-      `);
-      if (result.changes && result.changes.changes >= 0) {
-        //log.info('gun_nodes table created or already exists');
-      } else {
-        throw new Error('Failed to create gun_nodes table: no changes returned');
-      }
-
-      queue = new RequestQueue(storageServ);
-      isReady.value = true;
-      //log.info('Gun SQLite adapter initialized successfully');
-    } catch (err) {
-      //log.error('Failed to initialize Gun SQLite adapter:', err);
-      throw err;
-    }
-  }
 
   const adapterCore = {
     storageServ,
     queue,
     opt: async function (context: any, options: any) {
      // log.info('Adapter opt called:', { context, options });
-      await initialize();
+    
       return options;
     },
     get: async function (key: string, done: (err: Error | null, node: any) => void) {
       try {
-        if (!isReady.value) await initialize();
-        if (!queue) throw new Error('Adapter not initialized');
+    
+      //  if (!queue) throw new Error('Adapter not initialized');
         const data = await queue.get(key);
         done(null, data);
       } catch (err) {
@@ -157,8 +118,8 @@ export function useGunSQLiteAdapter(
     },
     put: async function (node: any, done: (err: Error | null) => void) {
       try {
-        if (!isReady.value) await initialize();
-        if (!queue) throw new Error('Adapter not initialized');
+      
+       // if (!queue) throw new Error('Adapter not initialized');
         if (typeof node !== 'object' || node === null) throw new Error('Invalid node');
         const souls = Object.keys(node).length > 1 ? Object.keys(node) : [node._?.['#'] || node._.id];
         if (!souls[0]) throw new Error('Missing soul in node');
@@ -179,9 +140,9 @@ export function useGunSQLiteAdapter(
   Flint.register(adapter);
 
   const gunSQLiteAdapter: IGunSQLiteAdapter = {
-    initialize,
+
     getAdapter: () => adapter,
-    isReady,
+
   };
 
   instance = gunSQLiteAdapter;

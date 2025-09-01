@@ -9,11 +9,11 @@ const customRoutes = [
 
   {
     path: '/',
-    component: () => import('@/pages/i18n.vue'),
+    component: () => import('@/components/phone/IndexPage.vue'),
   },
   {
     path: '/index',
-    component: () => import('@/pages/index.vue'),
+    component: () => import('@/components/phone/IndexPage.vue'),
   },
   {
     path: '/chatpage',
@@ -36,13 +36,9 @@ const customRoutes = [
 
   },
   {
-    path: '/moment/:momentId',
-    component: () => import('@/pages/MomentDetail.vue')
+    path: '/FriendRequests',
+    component: () => import('@/pages/FriendRequests.vue')
 
-  },
-  {
-    path: '/group-key-pairs',
-    component: () => import('@/pages/GroupKeyPairs.vue')
   },
   {
     path: '/group/:pub/messages',
@@ -53,7 +49,21 @@ const customRoutes = [
     component: () => import('@/pages/GroupMembers.vue')
   },
  
-  
+  {
+    path: '/user-guide',
+    component: () => import('@/pages/UserGuide.vue')
+  },
+ 
+  {
+    path: '/notifications',
+    name: 'Notifications',
+    component: () => import('@/pages/Notifications.vue'),
+  },
+  {
+    path: '/call',
+    name: 'CallPage',
+    component: () => import('@/pages/CallPage.vue'),
+  },
 
   ...routes,
 ]
@@ -63,25 +73,6 @@ const router = createRouter({
   routes: customRoutes,
 })
 
-
-// 导航守卫
-// router.beforeEach((to, from, next) => {
-//   // 如果用户没有登录，且访问的不是 'i18n.vue' 页面，则重定向到 'i18n.vue'
-//   if (!isLoggedIn.value && to.path !== '/') {
-//     next('/');  // 重定向到 i18n 页面
-//   } else {
-//     next();  // 允许访问目标路由
-//   }
-// });
-
-// router.beforeEach(async (to, from, next) => {
-//   const { isLoggedIn } = await import('@/composables/TalkFlowCore');
-//   if (!isLoggedIn.value && to.path !== '/') {
-//     next('/');
-//   } else {
-//     next();
-//   }
-// });
 
 
 export default router

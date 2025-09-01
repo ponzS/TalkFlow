@@ -18,6 +18,13 @@ class SQLiteService implements ISQLiteService {
     sqliteConnection = new SQLiteConnection(CapacitorSQLite);
     dbNameVersionDict: Map<string, number> = new Map();
 
+    // constructor() {
+    //     // 禁用SQLite调试日志以防止敏感数据泄露
+    //     if (typeof (CapacitorSQLite as any).setLogLevel === 'function') {
+    //         (CapacitorSQLite as any).setLogLevel('error');
+    //     }
+    // }
+
     getPlatform(): string {
         return this.platform;
     }

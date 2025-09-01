@@ -4,11 +4,11 @@
     
 
     <ion-content :fullscreen="true" class="qr-content" :style="{ '--keyboard-height': keyboardHeight + 'px' }">
-      <div class="back-button1">
+      <!-- <div class="back-button1">
         <div class="back-button" @click="goBack">
           <div class="i-material-symbols-arrow-back-ios-new-rounded"></div>
         </div>
-      </div>
+      </div> -->
 
       <div class="container">
         <!-- 二维码显示区域 -->
@@ -110,7 +110,8 @@ async function handlePasteFromClipboard() {
       }
     }
   } catch (err) {
-    console.error('Failed to read clipboard contents: ', err);
+    // Failed to read clipboard contents
+    // console.error('Failed to read clipboard contents:', err);
   }
 }
 

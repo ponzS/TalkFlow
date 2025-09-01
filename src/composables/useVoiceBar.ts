@@ -1,6 +1,5 @@
 import { ref, Ref, onMounted } from 'vue';
 import { VoiceRecorder } from 'capacitor-voice-recorder';
-import { SpeechRecognition } from '@capacitor-community/speech-recognition';
 import { Device } from '@capacitor/device';
 
 export function useVoiceBar() {
@@ -23,25 +22,24 @@ export function useVoiceBar() {
       if (!perm.value) {
         const request = await VoiceRecorder.requestAudioRecordingPermission();
         if (!request.value) {
-          console.log('用户拒绝录音权限');
+         // console.log('用户拒绝录音权限');
           return;
         }
-        console.log('录音权限已授予');
+       // console.log('录音权限已授予');
       } else {
-        console.log('已具备录音权限，无需重复请求');
+       // console.log('已具备录音权限，无需重复请求');
       }
 
-      const speech = await SpeechRecognition.available();
-      if (!speech.available) {
-        console.log('设备不支持语音识别');
-      }
+
+      
+
 
       const deviceInfo = await Device.getLanguageCode();
       const systemLanguage = deviceInfo.value || navigator.language || 'en-US';
       recognitionLanguage.value = normalizeLanguage(systemLanguage);
-      console.log('系统语言:', systemLanguage, '标准化后:', recognitionLanguage.value);
+     // console.log('系统语言:', systemLanguage, '标准化后:', recognitionLanguage.value);
     } catch (err) {
-      console.error('初始化失败:', err);
+     // console.error('初始化失败:', err);
     }
   };
 
@@ -61,7 +59,7 @@ export function useVoiceBar() {
       if (!perm.value) {
         const request = await VoiceRecorder.requestAudioRecordingPermission();
         if (!request.value) {
-          console.log('录音权限被拒绝');
+         // console.log('录音权限被拒绝');
           return;
         }
       }
@@ -69,14 +67,16 @@ export function useVoiceBar() {
       isRecording.value = true;
       recordingDuration.value = 0;
       triggerLightHaptic();
-      console.log('开始录音');
+     // console.log('开始录音');
     } catch (err) {
-      console.error('录音启动失败:', err);
+     // console.error('录音启动失败:', err);
       isRecording.value = false;
     }
   }
 
   async function stopRecording(): Promise<{ audioData: string | null; msDuration: number }> {
+   await initialize();
+    triggerLightHaptic();
     if (!isRecording.value) return { audioData: null, msDuration: 0 };
     try {
       const result = await VoiceRecorder.stopRecording();
@@ -85,12 +85,12 @@ export function useVoiceBar() {
         const audioData = `data:audio/aac;base64,${result.value.recordDataBase64}`;
         recordedAudio.value = audioData;
         recordingDuration.value = result.value.msDuration / 1000;
-        console.log('录音停止，实际时长:', result.value.msDuration, '毫秒');
+       // console.log('录音停止，实际时长:', result.value.msDuration, '毫秒');
         return { audioData, msDuration: result.value.msDuration };
       }
       return { audioData: null, msDuration: 0 };
     } catch (err) {
-      console.error('停止录音失败:', err);
+      //console.error('停止录音失败:', err);
       return { audioData: null, msDuration: 0 };
     }
   }
@@ -98,7 +98,7 @@ export function useVoiceBar() {
   async function sendVoiceMessage(): Promise<void> {
     const { audioData, msDuration } = await stopRecording();
     if (!audioData) {
-      showToast('Null', 'warning');
+    //  showToast('Null', 'warning');
       return;
     }
     await sendChat('voice', audioData, msDuration);
@@ -109,6 +109,7 @@ export function useVoiceBar() {
   }
 
   function playVoice(audioUrl: string | undefined, msgId: string): void {
+    triggerLightHaptic();
     if (!audioUrl) {
       //console.log('无效的 audioUrl:', audioUrl);
       return;
@@ -158,60 +159,7 @@ export function useVoiceBar() {
     }
   }
 
-  async function transcribeAudio(audioUrl: string, msgId: string): Promise<void> {
-    try {
-      await SpeechRecognition.requestPermissions();
-      const speechAvailable = await SpeechRecognition.available();
-      if (!speechAvailable.available) {
-        showToast('error', 'warning');
-        return;
-      }
-
-      const audioBlob = await fetch(audioUrl).then(res => res.blob());
-      const arrayBuffer = await audioBlob.arrayBuffer();
-      const audioContext = new AudioContext();
-      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
-
-      let transcription = '';
-      SpeechRecognition.addListener('partialResults', (data: { matches: string[] }) => {
-        transcription = data.matches[0] || 'Identifying...';
-      });
-
-      await SpeechRecognition.start({
-        language: recognitionLanguage.value,
-        maxResults: 1,
-        partialResults: true,
-        popup: false,
-      });
-
-      const source = audioContext.createBufferSource();
-      source.buffer = audioBuffer;
-      source.connect(audioContext.destination);
-      source.start(0);
-
-      await new Promise(resolve => setTimeout(resolve, audioBuffer.duration * 1000 + 500));
-      await SpeechRecognition.stop();
-
-      transcriptions.value[msgId] = transcription || '无法识别';
-      console.log('语音转文字:', transcription);
-      showToast('success', 'success');
-      audioContext.close();
-    } catch (err) {
-      console.error('语音转文字失败:', err);
-      showToast('error', 'error');
-      transcriptions.value[msgId] = 'error';
-    }
-  }
-
-  function formatDuration(seconds: number): string {
-    const sec = Math.floor(seconds);
-    const ms = Math.round((seconds - sec) * 1000);
-    return `${sec}.${Math.floor(ms / 100)}s`;
-  }
-
-  onMounted(() => {
-    initialize();
-  });
+ 
 
   return {
     isRecording,
@@ -226,7 +174,7 @@ export function useVoiceBar() {
     sendVoiceMessage,
     playVoice,
     stopVoice,
-    transcribeAudio,
-    formatDuration,
+ 
+    initialize
   };
 }

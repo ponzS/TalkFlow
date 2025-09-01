@@ -4,9 +4,9 @@
       <ion-header :translucent="true" collapse="fade">
         <ion-toolbar >
           <ion-buttons slot="start">
-            <ion-back-button  @click="router.go(-1)" color="dark"></ion-back-button>
+              <ion-back-button :text="$t('back')" ></ion-back-button>
           </ion-buttons>
-          <ion-title>{{ $t('dAi') }}</ion-title>
+          <ion-title>De Ai</ion-title>
         </ion-toolbar>
       </ion-header>
   
@@ -15,7 +15,7 @@
 
         <ion-header collapse="condense" >
           <ion-toolbar>
-            <ion-title size="large">{{ $t('dAi') }}</ion-title>
+            <ion-title size="large">De Ai</ion-title>
           </ion-toolbar>
         </ion-header>
 
@@ -23,7 +23,7 @@
         <div class="content-wrapper">
           <!-- Image Preview -->
           <div class="image-preview">
-            <p class="preview-label">Windows&MacOS</p>
+            <p class="preview-label">Windows&MacOS&UI</p>
             <img
               src="@/assets/talkflowai.jpg"
             
@@ -77,7 +77,11 @@
           <!-- GitHub Link -->
           <ion-button expand="block" class="github-button" @click="openGitHub">
             <ion-icon :icon="logoGithub" slot="start"></ion-icon>
-            {{$t('github4')}}
+             D-AI*Linux&MacOS&Windows
+          </ion-button>
+          <ion-button expand="block" class="github-button" @click="openGitHub1">
+            <ion-icon :icon="logoGithub" slot="start"></ion-icon>
+            SouceCode&UI
           </ion-button>
         </div>
       </ion-content>
@@ -93,6 +97,9 @@
   
   // Function to open GitHub link
   const openGitHub = () => {
+    window.open('https://github.com/ponzS/Gun-Ollama-Relay', '_blank')
+  }
+  const openGitHub1 = () => {
     window.open('https://github.com/ponzS/TalkFlow', '_blank')
   }
   </script>
@@ -151,7 +158,7 @@
     font-family: 'Montserrat', sans-serif;
     font-weight: 600;
     transition: transform 0.2s ease;
-    margin-bottom: 139px;
+    /* margin-bottom: 139px; */
   }
   
   .github-button:hover {

@@ -5,14 +5,24 @@
     <ion-header :translucent="true" collapse="fade">
       <ion-toolbar class="liquid-toolbar">
         <ion-buttons slot="start">
-          <ion-back-button color="dark"></ion-back-button>
+     <ion-back-button :text="$t('back')" ></ion-back-button>
         </ion-buttons>
         <ion-title>{{ $t('language') }}</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content :fullscreen="true" class="liquid-content">
-      <div class="brand">{{ $t('hello') }}</div>
+
+
+         <ion-header collapse="condense" >
+          <ion-toolbar>
+            <h1 style="margin: 10px;font-weight: 900;font-size: 39px;">
+ {{ $t('language') }}
+            </h1>
+          </ion-toolbar>
+        </ion-header>
+
+      <!-- <div class="brand">{{ $t('hello') }}</div> -->
 
       <ion-list class="language-options">
         <ion-item

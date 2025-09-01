@@ -7,7 +7,7 @@
 
   <ion-content style="margin:0;padding:0;--background: transparent;" :scroll-y="false">
 
-  <div style="height:100px"></div>
+  <div style="height:77px"></div>
 
 
 
@@ -44,7 +44,7 @@
               round: false,
               dark: isDark,
               p3: true,
-            })
+            } as any)
           "
         ></object>
         <div class="card-content" v-show="!showCard">
@@ -60,6 +60,7 @@
       </div>
       <div class="gameboy-screen">
         <div class="screen-content">
+     
           <div v-if="showCreateGroup" class="input-container">
             <input
               v-model="newGroupName"
@@ -100,9 +101,9 @@
         <button class="left-button down" @click="toggleScanner">
           <ion-icon :icon="scanSharp"></ion-icon>
         </button>
-        <button class="left-button down" @click="openStartMenu">
+        <!-- <button class="left-button down" @click="openStartMenu">
           <ion-icon :icon="compassOutline"></ion-icon>
-        </button>
+        </button> -->
         <!-- <button class="left-button down" @click="openEndMenu">
           <ion-icon :icon="settingsOutline"></ion-icon>
         </button> -->
@@ -120,12 +121,14 @@
         <button class="side-button down" @click="confirmDelete(centeredCard?.pub)" :disabled="!centeredCard">
           <ion-icon :icon="trashOutline"></ion-icon>
         </button>
-        <button class="side-button down" @click="openEndMenu">
+        <!-- <button class="side-button down" @click="openEndMenu">
           <ion-icon :icon="settingsOutline"></ion-icon>
-        </button>
-
+        </button> -->
+        
       </div>
       <div class="gameboy-buttons">
+        <img  src="@/assets/gun.svg" style=" width: 15%; min-width: 150px;">
+      
         <button
           class="gameboy-button action"
           :class="{ disabled: isAtLeftEdge }"
@@ -142,6 +145,9 @@
         >
           <ion-icon :icon="arrowForwardOutline"></ion-icon>
         </button>
+
+
+     
       </div>
     </div>
 
@@ -179,7 +185,7 @@
                     round: false,
                     dark: isDark,
                     p3: true,
-                  })
+                  } as any)
                 "
               ></object>
             </ion-label>
@@ -309,14 +315,23 @@ import { useTheme } from '@/composables/useTheme';
 const { isDark } = useTheme();
 
 onMounted(async () => {
+  console.log('🎬 Card 组件开始挂载...');
+  console.log('📊 挂载前 groups 数量:', groups.value.length);
+  
   mountClass();
- await loadGroups();
+  await loadGroups();
+  
+  console.log('📊 loadGroups 后 groups 数量:', groups.value.length);
+  console.log('📋 当前群组列表:', groups.value.map(g => g.name));
 
   setTimeout(async () => {
-  await  updateCenteredCard();
-   await updateEdgeStatus();
+    await updateCenteredCard();
+    await updateEdgeStatus();
     
     statusDotColor.value = centeredCard.value ? '#00ff00' : '#ff0000';
+    
+    console.log('🎯 Card 组件挂载完成!');
+    console.log('📊 最终 groups 数量:', groups.value.length);
   }, 500);
 });
 
@@ -334,6 +349,27 @@ watch(centeredCard, (newValue, oldValue) => {
     }, 200);
   }
 });
+
+// 监听 groups 状态变化，追踪数据丢失问题
+watch(groups, (newGroups, oldGroups) => {
+  console.log('🔍 Groups 状态变化检测:');
+  console.log('  📊 新数量:', newGroups.length);
+  console.log('  📊 旧数量:', oldGroups ? oldGroups.length : 'undefined');
+  console.log('  📋 新群组列表:', newGroups.map(g => g.name));
+  console.log('  📋 旧群组列表:', oldGroups ? oldGroups.map(g => g.name) : 'undefined');
+  
+  // 如果群组数量减少且不是删除操作，可能是数据被重置
+  if (oldGroups && newGroups.length < oldGroups.length) {
+    console.warn('⚠️ 群组数量减少! 可能存在数据重置问题');
+    console.trace('调用堆栈:');
+  }
+  
+  // 如果变成空数组，记录详细信息
+  if (oldGroups && oldGroups.length > 0 && newGroups.length === 0) {
+    console.error('❌ 群组被清空! 这不应该发生');
+    console.trace('调用堆栈:');
+  }
+}, { deep: true });
 
 const formatPubKey = (pub: string) => {
   return pub.length > 6 ? `${pub.slice(0, 6)}...` : pub;
@@ -497,7 +533,6 @@ const createGroupWithToast = async () => {
       color: 'success',
     });
     await toast.present();
-    loadGroups();
     setTimeout(updateCenteredCard, 100);
   } catch (error) {
     console.error('Failed to create group:', error);
@@ -532,7 +567,6 @@ const joinGroupWithToast = async () => {
       color: 'success',
     });
     await toast.present();
-    loadGroups();
     setTimeout(updateCenteredCard, 100);
   } catch (error) {
     console.error('Failed to join group:', error);

@@ -1,1 +1,7 @@
 node_modules
+ios
+android
+electron
+gun-vue
+gun-vue-call-relay
+dist

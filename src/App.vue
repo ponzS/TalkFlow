@@ -2,45 +2,48 @@
 
 
   <ion-app>
-  
-    <!-- <WindowControls /> -->
+  <!-- <div class="callWindow" v-show="isCallWindow">
+   <CallWindow/>
+  </div>
+  <div class="callbutton" v-if="isCallButton">
 
-    <GlobalToast />
- 
- <div style="display: none;">
-<RelayMode/>
- </div>
+    <div @click="isCallWindow = true">
+      open call window
+    </div>
+  </div> -->
 
- <!-- <div style="z-index: 9999;margin: 50%;">
-<AuthForm/>
-</div> -->
+    <ion-router-outlet  v-if="isLoggedIn"/>
 
-    <ion-router-outlet v-if="!isLoading"  />
 
+    <ion-modal :is-open="!isLoggedIn" :can-dismiss="false" class="login-modal" :key="`modal-${isLoggedIn}`">
+     
+      <ion-content >
+    <LoginMode/>
+      </ion-content>
+    </ion-modal>
 
     <transition name="fade">
-      <div v-if="isLoading" class="loading-overlay">
-        <p class="talkflow-title-text"><span style="color: black">Talk</span><span>Flow</span></p>
+      <div v-if="!isLoggedIn" class="loading-overlay">
+        <div class="loading-content">
+          <div style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center;">
+       
+                <p class="talkflow-title-text"><span style="color: black">Talk</span><span>Flow</span></p>
+</div>
+        </div>
       </div>
     </transition>
+
   </ion-app>
 </template>
 
-<script setup lang="ts">
+<script setup lang="ts" vapor>
 import { onMounted, onUnmounted, ref } from 'vue';
-import { IonApp, IonRouterOutlet,IonMenu } from '@ionic/vue';
+import { IonApp, IonRouterOutlet, IonModal, IonHeader, IonToolbar, IonTitle, IonContent, IonButton } from '@ionic/vue';
 import { getTalkFlowCore } from '@/composables/TalkFlowCore';
-import { useRouter } from 'vue-router';
-//import { useNotification } from '@/composables/useNotification';
 import { useLanguage } from '@/composables/useLanguage';
-const { languages, selectedLanguage, selectLanguage: selectLang, initLanguage } = useLanguage();
-// import { useNetworkStatus,cleanupNetworkStatus } from '@/composables/useNetworkStatus';
-import { VoiceRecorder } from 'capacitor-voice-recorder';
-//import { initializeRoomTables } from '@/composables/useRoomChat';
-import RelayMode from './components/GUNtest/RelayMode.vue';
+const { initLanguage } = useLanguage();
 const chatFlowStore = getTalkFlowCore();
-// const networkStatusStore = useNetworkStatus();
-
+import CallWindow from '@/pages/CallPage.vue'
 
 
 
@@ -48,184 +51,72 @@ const {
   restoreLoginState, 
   storageServ, 
   offlineNotice, 
-  // pingNetworkAndPeers, 
-  showToast, 
-  isLoggedIn, 
-  currentUserPub, 
-  // restoreLoginState1,
-  isLoading,
-  gun,
+  // isLoading,
   // currentUserPair,
-  isLargeScreen,
-  updateScreenSize
+  isLoggedIn,
+  // isCallWindow,
+  // isCallButton
 } = chatFlowStore;
-const router = useRouter();
-//const notification = useNotification();
 
 
-// 初始化网络状态检查
-// async function initializeNetworkStatus() {
-//   const isNetworkAvailable = await pingNetworkAndPeers();
-//   if (!isNetworkAvailable) {
-//     offlineNotice.value = '您已离线，消息发送将失败';
-//     showToast(offlineNotice.value, 'warning');
-//     console.log('应用启动时检测到离线状态');
-//   } else {
-//     offlineNotice.value = null;
-//     console.log('应用启动时检测到在线状态');
-//   }
-// }
-
-// 网络状态监听器
 function setupNetworkListener() {
   let debounceTimer: NodeJS.Timeout;
   window.addEventListener('online', async () => {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(async () => {
-      console.log('网络恢复');
+    //  console.log('网络恢复');
       offlineNotice.value = null;
-      // if (isLoggedIn.value && currentUserPub.value && router.currentRoute.value.path !== '/index') {
-      //   // await restoreLoginState1();
-      //   router.replace('/index');
-      // } else if (!isLoggedIn.value && router.currentRoute.value.path !== '/') {
-      //   router.replace('/');
-      // }
-      // if (!(await pingNetworkAndPeers())) {
-      //   showToast('节点不可达', 'warning');
-      // }
-    }, 100); // 防抖 500ms
+
+    }, 10000); 
   });
-  // window.addEventListener('offline', () => {
-  //   console.log('网络断开');
-  //   offlineNotice.value = '您已离线';
-  //   showToast(offlineNotice.value, 'warning');
-  // });
-}
-// 初始化音频权限
-async function initializeAudioPermissions() {
-  try {
-    const perm = await VoiceRecorder.hasAudioRecordingPermission();
-    if (!perm.value) {
-      const request = await VoiceRecorder.requestAudioRecordingPermission();
-      if (request.value) {
-        // console.log('音频权限已授予');
-      } else {
-        showToast('未授予音频权限，可能影响语音功能', 'warning');
-        // console.log('用户拒绝了音频权限');
-      }
-    } else {
-      console.log('已具备音频权限');
-    }
-  } catch (err) {
-    console.error('初始化音频权限失败:', err);
-  }
-}
-// 模拟录音重置音频状态
-// async function resetAudioState() {
-//   try {
-//     console.log('开始模拟重置音频状态');
-//     const context = new AudioContext();
-//     if (context.state === 'suspended') {
-//       await context.resume();
-//       console.log('AudioContext 已激活');
-//     }
 
-//     // 使用 VoiceRecorder 模拟短暂录音重置
-//     const perm = await VoiceRecorder.hasAudioRecordingPermission();
-//     if (perm.value) {
-//       await VoiceRecorder.startRecording();
-//       await new Promise(resolve => setTimeout(resolve, 50)); // 极短时间
-//       await VoiceRecorder.stopRecording();
-//       console.log('通过 VoiceRecorder 模拟录音完成，音频状态已重置');
-//     } else {
-//       // 回退到 Web Audio 模拟
-//       const silentAudio = new Audio('data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=');
-//       silentAudio.play().then(() => {
-//         setTimeout(() => {
-//           silentAudio.pause();
-//           silentAudio.src = '';
-//           context.close();
-//           console.log('Web Audio 模拟录音完成，音频状态已重置');
-//         }, 100);
-//       }).catch(err => console.error('模拟音频播放失败:', err));
-//     }
-//   } catch (err) {
-//     console.error('模拟重置音频状态失败:', err);
-//   }
-// }
-
-// 保存原始 console.warn
- const originalConsoleWarn = console.warn;
-
-// 过滤 Gun.js 警告
-function filterGunWarnings(...args: any[]) {
-  const message = args[0]?.toString() || '';
-  if (message.includes('Deprecated internal utility will break in next version')) {
-    return; // 忽略 Gun.js 警告
-  }
-  originalConsoleWarn.apply(console, args); // 输出其他警告
 }
 
+ 
 
 
-
-// const { listenRooms } = useRoomChat(gun, storageServ);
 onMounted(async () => {
-   console.warn = filterGunWarnings;
-  // notification.requestNotificationPermission();
+ 
+
+ 
 
 
-  isLoading.value = true;
-
-
-  window.addEventListener('resize', updateScreenSize);
-  
-  await initLanguage();
   await storageServ.initializeDatabase();
 
-  //await initializeRoomTables(storageServ);
-  // const { listenRooms } = useRoomChat(gun, storageServ);
-  // listenRooms();
+  await initLanguage();
   await setupNetworkListener(); 
   await restoreLoginState();
-  // await initializeNetworkStatus(); 
-  
-  await initializeAudioPermissions();
-  // await resetAudioState();
-  // 确保 networkStatusStore 已加载持久化状态
-  // console.log('App initialized with enabledPeer:', networkStatusStore.enabledPeer.value);
-  // setTimeout(() => {
-  //   listenRooms();
-  //   // console.log('群聊监听已启动');
-  // }, 0);
-  setTimeout(() => {
-    isLoading.value = false;
-  }, 1000);
 
-  //   const { listenRooms } = useRoomChat(gun, storageServ);
-  // listenRooms();
-  // document.addEventListener('deviceready', () => {
-  //   if (window.cordova && window.cordova.plugins && window.cordova.plugins.backgroundMode) {
-  //     window.cordova.plugins.backgroundMode.enable();
-  //     console.log('Background mode enabled');
-  //   } else {
-  //     console.warn('Background mode plugin is not available');
-  //   }
-  // }, false);
 });
 
-onUnmounted(() => {
-  window.removeEventListener('resize', updateScreenSize);
-});
 
-// onUnmounted(() => {
-
-//   window.removeEventListener('online', () => {});
-//   window.removeEventListener('offline', () => {});
-// });
 </script>
 
 <style scoped>
+.empty-icon {
+  /* max-width: 100%;
+  max-height: 300px; */
+  margin:0  auto;
+  width: 200px;
+  height: 200px;
+
+  /* color: var(--ion-text-color); */
+}
+
+.svg-icon {
+  width: min(200px, 50vw);
+  height: min(200px, 50vw);
+  max-width: 200px;
+  max-height: 200px;
+  background-color: var(--ion-text-color);
+  mask: url('@/assets/gun.svg') no-repeat center;
+  mask-size: contain;
+  -webkit-mask: url('@/assets/gun.svg') no-repeat center;
+  -webkit-mask-size: contain;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  margin-top: -30px;
+}
 /* 加载遮罩层样式（毛玻璃效果） */
 .loading-overlay {
   position: fixed;
@@ -239,6 +130,34 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+}
+
+.collaboration-symbol {
+  font-size: min(100px, 15vw);
+  font-weight: 300;
+  color: var(--ion-text-color);
+  opacity: 0.6;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    Roboto,
+    Oxygen,
+    Ubuntu,
+    Cantarell,
+    'Open Sans',
+    'Helvetica Neue',
+    sans-serif;
+  transition: all 0.3s ease;
 }
 
 /* Fade 过渡动画 */
@@ -273,7 +192,7 @@ onUnmounted(() => {
 }
 
 .talkflow-title-text {
-  font-size: 20vw;
+  font-size: min(100px, 20vw);
   font-weight: bold;
   color: transparent;
   text-shadow: 0 0 10px 0 rgba(0, 255, 217, 0.5);
@@ -296,8 +215,10 @@ onUnmounted(() => {
     'Open Sans',
     'Helvetica Neue',
     sans-serif;
-
-    /* filter: blur(3px); */
+  margin: 0;
+  text-align: center;
+margin-bottom: -10px;
+ 
 }
 
 @keyframes gradientBreath {
@@ -338,30 +259,11 @@ body,
   padding: 0;
   width: 100%;
   height: 100%;
-  /* touch-action: none;
-  touch-action: pan-x pan-y;
-  user-select: none;
-  -webkit-user-select: none;
-  -moz-user-select: none;
-  -ms-user-select: none; */
   background-color: transparent;
   --background-color: transparent;
   overflow: hidden;
-
 }
 
-/* ion-page {
-  width: 100% !important;
-}
-
-ion-content {
-    width: 100% !important;
-  }
-@media (max-width: 768px) {
-  ion-content {
-    width: 100% !important;
-  }
-} */
 body {
   font-family:
     Inter,
@@ -380,5 +282,52 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   
+}
+
+/* 登录模态窗口样式 */
+.login-modal {
+  --width: 100%;
+  --height: 100%;
+  --border-radius: 0;
+}
+
+.login-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  text-align: center;
+  padding: 2rem;
+}
+
+.logo-section {
+  margin-bottom: 3rem;
+}
+
+.login-form {
+  max-width: 400px;
+  width: 100%;
+}
+
+.login-form h2 {
+  color: var(--ion-text-color);
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.login-form p {
+  color: var(--ion-color-medium);
+  margin-bottom: 2rem;
+  line-height: 1.5;
+}
+
+.login-form ion-button {
+  --border-radius: 12px;
+  --padding-top: 16px;
+  --padding-bottom: 16px;
+  font-weight: 600;
+  margin-top: 1rem;
 }
 </style>

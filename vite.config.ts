@@ -2,42 +2,116 @@ import legacy from '@vitejs/plugin-legacy'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import { defineConfig } from 'vite'
+// @ts-ignore
 import Components from 'unplugin-vue-components/vite'
 import AutoImport from 'unplugin-auto-import/vite'
 import Pages from 'vite-plugin-pages'
 import { VitePWA } from 'vite-plugin-pwa'
+import tailwindcss from '@tailwindcss/vite'
+
 // import inject from "@rollup/plugin-inject";
 // https://vitejs.dev/config/
+
+
+
+
 export default defineConfig({
+  base: './', // 使用相对路径，适用于任何部署路径
+ 
 
   plugins: [
     vue(),
     legacy(),
     Components(),
+     tailwindcss(),
+  
     // inject({
     //   Buffer: ["buffer", "Buffer"],
     // }),
     AutoImport({
-      // 可以让该插件自动识别的库, 例如 vue, vue-router, pinia 等
       imports: ['vue', 'vue-router'],
-
-      // 把 composables/ 下的函数也自动导入
-      // 注意：unplugin-auto-import V3.0+ 支持 dirs 配置
       dirs: [
         'src/composables',
-        // 这样所有 src/composables/*.ts 中的函数，就可直接自动引入
       ],
-
-      // 生成一个自动导入的类型声明文件（便于 IDE 提示）
       dts: 'src/auto-imports.d.ts',
 
     
     }),
     Pages(),
     VitePWA({
+      manifest: {
+        name: 'TalkFlow',
+        short_name: 'TalkFlow',
+        description: 'P2P Mesh E2EE Chat App',
+        theme_color: '#000000',
+        background_color: '#000000',
+        icons: [
+          {
+            src: 'assets/icons/icon-48.webp',
+            type: 'image/webp',
+            sizes: '48x48',
+            purpose: 'any maskable'
+          },
+          {
+            src: 'assets/icons/icon-72.webp',
+            type: 'image/webp',
+            sizes: '72x72',
+            purpose: 'any maskable'
+          },
+          {
+            src: 'assets/icons/icon-96.webp',
+            type: 'image/webp',
+            sizes: '96x96',
+            purpose: 'any maskable'
+          },
+          {
+            src: 'assets/icons/icon-128.webp',
+            type: 'image/webp',
+            sizes: '128x128',
+            purpose: 'any maskable'
+          },
+          {
+            src: 'assets/icons/icon-192.webp',
+            type: 'image/webp',
+            sizes: '192x192',
+            purpose: 'any maskable'
+          },
+          {
+            src: 'assets/icons/icon-256.webp',
+            type: 'image/webp',
+            sizes: '256x256',
+            purpose: 'any maskable'
+          },
+          {
+            src: 'assets/icons/icon-512.webp',
+            type: 'image/webp',
+            sizes: '512x512',
+            purpose: 'any maskable'
+          }
+        ],
+      },
       registerType: 'autoUpdate',
       workbox: {
-        maximumFileSizeToCacheInBytes: 5000 * 1024 * 1024, 
+        maximumFileSizeToCacheInBytes: 10000 * 1024 * 1024,
+        globPatterns: [
+          '**/*.{js,css,html,ico,png,jpg,jpeg,gif,svg,webp,mp3,wav,wasm}',
+          'assets/**/*',
+          'audio/**/*',
+          'images/**/*'
+        ],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\.(png|jpg|jpeg|gif|svg|webp|mp3|wav)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'external-assets',
+              expiration: {
+                maxEntries: 5000,
+                maxAgeSeconds: 365 * 24 * 60 * 60 // 365 days
+              }
+            }
+          }
+        ]
       },
     }),
   ],
@@ -53,21 +127,19 @@ export default defineConfig({
     global: "window",
   },
   build: {
-    sourcemap: true,
     rollupOptions: {
-         external: ['text-encoding'],
         output:{
-        
             manualChunks(id) {
-              
                 if (id.includes('node_modules')) {
                     return id.toString().split('node_modules/')[1].split('/')[0].toString();
                 }
-                
             }
         }
     }
   },
+  // esbuild: {
+  //   logOverride: { 'this-is-undefined-in-esm': 'silent' }
+  // },
   // test: {
   //   globals: true,
   //   environment: 'jsdom'

@@ -1,10 +1,10 @@
-<!-- eslint-disable vue/multi-word-component-names -->
+
 <template>
     <ion-page>
       <ion-header :translucent="true" collapse="fade">
         <ion-toolbar >
           <ion-buttons slot="start">
-            <ion-back-button @click="router.go(-1)" color="dark"></ion-back-button>
+           <ion-back-button :text="$t('back')" ></ion-back-button>
           </ion-buttons>
           <ion-title>{{$t('github')}}</ion-title>
         </ion-toolbar>

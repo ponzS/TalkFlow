@@ -1,22 +1,21 @@
 <template>
+  <ion-page>
   <!-- 顶部导航栏 -->
   <ion-header >
     <ion-toolbar class="liquid-toolbar" style=" --background: var(--ion-background-color);">
-<!-- 
+
       <ion-buttons slot="start">
-          <ion-button  @click="openModal">
-            <ion-icon color="dark" :icon="scanSharp"></ion-icon>
-          </ion-button>
-        </ion-buttons> -->
+        <ion-back-button text="" color="dark"></ion-back-button>
+      </ion-buttons>
 
 
       <ion-title>Discover</ion-title>
 
- <ion-buttons slot="end">
+ <!-- <ion-buttons slot="end">
           <ion-button  @click="goToSetting">
             <ion-icon color="dark" :icon="settingsOutline"></ion-icon>
           </ion-button>
-        </ion-buttons>
+        </ion-buttons> -->
 
 
     </ion-toolbar>
@@ -42,16 +41,29 @@
 
 
     <!-- Single Row: Scanner -->
-    <div class="card-row">
+    <!-- <div class="card-row">
       <div class="cosmic-card1" @click="goToScan">
         <ion-icon :icon="scanSharp" class="cosmic-icon" />
         <span class="cosmic-label">{{ $t('scanner') }}</span>
       </div>
-    </div>
+    </div> -->
 
     <!-- Grid for Tools -->
     <div class="card-grid">
-      <!-- Card: QR Code -->
+     
+      <!-- <div class="cosmic-card" @click="goToSky">
+        <ion-icon :icon="qrCodeOutline" class="cosmic-icon" />
+        <span class="cosmic-label">MyStarrySky</span>
+      </div> -->
+      <div class="cosmic-card" @click="goToAI">
+        <ion-icon :icon="pulseOutline" class="cosmic-icon" />
+        <span class="cosmic-label">D-AI</span>
+      </div>
+      <div class="cosmic-card" @click="goToAIChat">
+        <ion-icon :icon="pulseOutline" class="cosmic-icon" />
+        <span class="cosmic-label">D-AI-MCP for Test</span>
+      </div>
+ <!-- Card: QR Code -->
       <div class="cosmic-card" @click="goToQR">
         <ion-icon :icon="qrCodeOutline" class="cosmic-icon" />
         <span class="cosmic-label">{{ $t('qrcodetool') }}</span>
@@ -61,20 +73,25 @@
         <ion-icon :icon="codeSlashOutline" class="cosmic-icon" />
         <span class="cosmic-label">{{ $t('offlinewebtools') }}</span>
       </div>
+    
       <!-- Card: Browser -->
       <div class="cosmic-card" @click="goToBrowser">
         <ion-icon :icon="browsersOutline" class="cosmic-icon" />
         <span class="cosmic-label">Browser</span>
       </div>
-      <!-- Card: Relay -->
-      <div class="cosmic-card" @click="goToRelays">
+      <!-- <div class="cosmic-card" @click="goToTest">
+        <ion-icon :icon="browsersOutline" class="cosmic-icon" />
+        <span class="cosmic-label">test</span>
+      </div> -->
+      <!-- <div class="cosmic-card" @click="goToVoiceCall">
+        <ion-icon :icon="browsersOutline" class="cosmic-icon" />
+        <span class="cosmic-label">VoiceCall</span>
+      </div> -->
+        <!-- Card: Relay -->
+        <div class="cosmic-card" @click="goToRelays">
+        <div style="filter: blur(20px);width: 100%;height: 100%;position: absolute;">
         <ponzsColor2></ponzsColor2>
-        <div class="lightflow1">
-          
-        </div>
-        
-        
-        
+      </div>
         <ion-icon :icon="rocketOutline" class="cosmic-icon" />
         <span class="cosmic-label">{{ $t('relay') }}</span>
       </div>
@@ -110,6 +127,7 @@
 
 
   </ion-content>
+</ion-page>
 </template>
 
 <script setup lang="ts">
@@ -119,7 +137,9 @@ import {
   IonToolbar,
   IonTitle,
   IonContent,
-  IonIcon
+  IonIcon,
+  IonButtons,
+  IonBackButton,
 } from '@ionic/vue'
 import { useRouter } from 'vue-router'
 import {
@@ -130,7 +150,8 @@ import {
   browsersOutline,
   rocketOutline,
   atOutline,
-  settingsOutline
+  settingsOutline,
+  pulseOutline
 } from 'ionicons/icons'
 
 const chatFlowStore = getTalkFlowCore();
@@ -178,7 +199,12 @@ function goToHtml() { router.push('/htmlpage') }
 function goToRelays() { router.push('/relaypage') }
 function goToBrowser() { router.push('/browser') }
  function goToSetting() { router.push('/settingspage') }
+ function goToAI() { router.push('/AiSetting') }
+ function goToAIChat() { router.push('/AiChat') }
+ function goToSky() { router.push('/GameTest') }
+ function goToVoiceCall() { router.push('/VoiceCall') }
  //function goToSetting() { router.push('/voicecall') }
+ function goToTest() { router.push('/audioset') }
 </script>
 
 <style scoped>
@@ -198,15 +224,15 @@ body {
   display: flex;
   justify-content: center;
   margin-bottom: 20px;
-  padding: 0 10px;
+  padding: 10px;
   
 }
 
 /* Grid layout for cards */
 .card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 10px;
+  /* display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); */
+  /* gap: 10px; */
   padding: 10px;
   margin-bottom: 20px;
   
@@ -217,7 +243,7 @@ body {
  height: 100%;
 }
 .lightflow1{
-backdrop-filter: blur(10px);
+filter: blur(10px);
 width: 100%;
 height: 100%;
 position: absolute;
@@ -239,9 +265,11 @@ bottom: 0;
   transition: all 0.3s ease;
   cursor: pointer;
   position: relative;
-  overflow: hidden;
+  overflow:visible;
   min-height: 120px;
   min-width: 100%;
+  margin: 10px 0;
+  
  
 }
 .cosmic-card1 {
@@ -291,27 +319,6 @@ bottom: 0;
   justify-self: end;
 }
 
-/* Hover and active states */
-.cosmic-card:active {
-  
-  /* transform: translateY(-5px); */
-  /* box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15); */
-}
-
-.cosmic-card:active {
-  /* transform: scale(0.95); */
-  /* background: rgba(42, 125, 112, 0.1); */
-}
-
-.cosmic-card:active .cosmic-icon {
-  transform: scale(1.1);
-}
-/* Hover and active states */
-.cosmic-card1:active {
-  
-  /* transform: translateY(-5px); */
-  /* box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15); */
-}
 
 .cosmic-card1:active {
   transform: scale(0.95);

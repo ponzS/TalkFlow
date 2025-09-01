@@ -6,7 +6,7 @@ import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { BrowserQRCodeReader } from '@zxing/browser';
 // import { getTalkFlowCore } from '@/composables/TalkFlowCore';
 import { Browser } from '@capacitor/browser';
-import { imageOutline } from 'ionicons/icons';
+// import { imageOutline } from 'ionicons/icons';
 
 const router = useRouter();
 // const chatFlowStore = getTalkFlowCore();

@@ -50,7 +50,7 @@ class="gun-group"
       //  embed: true,
       
       
-		})
+		} as any)
 	"
 ></object>
 <!-- <object
@@ -314,7 +314,7 @@ const getGunAvatar = (pub: string) => {
     size: 200,
     dark: isDark.value,
     svg: true,
-  });
+  } as any);
 };
 
 // 搜索回车事件（可扩展为外部跳转，当前仅占位）

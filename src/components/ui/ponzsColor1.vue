@@ -377,7 +377,7 @@ onMounted(async () => {
   if (canvas.value) {
     console.log('找到 Canvas，开始初始化 Three.js');
     try {
-      await initThreeJS(canvas.value);
+      await initThreeJS(canvas.value as HTMLCanvasElement);
       window.addEventListener('resize', onWindowResize);
       console.log('Three.js 初始化成功');
     } catch (err) {

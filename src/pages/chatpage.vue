@@ -1,21 +1,27 @@
-
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted, Directive } from 'vue';
 import { useRouter } from 'vue-router';
 import { debounce } from 'lodash';
 import { getTalkFlowCore, LocalChatMessage, MessageType } from '@/composables/TalkFlowCore';
 import { useVoiceBar } from '@/composables/useVoiceBar';
+import { useGroupChat } from '@/composables/useGroupChat';
 import { 
   IonBackButton, IonButton, IonButtons, IonIcon, IonTitle, IonToolbar, IonHeader, 
-  IonFooter, IonPage, IonCheckbox, IonProgressBar 
+  IonFooter, IonPage, IonCheckbox, IonProgressBar, IonModal, IonContent ,toastController 
 } from '@ionic/vue';
 import {
   ellipsisHorizontal, ellipsisVertical, playOutline, pauseOutline, refreshOutline,
   ellipsisHorizontalCircleOutline, micOutline, chatboxOutline, copyOutline, trashOutline,
   returnDownBackOutline, closeCircleOutline, lockClosedOutline, chevronBackOutline,
   chatbubbleEllipsesOutline, attachOutline, closeOutline, checkmarkOutline,
-  addCircleOutline, imageOutline
+  addCircleOutline, imageOutline, peopleOutline,
+  addOutline,
+  sendOutline,
+  notificationsCircleOutline,
+  callOutline
 } from 'ionicons/icons';
+import { useI18n } from 'vue-i18n';
+const { t } = useI18n();
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
 import { mountClass, gunAvatar } from 'gun-avatar';
 import { Browser } from '@capacitor/browser';
@@ -40,7 +46,15 @@ marked.setOptions({
   breaks: true,
   gfm: true,
 });
-
+const showToast = async (message: string, color: 'success' | 'warning' | 'danger' = 'success') => {
+  const toast = await toastController.create({
+    message,
+    duration: 2000,
+    color,
+    position: 'top'
+  });
+  await toast.present();
+};
 const { formatLastTime } = useDateFormatter();
 
 const chatFlow = getTalkFlowCore();
@@ -48,16 +62,27 @@ const voiceBar = useVoiceBar();
 const {
   closeChat, currentChatPub, getAliasRealtime, newMsg, sendChat, resendMessage,
   chatMessages, userAvatars, formatTimestamp, currentUserPub, loadMoreChatHistory,
-  isLoadingHistory, generateChatId, showToast, retractMessage, triggerLightHaptic,
-  friendRemarks
+  isLoadingHistory, generateChatId, retractMessage, triggerLightHaptic,
+  friendRemarks,currentUserAlias
 } = chatFlow;
 const { isRecording, recordingDuration, playingAudio, transcriptions, startRecording, 
-        stopRecording, sendVoiceMessage, playVoice, stopVoice, transcribeAudio, formatDuration 
+        stopRecording, sendVoiceMessage, playVoice, stopVoice, initialize
 } = voiceBar;
 mountClass();
 import { useTheme } from '@/composables/useTheme';
+import { useBarkNotification } from '@/composables/useBarkNotification';
+import SpinningLoader from '@/components/ui/SpinningLoader.vue';
+import VoiceBar from '@/components/VoiceBar.vue';
+import ImageMessage from '@/components/ui/ImageMessage.vue';
+import HlsVideoPlayer from '@/components/ui/HlsVideoPlayer.vue';
 const { isDark } = useTheme();
-const showtools = ref(false);
+
+const barkNotification = useBarkNotification();
+const { 
+  initBarkSettings,
+  currentChatBarkConfig,
+  setBarkConfigForPubKey,
+} = barkNotification;
 const uploadProgress = ref(0);
 const loadedVideos = ref<{ [msgId: string]: boolean }>({});
 const videoRefs = ref<{ [msgId: string]: HTMLVideoElement }>({});
@@ -75,22 +100,7 @@ const getGunAvatar = (pub: string) => {
     size: 200,
     dark: isDark.value,
     svg: true
-  });
-};
-
-function toolsopen() {
-  showtools.value = !showtools.value;
-}
-
-const { setSelectedFriendPub } = getTalkFlowCore();
-
-const goToProfile = (userPub: string) => {
-  if (userPub === currentUserPub.value) {
-    router.push('/MyMoments');
-  } else {
-    setSelectedFriendPub(userPub);
-    router.push('/FriendMoments');
-  }
+  } as any);
 };
 
 const audioMap = ref<Record<string, HTMLAudioElement>>({});
@@ -113,6 +123,19 @@ const deleteButtonVisible = ref(false);
 const deleteButtonPos = ref({ x: 0, y: 0 });
 const deleteTargetMessage = ref<LocalChatMessage | null>(null);
 
+// 模态窗口状态
+const isModalOpen = ref(false);
+
+// 打开模态窗口
+function openModal() {
+  isModalOpen.value = true;
+}
+
+// 关闭模态窗口
+function closeModal() {
+  isModalOpen.value = false;
+}
+
 const contextMenu = ref<{
   visible: boolean;
   x: number;
@@ -134,7 +157,6 @@ const contextMenu = ref<{
 // =================== Think/Reply 解析加强 ===================
 function parseMetaSegments(text: string): Array<{ content: string; type: 'normal' | 'think' | 'about'; from?: string; alias?: string }> {
   if (!text) return [];
-  // 新增 from/alias 属性捕获
   const regex = /<(think|about)(?:\s+from="(.*?)"(?:\s+alias="(.*?)")?)?>([\s\S]*?)<\/\1>/g;
   const segs: { content: string; type: 'normal' | 'think' | 'about'; from?: string; alias?: string }[] = [];
   let lastIndex = 0;
@@ -154,7 +176,7 @@ function parseMetaSegments(text: string): Array<{ content: string; type: 'normal
 }
 
 function renderMarkdown(content: string): string {
-  if (!content) return '';
+  if (!content) return "";
   const rawHtml = marked(content);
   return DOMPurify.sanitize(rawHtml as any);
 }
@@ -179,7 +201,7 @@ const isAtEarliest = computed(() => {
 });
 
 const currentChatMessages = computed(() => {
-  const pubKey = currentChatPub.value || '';
+  const pubKey = currentChatPub.value || "";
   const messages = chatMessages.value[pubKey] || [];
   return messages.filter((msg) => isValidMessage(msg));
 });
@@ -223,21 +245,7 @@ function handleLongPress1(event: TouchEvent) {
   }, LONG_PRESS_DELAY);
 }
 
-function showContextMenu(item: LocalChatMessage, event: MouseEvent) {
-  if (item.type !== 'text') return;
-  const rect = (event.target as HTMLElement).getBoundingClientRect();
-  contextMenu.value = {
-    visible: true,
-    x: rect.left + 20,
-    y: rect.top - 50,
-    type: item.type,
-    content: item.text || '',
-    item,
-    scaleAnimation: true
-  };
-  selectedMessage.value = item.msgId || null;
-  triggerLightHaptic();
-}
+
 
 function stripThinkTags(text: any): string {
   // 匹配 <think> 标签，包括带有 from 和 alias 属性的情况
@@ -290,20 +298,6 @@ async function deleteMessage(item: LocalChatMessage | null) {
   // await cancelSelectionMode()
 }
 
-function copySelectedMessages() {
-  if (selectedMessages.value.length === 0) return;
-  const textsToCopy = selectedMessages.value
-    .map(msgId => findMessageById(msgId))
-    .filter(msg => msg && msg.type === 'text')
-    .map(msg => msg!.text)
-    .filter(Boolean)
-    .join('\n\n');
-  if (textsToCopy) {
-    navigator.clipboard.writeText(textsToCopy).then(() => {
-      cancelSelectionMode();
-    });
-  }
-}
 function copySelectedMessages1() {
   if (selectedMessages.value.length === 0) return;
   const textsToCopy = selectedMessages.value
@@ -319,15 +313,6 @@ function copySelectedMessages1() {
   }
 }
 
-async function deleteSelectedMessages() {
-  if (selectedMessages.value.length === 0 || !currentChatPub.value) return;
-  const chatId = generateChatId(currentUserPub.value!, currentChatPub.value);
-  for (const msgId of selectedMessages.value) {
-    await retractMessage(chatId, msgId);
-  }
-  cancelSelectionMode();
-  
-}
 async function deleteSelectedMessages1() {
   if (selectedMessages.value.length === 0 || !currentChatPub.value) return;
   const chatId = generateChatId(currentUserPub.value!, currentChatPub.value);
@@ -335,9 +320,7 @@ async function deleteSelectedMessages1() {
     await retractMessage(chatId, msgId);
   }
   hideContextMenu();
-  
 }
-
 
 function handleGlobalClick(event: MouseEvent) {
   const menu = document.querySelector('.context-menu');
@@ -373,6 +356,26 @@ function isValidMessage(item: any): boolean {
 function getDisplayName(pub: string): string {
   const remark = chatFlow.friendRemarks.value[pub]?.remark;
   return remark && remark.trim() !== '' ? remark : getAliasRealtime(pub);
+}
+
+// 判断下一条消息是否在1分钟内，用于决定是否使用全圆角
+function shouldUseFullRadius(index: number): boolean {
+  if (!currentChatMessages.value || index >= currentChatMessages.value.length - 1) {
+    return false;
+  }
+  
+  const currentMsg = currentChatMessages.value[index];
+  const nextMsg = currentChatMessages.value[index + 1];
+  
+  if (!currentMsg.timestamp || !nextMsg.timestamp) {
+    return false;
+  }
+  
+  // 计算时间差（毫秒）
+  const timeDiff = Math.abs(nextMsg.timestamp - currentMsg.timestamp);
+  const oneMinute = 60 * 1000; // 1分钟 = 60秒 * 1000毫秒
+  
+  return timeDiff <= oneMinute;
 }
 
 const remainingMs = ref<Record<string, number>>({});
@@ -415,18 +418,23 @@ function hideContextMenu() {
 }
 
 function goToFriendProfile() {
+
   if (currentChatPub.value) {
     router.push({ path: '/friend-profile', query: { pub: currentChatPub.value } });
   }
+  
 }
 
 async function startVoiceRecording(event: TouchEvent) {
+  
+  triggerLightHaptic();
   event.preventDefault();
   touchStartY = event.touches[0].clientY;
   await startRecording();
 }
 
 function handleVoiceMove(event: TouchEvent) {
+  triggerLightHaptic();
   if (!isRecording.value) return;
   const currentY = event.touches[0].clientY;
   const deltaY = touchStartY - currentY;
@@ -434,6 +442,7 @@ function handleVoiceMove(event: TouchEvent) {
 }
 
 async function stopVoiceRecording(event: TouchEvent) {
+  triggerLightHaptic();
   if (!isRecording.value) return;
   event.preventDefault();
   if (cancelRecording.value) {
@@ -452,30 +461,39 @@ async function cancelVoiceRecording() {
   }
 }
 
-function handleActionButtonClick() {
+ async function handleActionButtonClick() {
+
   if (isVoiceMode.value) {
     isVoiceMode.value = false;
   } else if (newMsg.value) {
-    newMsg.value += '\n';
+   await  sendChat('text', newMsg.value);
+   await  testFriendBarkNotification();
+      newMsg.value = '';
+  typedMeta.value = [];
+  inputMode.value = 'default';
+  setTimeout(() => scrollToBottom(), 150);
+  resetHeight();
+  if (inputFocused.value) {
     nextTick(() => {
       if (textInputRef.value) {
         textInputRef.value.focus();
         adjustHeight();
+      
+        scrollToBottom();
       }
     });
+  }
+    // newMsg.value += '\n';
+    // nextTick(() => {
+    //   if (textInputRef.value) {
+    //     textInputRef.value.focus();
+    //     adjustHeight();
+    //   }
+    // });
   } else {
+   
     isVoiceMode.value = true;
-  }
-}
-
-function confirmInput() {
-  if (inputMode.value !== 'default' && newMsg.value.trim() && !typedMeta.value.some(m => m.content === newMsg.value.trim())) {
-    typedMeta.value.push({ type: inputMode.value as 'about' | 'think', content: newMsg.value.trim() });
-    newMsg.value = '';
-  }
-  inputMode.value = 'default';
-  if (textInputRef.value) {
-    nextTick(() => textInputRef.value!.focus());
+   initialize(); 
   }
 }
 
@@ -499,8 +517,12 @@ function handleEnterKey(event: KeyboardEvent) {
       full += `<about>${m.content}</about>\n`;
     }
   });
-  if (newMsg.value.trim()) {
-    full += newMsg.value.trim();
+
+  const trimmedMsg = newMsg.value.trim();
+  if (trimmedMsg && /^\d+$/.test(trimmedMsg)) {
+    full += `Number:${trimmedMsg}`;
+  } else if (trimmedMsg) {
+    full += trimmedMsg;
   }
 
   sendChat('text', full);
@@ -508,11 +530,13 @@ function handleEnterKey(event: KeyboardEvent) {
   typedMeta.value = [];
   inputMode.value = 'default';
   setTimeout(() => scrollToBottom(), 150);
+  resetHeight();
   if (inputFocused.value) {
     nextTick(() => {
       if (textInputRef.value) {
         textInputRef.value.focus();
         adjustHeight();
+      
         scrollToBottom();
       }
     });
@@ -602,24 +626,43 @@ function loadAndPlayVideo(item: LocalChatMessage) {
   nextTick(() => {
     const video = videoRefs.value[item.msgId];
     if (video) {
-      video.play().catch((err) => console.error('Playback failed:', err));
+      video.play().catch((err) => {/* Playback failed */});
     }
   });
+}
+
+// HLS视频播放器事件处理
+function onVideoLoaded(msgId: string) {
+  loadedVideos.value[msgId] = true;
+  console.log('Video loaded:', msgId);
+}
+
+function onVideoError(msgId: string, error: any) {
+  console.error('Video error for', msgId, ':', error);
+  showToast('Video loading failed', 'danger');
+}
+
+function onVideoPlay(msgId: string) {
+  console.log('Video playing:', msgId);
+}
+
+function onVideoPause(msgId: string) {
+  console.log('Video paused:', msgId);
 }
 
 function adjustHeight() {
   const el = textInputRef.value;
   if (el) {
-    el.style.height = '46px';
+    el.style.height = 'auto'; // Reset height to auto to get correct scrollHeight
     const newHeight = Math.min(el.scrollHeight, 120);
     el.style.height = `${newHeight}px`;
-    if (capsuleRef.value) capsuleRef.value.style.height = `${newHeight}px`;
+    if (capsuleRef.value) capsuleRef.value.style.height = `${newHeight + 6}px`; // Account for input-capsule padding
   }
 }
 
 function resetHeight() {
   if (!newMsg.value && textInputRef.value && capsuleRef.value && !inputFocused.value) {
-    textInputRef.value.style.height = '40px';
+    textInputRef.value.style.height = '40px'; // Reset to min-height for textarea
     capsuleRef.value.style.height = '46px';
   }
 }
@@ -631,10 +674,6 @@ function onFocus() {
 function onBlur(event: FocusEvent) {
   event.preventDefault();
   if (!inputFocused.value) resetHeight();
-}
-
-function closeWindow() {
-  router.go(-1);
 }
 
 const debouncedLoadMore = debounce(async () => {
@@ -719,10 +758,6 @@ function showDeleteOption(item: LocalChatMessage, event: MouseEvent | TouchEvent
   }, 50);
 }
 
-function showNativeMenu(item: LocalChatMessage, event: MouseEvent) {
-  if (window.innerWidth >= 768) showDeleteOption(item, event);
-}
-
 function clearLongPress() {
   if (longPressTimer !== null) {
     clearTimeout(longPressTimer);
@@ -772,7 +807,7 @@ async function openUrl(url: string) {
     const formattedUrl = url.match(/^https?:\/\//) ? url : `http://${url}`;
     await Browser.open({ url: formattedUrl });
   } catch (error) {
-    showToast('无法打开链接', 'error');
+   // showToast('无法打开链接', 'error');
   }
 }
 
@@ -788,6 +823,20 @@ watch(
     } else {
       isLoadingMessages.value = false;
     }
+    
+    // 检查新消息中是否有删除证书消息
+    if (newMessages.length > (oldMessages?.length || 0)) {
+      const newMsgs = newMessages.slice(oldMessages?.length || 0);
+      newMsgs.forEach(msg => {
+        if (msg.type === 'text' && msg.text && isDeleteCertMessage(msg.text)) {
+          // 异步处理删除证书消息，避免阻塞UI
+          nextTick(() => {
+            handleDeleteCertMessage(msg.text, msg.from, msg.msgId);
+          });
+        }
+      });
+    }
+    
     if (isInitialLoad.value && newMessages?.length > 0) {
       nextTick(() => scrollToBottomInitial());
     } else if (newMessages.length > (oldMessages?.length || 0) && isNearBottom()) {
@@ -808,15 +857,33 @@ watch(currentChatPub, (newPub) => {
     });
   }
 });
+// 当前选择的配置类型：'self' 或 'friend'
+const configType = ref<'self' | 'friend'>('self');
+
+// 当前选择的好友公钥（用于设置好友的Bark配置）
+const selectedFriendPub = ref<string>('');
 
 onMounted(async () => {
-  setTimeout(() => {
-    showOverlay.value = false;
-  }, 500);
+  // 初始化 Bark 设置
+  await initBarkSettings();
+  
+  // 如果当前有聊天对象，默认选择好友配置
+  if (currentChatPub.value) {
+    configType.value = 'friend';
+    selectedFriendPub.value = currentChatPub.value;
+  }
+  
 
-  scrollToBottomInitial();
+  setTimeout(async () => {
+   await scrollToBottom()
+    showOverlay.value = false;
+  }, 10);
+  //  initializeAudioPermissions();
+   scrollToBottomInitial();
   scrollerEl.value = scrollerRef.value?.$el;
 
+
+  
   if (currentChatMessages.value.length > 0) {
     isLoadingMessages.value = false;
   } else {
@@ -829,6 +896,7 @@ onMounted(async () => {
       keyboardHeight.value = info.keyboardHeight;
       inputFocused.value = true;
       nextTick(() => scrollToBottom());
+     
     });
     Keyboard.addListener('keyboardWillHide', () => {
       keyboardHeight.value = 0;
@@ -842,7 +910,7 @@ onMounted(async () => {
       });
     });
   } catch (err) {
-    console.error('Keyboard setup failed:', err);
+   // console.error('Keyboard setup failed:', err);
   }
 
   document.addEventListener('click', handleGlobalClick);
@@ -853,27 +921,6 @@ onMounted(async () => {
     chatMessages.value = { ...chatMessages.value };
     scrollToBottomInitial();
   }
-
-  let menuStabilityInterval = setInterval(() => {
-    if (selectedMessage.value && !contextMenu.value.visible) {
-      const messageEl = document.querySelector(`.message-bubble[data-msgid="${selectedMessage.value}"]`);
-      if (messageEl) {
-        const rect = messageEl.getBoundingClientRect();
-        const item = currentChatMessages.value.find(msg => msg.msgId === selectedMessage.value);
-        if (item) {
-          contextMenu.value = {
-            visible: true,
-            x: rect.left + 20,
-            y: rect.top - 50,
-            type: item.type,
-            content: item.type === 'text' ? item.text || '' : '',
-            item,
-            scaleAnimation: false
-          };
-        }
-      }
-    }
-  }, 1000);
 
   const observer = new IntersectionObserver(
     (entries) => {
@@ -892,14 +939,45 @@ onMounted(async () => {
 
   onUnmounted(() => {
     document.removeEventListener('click', handleGlobalClick);
-    closeChat();
+    // closeChat();
     Keyboard.removeAllListeners();
-    if (menuStabilityInterval) {
-      clearInterval(menuStabilityInterval);
-    }
+    // 清理所有定时器和间隔器
+    cleanupAllTimers();
+    // 清理长按定时器
+    clearPressTimer();
   });
 });
 
+
+// 使用Set管理定时器和间隔器，避免内存泄漏
+const activeTimers = new Set<NodeJS.Timeout>();
+const activeIntervals = new Set<NodeJS.Timeout>();
+
+const addTimer = (timer: NodeJS.Timeout) => {
+  activeTimers.add(timer);
+  return timer;
+};
+
+// 清理所有定时器的函数
+const cleanupAllTimers = () => {
+  activeTimers.forEach(timer => {
+    try {
+      clearTimeout(timer);
+    } catch (error) {
+      // Failed to clear timer
+    }
+  });
+  activeTimers.clear();
+  
+  activeIntervals.forEach(interval => {
+    try {
+      clearInterval(interval);
+    } catch (error) {
+      // Failed to clear interval
+    }
+  });
+  activeIntervals.clear();
+};
 
 function showContextMenuEdgeLimited(item: LocalChatMessage, clientX: number, clientY: number) {
   const menuWidth = 160; // 选项栏宽度，根据实际宽度调整
@@ -928,12 +1006,15 @@ function showContextMenuEdgeLimited(item: LocalChatMessage, clientX: number, cli
   selectedMessage.value = item.msgId || null;
 }
 
-let pressTimer: any = null;
+let pressTimer: NodeJS.Timeout | null = null;
 let pressStartPosition: {x: number, y: number} | null = null;
 
 function clearPressTimer() {
   if (pressTimer) {
     clearTimeout(pressTimer);
+    if (activeTimers.has(pressTimer)) {
+      activeTimers.delete(pressTimer);
+    }
     pressTimer = null;
   }
   pressStartPosition = null;
@@ -961,15 +1042,15 @@ function onBubbleTouchMove(event: TouchEvent) {
 }
 
 function onBubbleTouchStart(item: LocalChatMessage, event: TouchEvent) {
-  if (item.type !== 'text' || isSelectMode.value) return;
+  if ((item.type !== 'text' && item.type !== 'voice') || isSelectMode.value) return;
   pressStartPosition = {
     x: event.touches[0].clientX,
     y: event.touches[0].clientY
   };
-  pressTimer = setTimeout(() => {
+  pressTimer = addTimer(setTimeout(() => {
     showContextMenuEdgeLimited(item, event.touches[0].clientX, event.touches[0].clientY);
     triggerLightHaptic();
-  }, 450);
+  }, 450));
   event.target?.addEventListener(
   'touchmove',
   (e) => onBubbleTouchMove(e as TouchEvent),
@@ -986,12 +1067,12 @@ function onBubbleTouchEnd(item: LocalChatMessage, event: TouchEvent) {
 
 }
 function onBubbleMouseDown(item: LocalChatMessage, event: MouseEvent) {
-  if (item.type !== 'text' || isSelectMode.value) return;
+  if ((item.type !== 'text' && item.type !== 'voice') || isSelectMode.value) return;
   pressStartPosition = { x: event.clientX, y: event.clientY };
-  pressTimer = setTimeout(() => {
+  pressTimer = addTimer(setTimeout(() => {
     showContextMenuEdgeLimited(item, event.clientX, event.clientY);
     triggerLightHaptic();
-  }, 450);
+  }, 450));
 }
 function onBubbleMouseUp(item: LocalChatMessage, event: MouseEvent) {
   clearPressTimer();
@@ -1034,7 +1115,7 @@ function sendThinkAndEmojiReply(emoji: string) {
   showEmojiPicker.value = false;
   cancelSelectionMode();
   triggerLightHaptic();
-  setTimeout(() => scrollToBottom(), 100);
+  addTimer(setTimeout(() => scrollToBottom(), 100));
 }
 
 function isSingleEmoji(text: string): boolean {
@@ -1047,6 +1128,361 @@ function truncateContent(content: string, maxLength: number) {
   return content.substring(0, maxLength) + '...';
 }
 
+// 群聊邀请相关函数
+function isGroupInvitationMessage(text: string): boolean {
+  // 🔧 修复：支持新的XML标签格式和旧格式
+  return text.includes('🎯GROUP_INVITATION_START🎯') && text.includes('🎯GROUP_INVITATION_END🎯') ||
+         text.startsWith('GroupInvitation:');
+}
+
+// API URL 消息相关函数
+function isApiUrlMessage(text: string): boolean {
+  return text.includes('<apiurl>') && text.includes('</apiurl>') && !text.includes('<delete>');
+}
+
+function parseApiUrlMessage(text: string): string {
+  const match = text.match(/<apiurl>(.*?)<\/apiurl>/);
+  return match ? match[1] : '';
+}
+
+function getApiUrlDisplayText(text: string): string {
+  const apiUrl = t('chatPageRemoteNotificationCertificate') ;
+  if (!apiUrl) return text;
+  
+  // 隐藏完整的API URL，只显示服务器域名
+  try {
+    const url = new URL(apiUrl);
+    return ` ${url.hostname}`;
+  } catch {
+    return t('chatPageRemoteNotificationCertificate');
+  }
+}
+
+// 处理API URL消息点击
+async function handleApiUrlClick(text: string, fromPub: string, msgId?: string) {
+  const apiUrl = parseApiUrlMessage(text);
+  if (!apiUrl || !fromPub) return;
+  
+  try {
+    // 先删除旧的配置（如果存在）
+    await barkNotification.deleteBarkConfigForPubKey(fromPub);
+    
+    // 添加新的API URL配置
+    await setBarkConfigForPubKey(fromPub, apiUrl);
+    
+    showToast(t('chatPageAcceptedRemoteNotificationCertificate'), 'success');
+    
+    // 如果提供了msgId，删除原消息并发送已接受的文本消息
+    if (msgId && currentChatPub.value) {
+      // 找到要删除的消息
+      const messages = chatMessages.value[fromPub] || [];
+      const messageToDelete = messages.find(msg => msg.msgId === msgId);
+      
+      if (messageToDelete) {
+        // 删除原消息
+        await deleteMessage(messageToDelete);
+        
+        // 发送已接受的文本消息
+        const acceptedMessage = t('chatPageAcceptedRemoteNotificationCertificate');
+        await sendChat('text', acceptedMessage);
+      }
+    }
+  } catch (error) {
+    console.error('保存API URL失败:', error);
+   // showToast('保存失败，请检查API URL格式', 'error');
+  }
+}
+
+// 删除证书消息相关函数
+function isDeleteCertMessage(text: string): boolean {
+  return text.includes('<delete>') && text.includes('</delete>') && text.includes('<pub>') && text.includes('<apiurl>');
+}
+
+function parseDeleteCertMessage(text: string): { targetPub: string; apiUrl: string } | null {
+  const deleteMatch = text.match(/<delete>(.*?)<\/delete>/);
+  if (!deleteMatch) return null;
+  
+  const content = deleteMatch[1];
+  
+  // 解析pub标签
+  const pubMatch = content.match(/<pub>(.*?)<\/pub>/);
+  if (!pubMatch) return null;
+  
+  // 解析apiurl标签
+  const apiUrlMatch = content.match(/<apiurl>(.*?)<\/apiurl>/);
+  if (!apiUrlMatch) return null;
+  
+  return {
+    targetPub: pubMatch[1].trim(),
+    apiUrl: apiUrlMatch[1].trim()
+  };
+}
+
+function isDeleteOkMessage(text: string): boolean {
+  return text.includes(`<deleteok>${t('chatPageSecurityCertificateDeleted')}</deleteok>`);
+}
+
+// 检测是否为远程通知相关的消息
+function isRemoteNotificationMessage(text: string): boolean {
+  return isGroupInvitationMessage(text) || 
+         isApiUrlMessage(text) || 
+         isDeleteCertMessage(text) || 
+         isDeleteOkMessage(text);
+}
+
+// 已处理的删除消息ID集合
+const processedDeleteMessages = new Set<string>();
+
+// 处理删除证书消息
+async function handleDeleteCertMessage(text: string, fromPub: string, msgId: string) {
+  // 检查是否已经处理过这条消息
+  if (processedDeleteMessages.has(msgId)) {
+    return;
+  }
+  
+  const deleteData = parseDeleteCertMessage(text);
+  if (!deleteData || !fromPub) return;
+  
+  // 检查发送者是否是自己，如果是自己则不执行删除操作
+  if (fromPub === currentUserPub.value) {
+    return;
+  }
+  
+  // 检查删除请求中的公钥是否与发送者匹配
+  if (deleteData.targetPub !== fromPub) {
+    return;
+  }
+  
+  // 检查下一条消息是否是删除确认消息
+  const messages = chatMessages.value[fromPub] || [];
+  const currentIndex = messages.findIndex(msg => msg.msgId === msgId);
+  if (currentIndex !== -1 && currentIndex < messages.length - 1) {
+    const nextMessage = messages[currentIndex + 1];
+    if (nextMessage && isDeleteOkMessage(nextMessage.text)) {
+      // 下一条消息是删除确认，不执行删除
+      return;
+    }
+  }
+  
+  try {
+    // 执行删除操作
+    await barkNotification.deleteBarkConfigForPubKey(fromPub);
+    
+    // 标记消息已处理
+    processedDeleteMessages.add(msgId);
+    
+    // 发送删除确认消息
+    await sendChat('text', `<deleteok>${t('chatPageSecurityCertificateDeleted')}</deleteok>`);
+    
+    showToast(t('chatPageRemoteNotificationCertificateDeleted'), 'success');
+  } catch (error) {
+    console.error('删除证书失败:', error);
+  //  showToast('删除证书失败', 'error');
+  }
+}
+
+function parseGroupInvitationMessage(text: string): string {
+  try {
+    // 🔧 修复：支持新的XML标签格式
+    if (text.includes('🎯GROUP_INVITATION_START🎯') && text.includes('🎯GROUP_INVITATION_END🎯')) {
+      const startMarker = '🎯GROUP_INVITATION_START🎯';
+      const endMarker = '🎯GROUP_INVITATION_END🎯';
+      const startIndex = text.indexOf(startMarker) + startMarker.length;
+      const endIndex = text.indexOf(endMarker);
+      const xmlContent = text.substring(startIndex, endIndex);
+      
+      // 解析XML标签获取群聊名称
+      const groupMatch = xmlContent.match(/<group>(.*?)<\/group>/);
+      const groupName = groupMatch ? groupMatch[1] : 'group';
+      
+      return `Invite you to join the group"${groupName}"`;
+    } 
+    // 兼容旧格式
+    else if (text.startsWith('GroupInvitation:')) {
+      const jsonStr = text.replace('GroupInvitation:', '');
+      const invitationData = JSON.parse(jsonStr);
+      return invitationData.message || `Invite you to join the group"${invitationData.groupName || 'group'}"`;
+    } 
+    else {
+      return 'Invite you to join the group';
+    }
+  } catch (error) {
+   // console.error('解析群聊邀请消息失败:', error);
+    return 'Invite you to join the group';
+  }
+}
+
+function extractGroupInvitationData(text: string): any | null {
+  try {
+    // 🔧 修复：支持新的XML标签格式
+    if (text.includes('🎯GROUP_INVITATION_START🎯') && text.includes('🎯GROUP_INVITATION_END🎯')) {
+      const startMarker = '🎯GROUP_INVITATION_START🎯';
+      const endMarker = '🎯GROUP_INVITATION_END🎯';
+      const startIndex = text.indexOf(startMarker) + startMarker.length;
+      const endIndex = text.indexOf(endMarker);
+      const xmlContent = text.substring(startIndex, endIndex);
+      
+     // console.log('🔍 解析XML内容:', xmlContent);
+      
+      // 解析各个XML标签
+      const groupMatch = xmlContent.match(/<group>(.*?)<\/group>/);
+      const pubMatch = xmlContent.match(/<pub>(.*?)<\/pub>/);
+      const privMatch = xmlContent.match(/<priv>(.*?)<\/priv>/);
+      const epubMatch = xmlContent.match(/<epub>(.*?)<\/epub>/);
+      const eprivMatch = xmlContent.match(/<epriv>(.*?)<\/epriv>/);
+      const inviterMatch = xmlContent.match(/<inviter>(.*?)<\/inviter>/);
+      const timeMatch = xmlContent.match(/<time>(.*?)<\/time>/);
+      
+      if (!pubMatch || !privMatch || !epubMatch || !eprivMatch) {
+     //   console.error('❌ 缺少必要的密钥字段');
+        return null;
+      }
+      
+      // 构建完整的密钥对对象
+      const keyPair = {
+        pub: pubMatch[1],
+        priv: privMatch[1],
+        epub: epubMatch[1],
+        epriv: eprivMatch[1]
+      };
+      
+     // console.log('🔐 解析出的密钥对:', keyPair);
+      
+      return {
+        groupName: groupMatch ? groupMatch[1] : 'group',
+        keyPair: keyPair,
+        invitedBy: inviterMatch ? inviterMatch[1] : 'unknown',
+        inviteTime: timeMatch ? timeMatch[1] : new Date().toISOString()
+      };
+    } 
+    // 兼容旧格式
+    else if (text.startsWith('GroupInvitation:')) {
+      const jsonStr = text.replace('GroupInvitation:', '');
+      return JSON.parse(jsonStr);
+    } 
+    else {
+      return null;
+    }
+  } catch (error) {
+    // console.error('提取群聊邀请数据失败:', error);
+    return null;
+  }
+}
+
+async function acceptGroupInvitation(item: LocalChatMessage) {
+  try {
+    if (!item.text || !isGroupInvitationMessage(item.text)) return;
+    
+    const invitationData = extractGroupInvitationData(item.text);
+    if (!invitationData) {
+     // showToast('邀请信息无效', 'error');
+      return;
+    }
+    
+    // console.log('📥 收到邀请数据:', invitationData);
+    
+    // 使用群聊密钥加入群聊
+    if (invitationData.keyPair) {
+      const { joinGroupWithKeyPair, groups, selectGroup } = useGroupChat();
+      
+      // 🚀 直接使用解析出的密钥对对象
+      const keyPair = invitationData.keyPair;
+      const groupPub = keyPair.pub;
+      
+    // console.log('🔐 使用的密钥对:', keyPair);
+      // console.log('🎯 群聊Pub:', groupPub);
+      
+      // 检查是否已经加入该群聊
+      const existingGroup = groups.value.find(group => group.pub === groupPub);
+      
+      if (existingGroup) {
+        // 已经加入，直接跳转到群聊页面
+        selectGroup(groupPub);
+        router.push(`/group/${groupPub}/messages`);
+        showToast(`You have joined the group"${existingGroup.name}"`, 'success');
+        return;
+      }
+      
+      // 未加入，尝试加入群聊
+      // 将密钥对对象转换为JSON字符串给joinGroupWithKeyPair函数
+      const keyPairJson = JSON.stringify(keyPair);
+      await joinGroupWithKeyPair(keyPairJson);
+      
+      showToast(`You have joined the group"${invitationData.groupName}"`, 'success');
+        
+      // 自动跳转到群聊页面
+      selectGroup(keyPair.pub);
+      router.push(`/group/${keyPair.pub}/messages`);
+
+    } 
+    // 兼容旧格式处理
+    else if (invitationData.groupKey) {
+      const { joinGroupWithKeyPair, groups, selectGroup } = useGroupChat();
+      
+      // 旧格式的兼容处理（之前的修复逻辑）
+      const completeKeyPairJson = `{${invitationData.groupKey}}`;
+    // console.log('🔧 兼容模式重建密钥对JSON:', completeKeyPairJson);
+      
+      try {
+        const keyPair = JSON.parse(completeKeyPairJson);
+        const groupPub = keyPair.pub;
+        
+        const existingGroup = groups.value.find(group => group.pub === groupPub);
+        if (existingGroup) {
+          selectGroup(groupPub);
+          router.push(`/group/${groupPub}/messages`);
+          showToast(`You have joined the group"${existingGroup.name}"`, 'success');
+          return;
+        }
+        
+        await joinGroupWithKeyPair(completeKeyPairJson);
+        
+        showToast(`You have joined the group"${invitationData.groupName}"`, 'success');
+        selectGroup(keyPair.pub);
+        router.push(`/group/${keyPair.pub}/messages`);
+
+      } catch (parseError) {
+       // console.error('兼容模式解析失败:', parseError);
+     //   showToast('Key format error', 'error');
+      }
+    } 
+    else {
+    //  showToast('Invitation information is invalid', 'error');
+    }
+    
+  } catch (error) {
+    // console.error('处理群聊邀请失败:', error);
+   // showToast('Failed to join the group', 'error');
+  }
+}
+
+async function testFriendBarkNotification() {
+  if (!currentChatBarkConfig.value?.enabled || !currentChatPub.value) {
+    await showToast(t('friendConfigNotEnabled'), 'warning');
+    return;
+  }
+  
+  const title = currentUserAlias.value;
+  const content = newMsg.value.trim() ;
+  const testUrl = ref('talkflow://');
+const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-412a-bfbf-18c7f92781ff');
+
+  const success = await barkNotification.sendBarkNotification(
+    title,
+    content,
+    currentChatBarkConfig.value.deviceKey,
+    currentChatBarkConfig.value.serverUrl,
+    testUrl.value.trim() || undefined,
+    testIcon.value.trim() || undefined
+  );
+  
+  if (success) {
+   
+    await showToast(t('testNotificationSentSuccessfully'), 'success');
+  } else {
+    await showToast(t('testNotificationSendFailed'), 'danger');
+  }
+}
 </script>
 
 
@@ -1054,15 +1490,17 @@ function truncateContent(content: string, maxLength: number) {
 <template>
 
   <ion-page>
-    <ion-header :translucent="true"  class="ion-no-border ">
+    <ion-header :translucent="true"  collapse="fade"  >
       <ion-toolbar >
         <ion-buttons slot="start">
-          <div color="dark" @click="closeWindow">
-            <ion-icon style="font-size:20px;margin-left:10px;" color="dark" :ios="chevronBackOutline" :md="chevronBackOutline"></ion-icon>
-          </div>
+      
+           <ion-back-button :text="$t('back')" ></ion-back-button>
         </ion-buttons>
-        <ion-title>
+        <ion-title @click="goToFriendProfile" >
+          <div style="height:5px"></div>
+          <div class="header-title">
           <div class="avatar-container">
+
             <img
               v-if="userAvatars[currentChatPub!]"
               :src="userAvatars[currentChatPub!]"
@@ -1077,10 +1515,14 @@ function truncateContent(content: string, maxLength: number) {
             />
           </div>
           <span class="chat-name">{{ getDisplayName(currentChatPub!) }}</span>
+       </div>
         </ion-title>
         <ion-buttons slot="end">
-          <ion-button @click="goToFriendProfile">
-            <ion-icon style="font-size:20px;" color="dark" :icon="ellipsisHorizontal"></ion-icon>
+            <ion-button @click="router.push('/CallPage')">
+            <ion-icon   :icon="callOutline"></ion-icon>
+          </ion-button>
+          <ion-button @click="openModal">
+            <ion-icon   :icon="notificationsCircleOutline"></ion-icon>
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
@@ -1090,27 +1532,12 @@ function truncateContent(content: string, maxLength: number) {
 
 <transition name="slide-up">
   <div v-if="selectedMessage" >
-    <!-- <ion-button fill="clear" @click="cancelSelectionMode">
-      <ion-icon :icon="closeCircleOutline" color="dark"></ion-icon>
-    </ion-button>
-    <ion-button fill="clear" @click="deleteMessage(selectedMsgObj)">
-      <ion-icon :icon="trashOutline" color="danger"></ion-icon>
-    </ion-button>
-    <ion-button fill="clear" @click="copyText(selectedMsgObj!.text!)" v-if="selectedMsgObj!.type === 'text'">
-      <ion-icon :icon="copyOutline"></ion-icon>
-    </ion-button>
-    <ion-button fill="clear" @click="onSelectThink(selectedMsgObj)">
-      <ion-icon :icon="chatbubbleEllipsesOutline"></ion-icon>
-    </ion-button>
-    <ion-button fill="clear" @click="showEmojiPicker = !showEmojiPicker">
-  <span style="font-size:22px;">😊</span>
-</ion-button> -->
+
   </div>
 </transition>
 
 <transition name="slide">
-<!-- <transition name="fade"> :class="showEmojiPicker ? 'emoji-picker-overlay' : 'emoji-picker-overlay1'"-->
-  <!-- class="emoji-picker-panel" -->
+
   <div v-if="showEmojiPicker" class="emoji-picker-overlay" @click.self="showEmojiPicker = false">
     <div class="emoji-picker-panel" >
       <div class="emoji-list">
@@ -1128,86 +1555,187 @@ function truncateContent(content: string, maxLength: number) {
 
     <ion-content :fullscreen="true" :scroll-y="false" :style="{ '--content-bottom': keyboardHeight + 'px' }">
 
-<!-- 模糊罩和浮层消息 -->
-<div v-if="selectedMessage" class="blur-overlay">
-
+      <div v-if="selectedMessage" class="blur-overlay">
   <div class="center-message-popup">
     <div v-if="selectedMsgObj" class="center-message-bubble" :class="selectedMsgObj.from === currentUserPub ? 'my-message' : 'other-message'">
       <template v-if="selectedMsgObj.type === 'text' && selectedMsgObj.text">
-        <!-- about/think/normal 逻辑复用你的消息渲染代码 -->
-         
-        <div class="meta-text-container"
-             :class="selectedMsgObj.from === currentUserPub ? 'my-message' : 'other-message'">
-          <div v-for="(seg, i) in parseMetaSegments(selectedMsgObj.text).filter(s => s.type === 'about')"
-               :key="'about'+i"
-               class="about-block"
-               :class="selectedMsgObj.from === currentUserPub ? 'about-own' : 'about-other'">
-               
-            <ion-icon :icon="attachOutline" class="meta-icon" />
-            <span v-for="(part, j) in extractUrls(seg.content)" :key="j">
-              <a v-if="part.isUrl" @click.stop="openUrl(part.text)" class="url-link">{{ part.text }}</a>
-              <span v-else>{{ part.text }}</span>
-            </span>
+        <!-- 群聊邀请 -->
+        <template v-if="selectedMsgObj.text && isGroupInvitationMessage(selectedMsgObj.text)">
+          <div class="group-invitation-card">
+            <div class="invitation-header">
+              <ion-icon :icon="peopleOutline" class="invitation-icon"></ion-icon>
+              <span class="invitation-title">{{ $t('GroupChatInvitation') || 'Group Invitation' }}</span>
+            </div>
+            <div class="invitation-content">
+              <p class="invitation-message">{{ parseGroupInvitationMessage(selectedMsgObj.text) }}</p>
+            </div>
+            <div class="invitation-actions">
+              <ion-button 
+                size="small" 
+                color="primary"
+                @click="acceptGroupInvitation(selectedMsgObj)"
+              >
+                {{ $t('JoinGroup') }}
+              </ion-button>
+            </div>
           </div>
-          <div v-for="(seg, i) in parseMetaSegments(selectedMsgObj.text).filter(s => s.type === 'think')"
-               :key="'think'+i"
-               class="think-block"
-               :class="selectedMsgObj.from === currentUserPub ? 'think-own' : 'think-other'">
-            <span v-if="seg.alias" class="think-reply-user">@{{ seg.alias }}:</span>
-           <!-- 判断是否图片/视频 -->
-  <template v-if="isBase64Image(seg.content)">
-    <img :src="seg.content" class="media-element" alt="" />
-  </template>
-  <template v-else-if="isBase64Video(seg.content)">
-    <video controls playsinline class="media-element" :src="seg.content" preload="none"></video>
-  </template>
-  <template v-else>
-    {{ seg.content }}
-  </template>
+        </template>
+        
+        <!-- API URL 消息 -->
+        <template v-else-if="selectedMsgObj.text && isApiUrlMessage(selectedMsgObj.text)">
+          <div class="api-url-card">
+            <div class="api-url-header">
+              <ion-icon :icon="notificationsCircleOutline" class="api-url-icon"></ion-icon>
+              <span class="api-url-title">{{ getApiUrlDisplayText(selectedMsgObj.text) }}</span>
+            </div>
+            <div class="api-url-content" v-if="selectedMsgObj.from !== currentUserPub">
+              <p class="api-url-message">{{ t('chatPageClickToAcceptRemoteNotification') }}</p>
+            </div>
+            <div class="api-url-actions" v-if="selectedMsgObj.from !== currentUserPub">
+              <ion-button 
+                size="small" 
+                color="primary"
+                @click="handleApiUrlClick(selectedMsgObj.text, selectedMsgObj.from, selectedMsgObj.msgId)"
+              >
+                {{ t('chatPageAccept') }}
+              </ion-button>
+            </div>
           </div>
-          <div v-for="(seg, k) in parseMetaSegments(selectedMsgObj.text).filter(s => s.type === 'normal')" :key="'normal'+k">
-  <template v-if="isBase64Image(seg.content)">
-    <img :src="seg.content" class="media-element" alt="" />
-  </template>
-  <template v-else-if="isBase64Video(seg.content)">
-    <video controls playsinline class="media-element" :src="seg.content" preload="none"></video>
-  </template>
-  <template v-else-if="isSingleEmoji(seg.content)">
-    <div class="emoji-message-big">{{ seg.content }}</div>
-  </template>
-  <template v-else>
-    <div
-      :class="['textchat', selectedMsgObj.from === currentUserPub ? 'my-message' : 'other-message']"
-      class="native-selectable markdown-content"
-      v-html="renderMarkdown(seg.content)"
-    ></div>
-  </template>
-</div>
-
-
-        </div>
+        </template>
+        
+        <!-- 删除证书请求消息 -->
+        <template v-else-if="selectedMsgObj.text && isDeleteCertMessage(selectedMsgObj.text)">
+          <div class="delete-cert-request-card">
+            <div class="delete-cert-request-content">
+              <ion-icon :icon="trashOutline" class="delete-cert-request-icon"></ion-icon>
+              <span class="delete-cert-request-title">{{ t('chatPageRevokeRemoteNotificationCertificate') }}</span>
+            </div>
+          </div>
+        </template>
+        
+        <!-- 删除确认消息 -->
+        <template v-else-if="selectedMsgObj.text && isDeleteOkMessage(selectedMsgObj.text)">
+          <div class="delete-ok-card">
+            <div class="delete-ok-header">
+              <ion-icon :icon="checkmarkOutline" class="delete-ok-icon"></ion-icon>
+              <span class="delete-ok-title">{{ t('chatPageSecurityCertificateDeleted') }}</span>
+            </div>
+            <div class="delete-ok-content">
+              <p class="delete-ok-message">{{ t('chatPageRemoteNotificationCertificateSuccessfullyRevoked') }}</p>
+            </div>
+          </div>
+        </template>
+        
+        <!-- 普通文本消息 -->
+        <template v-else>
+          <div class="meta-text-container" :class="selectedMsgObj.from === currentUserPub ? 'my-message' : 'other-message'">
+            <div v-for="(seg, i) in parseMetaSegments(selectedMsgObj.text).filter(s => s.type === 'about')" :key="'about'+i"
+                 class="about-block" :class="selectedMsgObj.from === currentUserPub ? 'about-own' : 'about-other'">
+              <ion-icon :icon="attachOutline" class="meta-icon" />
+              <span v-for="(part, j) in extractUrls(seg.content)" :key="j">
+                <a v-if="part.isUrl" @click.stop="openUrl(part.text)" class="url-link">{{ part.text }}</a>
+                <span v-else>{{ part.text }}</span>
+              </span>
+            </div>
+            <div v-for="(seg, i) in parseMetaSegments(selectedMsgObj.text).filter(s => s.type === 'think')" :key="'think'+i"
+                 class="think-block" :class="selectedMsgObj.from === currentUserPub ? 'think-own' : 'think-other'">
+              <span v-if="seg.alias" class="think-reply-user">@{{ seg.alias }}</span>
+              <template v-if="isBase64Image(seg.content)">
+                <img :src="seg.content" class="media-element" alt="" />
+              </template>
+              <template v-else-if="isBase64Video(seg.content)">
+                <HlsVideoPlayer
+                  :msg-id="`${selectedMsgObj.msgId}-seg-${i}`"
+                  :base64-video="seg.content"
+                  @loaded="onVideoLoaded"
+                  @error="onVideoError"
+                  @play="onVideoPlay"
+                  @pause="onVideoPause"
+                />
+              </template>
+              <template v-else-if="seg.content.startsWith('Number:')">
+                <div class="number-message">
+                  <span class="number-badge">{{ seg.content.replace('Number:', '') }}</span>
+                </div>
+              </template>
+              <template v-else>
+                {{ seg.content }}
+              </template>
+            </div>
+            <div v-for="(seg, k) in parseMetaSegments(selectedMsgObj.text).filter(s => s.type === 'normal')" :key="'normal'+k">
+              <template v-if="isBase64Image(seg.content)">
+                <img :src="seg.content" class="media-element" alt="" />
+              </template>
+              <template v-else-if="isBase64Video(seg.content)">
+                <HlsVideoPlayer
+                  :msg-id="`${selectedMsgObj.msgId}-normal-${k}`"
+                  :base64-video="seg.content"
+                  @loaded="onVideoLoaded"
+                  @error="onVideoError"
+                  @play="onVideoPlay"
+                  @pause="onVideoPause"
+                />
+              </template>
+              <template v-else-if="isSingleEmoji(seg.content)">
+                <div class="emoji-message-big">{{ seg.content }}</div>
+              </template>
+              <template v-else-if="seg.content.startsWith('Number:')">
+                <div class="number-message">
+                  <span class="number-badge">{{ seg.content.replace('Number:', '') }}</span>
+                </div>
+              </template>
+              <template v-else>
+                <div :class="['textchat', selectedMsgObj.from === currentUserPub ? 'my-message' : 'other-message']"
+                     class="native-selectable markdown-content" v-html="renderMarkdown(seg.content)"></div>
+              </template>
+            </div>
+          </div>
+        </template>
       </template>
-   
+      <template v-else-if="selectedMsgObj.type === 'voice' && selectedMsgObj.audioUrl">
+        <!-- Voice message rendering -->
+        <VoiceBar
+          :is-playing="voiceBar.playingAudio.value === selectedMsgObj.msgId"
+          :is-pending="selectedMsgObj.status === 'pending' && selectedMsgObj.isSending"
+          :is-failed="false"
+          :is-my-message="selectedMsgObj.from === currentUserPub"
+          :duration="selectedMsgObj.duration || 0"
+          :remaining-time="remainingMs[selectedMsgObj.msgId]"
+          @click="toggleVoicePlayback(selectedMsgObj)"
+        />
+        <p v-if="voiceBar.transcriptions.value[selectedMsgObj.msgId!]" class="transcription">
+          {{ voiceBar.transcriptions.value[selectedMsgObj.msgId!] }}
+        </p>
+      </template>
     </div>
     <div class="center-timestamp">
-      <!-- {{ formatLastTime(selectedMsgObj.timestamp) }} -->
-
-    <ion-button fill="clear" @click="deleteMessage(selectedMsgObj)">
-      <ion-icon :icon="trashOutline" color="danger"></ion-icon>
-    </ion-button>
-    <ion-button fill="clear" @click="copyText(selectedMsgObj!.text!)" v-if="selectedMsgObj!.type === 'text'">
-      <ion-icon :icon="copyOutline"></ion-icon>
-    </ion-button>
-    <ion-button fill="clear" @click="onSelectThink(selectedMsgObj)">
-      <ion-icon :icon="chatbubbleEllipsesOutline"></ion-icon>
-    </ion-button>
-    <ion-button fill="clear" @click="showEmojiPicker = !showEmojiPicker">
-  <span style="font-size:22px;">😊</span>
-</ion-button>
-<ion-button fill="clear" @click="cancelSelectionMode">
-      <ion-icon :icon="closeCircleOutline" color="dark"></ion-icon>
-    </ion-button>
-
+      <ion-button fill="clear" @click="deleteMessage(selectedMsgObj)">
+        <ion-icon :icon="trashOutline" color="danger"></ion-icon>
+      </ion-button>
+      <ion-button 
+        fill="clear" 
+        @click="copyText(selectedMsgObj!.text!)" 
+        v-if="selectedMsgObj!.type === 'text' && !isRemoteNotificationMessage(selectedMsgObj.text)"
+      >
+        <ion-icon :icon="copyOutline"></ion-icon>
+      </ion-button>
+      <ion-button 
+        fill="clear" 
+        @click="onSelectThink(selectedMsgObj)" 
+        v-if="selectedMsgObj!.type === 'text' && !isRemoteNotificationMessage(selectedMsgObj.text)"
+      >
+        <ion-icon :icon="chatbubbleEllipsesOutline"></ion-icon>
+      </ion-button>
+      <ion-button 
+        fill="clear" 
+        @click="showEmojiPicker = !showEmojiPicker" 
+        v-if="selectedMsgObj!.type === 'text' && !isRemoteNotificationMessage(selectedMsgObj.text)"
+      >
+        <span style="font-size:22px;">😊</span>
+      </ion-button>
+      <ion-button fill="clear" @click="cancelSelectionMode">
+        <ion-icon :icon="closeCircleOutline" color="dark"></ion-icon>
+      </ion-button>
     </div>
   </div>
 </div>
@@ -1217,6 +1745,7 @@ function truncateContent(content: string, maxLength: number) {
       <transition name="fade">
         <div v-if="showOverlay" class="glass-overlay"></div>
       </transition>
+      
       <ion-progress-bar 
         :value="uploadProgress" 
         v-if="uploadProgress > 0" 
@@ -1225,7 +1754,7 @@ function truncateContent(content: string, maxLength: number) {
       ></ion-progress-bar>
 
       <!-- 骨架屏 -->
-      <div v-if="isLoadingMessages" class="skeleton-container">
+      <!-- <div v-if="isLoadingMessages" class="skeleton-container">
         <div class="skeleton-message" v-for="n in 15" :key="n" :class="{ 'my-message': n % 2 === 0 }">
           <template v-if="n % 2 === 0">
             <div class="skeleton-bubble" :style="{ width: `${80 + Math.random() * 120}px` }"></div>
@@ -1236,16 +1765,16 @@ function truncateContent(content: string, maxLength: number) {
             <div class="skeleton-bubble" :style="{ width: `${80 + Math.random() * 120}px` }"></div>
           </template>
         </div>
-      </div>
+      </div> -->
 
       <div v-if="currentChatPub" class="message-container"
            @touchstart="handleLongPress1($event)"
            @touchend="clearLongPress()"
            @touchmove="clearLongPress()">
         <DynamicScroller
-          class="scroller"
+          class="scroller ion-content-scroll-host"
           :items="currentChatMessages"
-          :buffer="2000"
+          :buffer="3000"
           :min-item-size="50"
           key-field="msgId"
           v-slot="{ item, index, active }"
@@ -1286,7 +1815,7 @@ function truncateContent(content: string, maxLength: number) {
                     v-if="userAvatars[item.from] && isLastInSequence(index)" 
                     class="message-avatar" 
                     :src="userAvatars[item.from]" 
-                    @click="goToProfile(item.from)" 
+                    @click="goToFriendProfile"
                     alt=""
                   />
                   <img 
@@ -1294,13 +1823,14 @@ function truncateContent(content: string, maxLength: number) {
                     class="message-avatar" 
                     :src="getGunAvatar(item.from)" 
                     alt="" 
-                    @click="goToProfile(item.from)" 
+                 @click="goToFriendProfile"
                   />
                 </template>
                 <div :class="['message-bubble', 
                             item.type === 'voice' ? 'voice-bubble' : '',
                             item.status === 'failed' ? 'failed-message' : '',
-                            item.status === 'pending' && item.isSending ? 'pending-message' : '']"
+                            item.status === 'pending' && item.isSending ? 'pending-message' : '',
+                            shouldUseFullRadius(index) ? 'full-radius' : '']"
                              @touchstart="onBubbleTouchStart(item, $event)"
   @touchend="onBubbleTouchEnd(item, $event)"
   @mousedown="onBubbleMouseDown(item, $event)"
@@ -1310,26 +1840,93 @@ function truncateContent(content: string, maxLength: number) {
                   <template v-if="item.type === 'text' && item.text">
                     <!-- 图片 -->
                     <template v-if="isBase64Image(item.text)">
-                      <div class="image-container">
-                        <photo-provider :photo-closable="true">
-                          <photo-consumer :src="item.text" :visible="false" :shouldTransition="false" :toggleOverlay="false" :intro="false">
-                            <img v-lazy="item.text" class="media-element" alt="" />
-                          </photo-consumer>
-                        </photo-provider>
-                      </div>
+                      <ImageMessage 
+                        :image-src="item.text" 
+                        :alt="''"
+                        max-width="280px"
+                        max-height="200px"
+                      />
                     </template>
                     <!-- 视频 -->
                     <template v-else-if="isBase64Video(item.text)">
-                      <div class="video-container" :data-msgid="item.msgId">
-                        <div v-if="!loadedVideos[item.msgId]" class="video-placeholder" @click.stop="loadAndPlayVideo(item)">
-                          <p class="video-placeholder-text">Video - E2EE</p>
-                          <ion-icon :icon="lockClosedOutline" class="play-icon"></ion-icon>
+                      <HlsVideoPlayer
+                        :msg-id="item.msgId!"
+                        :base64-video="item.text"
+                        @loaded="onVideoLoaded"
+                        @error="onVideoError"
+                        @play="onVideoPlay"
+                        @pause="onVideoPause"
+                      />
+                    </template>
+                    <!-- 群聊邀请 -->
+                    <template v-else-if="item.text && isGroupInvitationMessage(item.text)">
+                      <div class="group-invitation-card">
+                        <div class="invitation-header">
+                          <ion-icon :icon="peopleOutline" class="invitation-icon"></ion-icon>
+                          <span class="invitation-title">{{ $t('GroupChatInvitation') || 'Group Invitation' }}</span>
                         </div>
-                        <video v-else controls playsinline class="media-element" :src="item.text" :poster="item.text" preload="none"></video>
+                        <div class="invitation-content">
+                          <p class="invitation-message">{{ parseGroupInvitationMessage(item.text) }}</p>
+                        </div>
+                        <div class="invitation-actions">
+                      
+                          <ion-button 
+                            size="small" 
+                            color="primary"
+                            @click="acceptGroupInvitation(item)"
+                          >
+                            {{ $t('JoinGroup') }}
+                          </ion-button>
+                        </div>
                       </div>
                     </template>
+                    
+                    <!-- API URL 消息 -->
+                    <template v-else-if="item.text && isApiUrlMessage(item.text)">
+                      <div class="api-url-card">
+                        <div class="api-url-header">
+                          <ion-icon :icon="notificationsCircleOutline" class="api-url-icon"></ion-icon>
+                          <span class="api-url-title">{{ getApiUrlDisplayText(item.text) }}</span>
+                        </div>
+                        <div class="api-url-content" v-if="item.from !== currentUserPub">
+                          <p class="api-url-message">{{ t('chatPageClickToAcceptRemoteNotification') }}</p>
+                        </div>
+                        <div class="api-url-actions" v-if="item.from !== currentUserPub">
+                          <ion-button 
+                            size="small" 
+                            color="primary"
+                            @click="handleApiUrlClick(item.text, item.from, item.msgId)"
+                          >
+                            {{ t('chatPageAccept') }}
+                          </ion-button>
+                        </div>
+                      </div>
+                    </template>
+                    
+                    <!-- 删除证书请求消息 -->
+                    <template v-else-if="item.text && isDeleteCertMessage(item.text)">
+                      <div class="delete-cert-request-card">
+                        <div class="delete-cert-request-content">
+                          <ion-icon :icon="trashOutline" class="delete-cert-request-icon"></ion-icon>
+                          <span class="delete-cert-request-title">{{ t('chatPageRevokeRemoteNotificationCertificate') }}</span>
+                        </div>
+                      </div>
+                    </template>
+                    
+                    <!-- 删除确认消息 -->
+                    <template v-else-if="item.text && isDeleteOkMessage(item.text)">
+                      <div class="delete-ok-card">
+                        <div class="delete-ok-header">
+                          <ion-icon :icon="checkmarkOutline" class="delete-ok-icon"></ion-icon>
+                          <span class="delete-ok-title">{{ t('chatPageSecurityCertificateDeleted') }}</span>
+                        </div>
+                        <div class="delete-ok-content">
+                          <p class="delete-ok-message">{{ t('chatPageRemoteNotificationCertificateSuccessfullyRevoked') }}</p>
+                        </div>
+                      </div>
+                    </template>
+                    
                     <!-- 文本、about、think、Markdown -->
-              
                     <template v-else>
                       <div class="meta-text-container"
                        :class="item.from === currentUserPub ? 'my-message' : 'other-message'"
@@ -1356,50 +1953,21 @@ function truncateContent(content: string, maxLength: number) {
   class="think-block native-selectable"
   :class="item.from === currentUserPub ? 'think-own' : 'think-other'"
 >
-  <span v-if="seg.alias" class="think-reply-user">@{{ seg.alias }}:</span>
+  <span v-if="seg.alias" class="think-reply-user">@{{ seg.alias }}</span>
+  
    <!-- 判断是否图片/视频 -->
    <template v-if="isBase64Image(seg.content)">
     <img :src="seg.content" class="media-element" alt="" />
   </template>
-  <template v-else-if="isBase64Video(seg.content)">
-    <video controls playsinline class="media-element" :src="seg.content" preload="none"></video>
-  </template>
-  <template v-else>
-
-    <!-- {{ seg.content }} -->
-    {{ truncateContent(seg.content, 200) }}
-
-  </template>
-</div>
-
-<!-- 普通文本部分（只把普通消息的背景变透明并放大emoji） -->
-<div v-for="(seg, k) in parseMetaSegments(item.text).filter(s => s.type === 'normal')" :key="'normal'+k">
-  <div
-    v-if="isSingleEmoji(seg.content)"
-    class="emoji-message-big"
-  >{{ seg.content }}</div>
-  <div
-    v-else
-    :class="['textchat ', item.from === currentUserPub ? 'my-message' : 'other-message',
-      selectedMessage === item.msgId ? 'selected-message' : ''
-    ]"
-    class="native-selectable markdown-content "
-    v-html="renderMarkdown(seg.content)"
-    @contextmenu.prevent="showDeleteOption(item, $event)"
-  ></div>
-</div>
-
-                      </div>
-                    </template>
-                
-                  </template>
-                  <template v-else-if="item.type === 'voice'">
+  <template v-else-if="item.type === 'voice'">
                     <div v-if="item.audioUrl" class="voice-bar"
                       :class="{ 
-                        'failed-voice': item.status === 'failed', 
+                        
                         'pending-voice': item.status === 'pending' && item.isSending,
-                        'playing': voiceBar.playingAudio.value === item.msgId 
+                        'playing': voiceBar.playingAudio.value === item.msgId,
+                        'full-radius': shouldUseFullRadius(index)
                       }"
+                     
                       :style="{ width: calculateVoiceBarWidth(item.duration || 0) }"
                       @click.stop="isSelectMode ? toggleMessageSelection(item) : toggleVoicePlayback(item)">
                       <span class="duration">
@@ -1411,6 +1979,71 @@ function truncateContent(content: string, maxLength: number) {
                         </template>
                       </span>
                     </div>
+                    <p v-else class="error-text">Loading failed-voice</p>
+                    <p v-if="voiceBar.transcriptions.value[item.msgId!]" class="transcription">{{ voiceBar.transcriptions.value[item.msgId!] }}</p>
+                  </template>
+  <template v-else-if="isBase64Video(seg.content)">
+    <HlsVideoPlayer
+      :msg-id="`${item.msgId}-content-${i}`"
+      :base64-video="seg.content"
+      @loaded="onVideoLoaded"
+      @error="onVideoError"
+      @play="onVideoPlay"
+      @pause="onVideoPause"
+    />
+  </template>
+  <template v-else-if="seg.content.startsWith('Number:')" >
+    <div class="number-message">
+    <span class="number-badge">{{ seg.content.replace('Number:', '') }}</span>
+  </div>
+  </template>
+
+  <template v-else>
+
+    <!-- {{ seg.content }} -->
+    {{ truncateContent(seg.content, 200) }}
+
+  </template>
+</div>
+
+<!-- 普通文本部分（只把普通消息的背景变透明并放大emoji） -->
+<div v-for="(seg, k) in parseMetaSegments(item.text).filter(s => s.type === 'normal')" :key="'normal'+k">
+  
+  <div
+    v-if="isSingleEmoji(seg.content)"
+    class="emoji-message-big"
+  >{{ seg.content }}</div>
+
+  <div v-else-if="item.text.startsWith('Number:')" class="number-message">
+    <span class="number-badge">{{ item.text.replace('Number:', '') }}</span>
+  </div>
+  <div
+    v-else
+    :class="['textchat ', item.from === currentUserPub ? 'my-message' : 'other-message',
+      selectedMessage === item.msgId ? 'selected-message' : '',
+      shouldUseFullRadius(index) ? 'full-radius' : ''
+    ]"
+    class="native-selectable markdown-content "
+    v-html="renderMarkdown(seg.content.replace('Number:', ''))"
+    @contextmenu.prevent="showDeleteOption(item, $event)"
+  ></div>
+</div>
+
+                      </div>
+                    </template>
+                
+                  </template>
+                  <template v-else-if="item.type === 'voice'">
+                    <VoiceBar
+                      v-if="item.audioUrl"
+                      :is-playing="voiceBar.playingAudio.value === item.msgId"
+                      :is-pending="item.status === 'pending' && item.isSending"
+                      :is-failed="false"
+                      :is-my-message="item.from === currentUserPub"
+                      :duration="item.duration || 0"
+                      :remaining-time="remainingMs[item.msgId]"
+                      @click="isSelectMode ? toggleMessageSelection(item) : toggleVoicePlayback(item)"
+                    />
                     <p v-else class="error-text">Loading failed-voice</p>
                     <p v-if="voiceBar.transcriptions.value[item.msgId!]" class="transcription">{{ voiceBar.transcriptions.value[item.msgId!] }}</p>
                   </template>
@@ -1434,18 +2067,18 @@ function truncateContent(content: string, maxLength: number) {
                 :class="['timestamp-container', item.from === currentUserPub ? 'my-timestamp' : 'other-timestamp']"
               >
                 {{ formatLastTime(item.timestamp) }}
-                <ion-button 
-                  v-if="item.status === 'failed' && item.from === currentUserPub" 
+                <SpinningLoader 
+                  v-if="item.status === 'pending' && item.isSending && item.from === currentUserPub" 
                   size="small" 
-                  fill="clear" 
-                  @click="resendMessage(currentChatPub, item)"
-                >
-                  <ion-icon color="dark" slot="icon-only" :icon="refreshOutline"></ion-icon>
-                </ion-button>
-                <span 
-                  v-else-if="item.status === 'pending' && item.isSending && item.from === currentUserPub" 
+                  theme="primary"
                   class="pending-status"
-                > {{ $t('sending') }}...</span>
+                />
+                <div 
+                  v-else-if="item.status === 'sent' && item.justSent && item.from === currentUserPub"
+                  class="sent-confirmation"
+                >
+                  <ion-icon :icon="checkmarkOutline" class="checkmark-icon"></ion-icon>
+                </div>
               </div>
             </div>
           </DynamicScrollerItem>
@@ -1473,7 +2106,7 @@ function truncateContent(content: string, maxLength: number) {
       
     </ion-content>
 
-    <ion-footer  class="ion-no-border" >
+    <ion-footer   :translucent="true"  collapse="fade">
             
 
       <ion-toolbar class="input-toolbar" :style="{ transform: `translateY(-${keyboardHeight}px)` }">
@@ -1502,9 +2135,9 @@ function truncateContent(content: string, maxLength: number) {
 
         <div class="input-capsule" ref="capsuleRef" :class="{ 'shift-up': isDrawerOpen }">
           <ion-button class="drawer-toggle" fill="clear" @click="triggerFileUpload">
-            <ion-icon color="dark" slot="icon-only" :icon="addCircleOutline"></ion-icon>
+            <ion-icon :icon="addOutline"></ion-icon>
           </ion-button>
-          
+         
           <input
             type="file"
             ref="fileInput"
@@ -1517,42 +2150,82 @@ function truncateContent(content: string, maxLength: number) {
           <div class="input-container">
 
             
-            <div v-if="!isVoiceMode" class="text-input" :class="inputMode">
-              <textarea
-                v-model="newMsg"
-                @input="adjustHeight"
-                @focus="onFocus"
-                @blur="onBlur"
-                @keydown.enter.prevent="handleEnterKey"
-                @submit.prevent
-                placeholder=""
-                enterkeyhint="send"
-                rows="1"
-                ref="textInputRef"
-              ></textarea>
-              <ion-button 
-                v-if="inputMode !== 'default'" 
-                class="confirm-button" 
-                fill="clear" 
-                @click="confirmInput"
-              >
-                <ion-icon slot="icon-only" :icon="checkmarkOutline" color="primary"></ion-icon>
-              </ion-button>
-            </div>
-            <div v-else class="voice-input" :class="{ recording: voiceBar.isRecording.value, 'cancel-recording': cancelRecording }"
-              @touchstart="startVoiceRecording" @touchmove="handleVoiceMove" @touchend="stopVoiceRecording" @touchcancel="cancelVoiceRecording">
-              <span v-if="voiceBar.isRecording.value">{{ cancelRecording ? 'Cancel the sliding' : 'Recording' }}</span>
-            </div>
+            <transition name="button-fade" mode="out-in">
+              <div v-if="!isVoiceMode" class="text-input" :class="inputMode" key="text-input">
+
+
+                <!--   @keydown.enter.prevent="handleEnterKey"  enterkeyhint="send"-->
+                <textarea
+                  v-model="newMsg"
+                  @input="adjustHeight"
+                  @focus="onFocus"
+                  @blur="onBlur"
+                  
+                  @submit.prevent
+                  placeholder="Message"
+                 
+                  rows="1"
+                  ref="textInputRef"
+                  
+                ></textarea>
+                <!-- <ion-button 
+                  v-if="inputMode !== 'default'" 
+                  class="confirm-button" 
+                  fill="clear" 
+                  @click="confirmInput"
+                >
+                  <ion-icon slot="icon-only" :icon="checkmarkOutline" color="primary"></ion-icon>
+                </ion-button> -->
+              </div>
+              <div v-else class="voice-input" :class="{ recording: voiceBar.isRecording.value, 'cancel-recording': cancelRecording }" 
+                @touchstart="startVoiceRecording" @touchmove="handleVoiceMove" @touchend="stopVoiceRecording" @touchcancel="cancelVoiceRecording" key="voice-input">
+                <span v-if="voiceBar.isRecording.value">{{ cancelRecording ? 'Cancel the sliding' : 'Recording' }}</span>
+                  <span v-else>Hold to record</span>
+              </div>
+            </transition>
           </div>
+
           <ion-button class="action-button" fill="clear" @click="handleActionButtonClick">
-            <ion-icon slot="icon-only" color="dark" v-if="!newMsg && !isVoiceMode" :icon="micOutline" key="voice"></ion-icon>
-            <ion-icon slot="icon-only" color="dark" v-else-if="newMsg && !isVoiceMode" :icon="returnDownBackOutline" key="send"></ion-icon>
-            <ion-icon slot="icon-only" color="dark" v-else-if="isVoiceMode" :icon="chatboxOutline" key="keyboard"></ion-icon>
+            <transition name="button-fade" mode="out-in">
+              <ion-icon slot="icon-only" v-if="!newMsg && !isVoiceMode" :icon="micOutline" key="voice" ></ion-icon>
+              <ion-icon slot="icon-only" v-else-if="newMsg && !isVoiceMode" :icon="notificationsCircleOutline" key="send"></ion-icon>
+              <ion-icon slot="icon-only" v-else-if="isVoiceMode" :icon="chatbubbleEllipsesOutline" key="keyboard"></ion-icon>
+            </transition>
           </ion-button>
+          <transition name="button-fade" mode="out-in">
+              <ion-button
+                v-if="newMsg.length > 0"
+                key="send-button"
+                fill="clear"
+                class="send-button"
+                @click="handleEnterKey"
+              >
+                <ion-icon slot="icon-only" :icon="sendOutline"></ion-icon>
+              </ion-button>
+            </transition>
         </div>
       </ion-toolbar>
     </ion-footer>
 
+  
+    <!-- 模态窗口 -->
+    <ion-modal :is-open="isModalOpen" @did-dismiss="closeModal">
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>Remote notification</ion-title>
+          <ion-buttons slot="end">
+            <ion-button @click="closeModal">
+              <ion-icon color="dark" :icon="closeOutline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="ion-padding">
+        <div class="modal-content">
+         <RemoteMD />
+        </div>
+      </ion-content>
+    </ion-modal>
   
   </ion-page>
 </template>
@@ -1560,6 +2233,71 @@ function truncateContent(content: string, maxLength: number) {
 
 
 <style scoped>
+.center-message-bubble .voice-bar {
+  margin: 10px auto;
+  transform: scale(1.2); /* Slightly larger for emphasis in full-screen */
+  min-width: 120px;
+  max-width: 240px;
+  height: 39px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 30px 30px 30px 5px !important;
+}
+
+.center-message-bubble.my-message .voice-bar {
+  border-radius: 30px 30px 5px 30px !important;
+}
+
+.center-message-bubble .transcription {
+  margin-top: 10px;
+  font-size: 14px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: #f5f5f5;
+  color: #333;
+  text-align: center;
+  max-width: 80%;
+}
+
+.center-message-bubble.my-message .transcription {
+  background: #e0fff0;
+}
+
+.number-message {
+  display: inline-block;
+  /* padding: 5px 12px; */
+  /* border-radius: 20px; */
+  /* background: linear-gradient(45deg, #4facfe, #00f2fe); */
+  color: rgb(143, 143, 143);
+  font-weight: bold;
+  font-size: 30px;
+  /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); */
+  animation: numberPop 0.3s ease-in-out;
+}
+
+.number-badge {
+  display: inline-block;
+  transform: scale(1);
+  transition: transform 0.2s ease;
+}
+
+/* .number-message:hover .number-badge {
+  transform: scale(1.2);
+} */
+
+@keyframes numberPop {
+  0% { transform: scale(0.8); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.textchat p {
+  margin: 0;
+  padding: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
 .emoji-message-big {
   font-size: 3.2rem;
   background: transparent !important;
@@ -1665,9 +2403,15 @@ function truncateContent(content: string, maxLength: number) {
   border-radius: 30px 30px 8px 30px;
 }
 .center-timestamp {
+
   color: #bbb; font-size: 11px; margin-top: 0px; text-align: center;
   background: var(--background-color-no);
   border-radius: 20px;
+  position: fixed;
+  bottom: 5%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 /* 固定底部操作栏 */
@@ -1703,10 +2447,11 @@ function truncateContent(content: string, maxLength: number) {
 .markdown-content {
   word-break: break-word;
   overflow-wrap: break-word;
-  line-height: 1.5;
+  line-height: 1.3;
   font-size: 13px;
   max-width: 100%;
   overflow-x: auto;
+  white-space: pre-wrap;
 }
 
 /* 标题 */
@@ -1739,7 +2484,7 @@ function truncateContent(content: string, maxLength: number) {
   padding-left: 20px;
   max-width: 100%;
   overflow-x: auto;
-  /* 让英文单词也能断 */
+ 
   word-break: break-all;
   white-space: pre-wrap;
   box-sizing: border-box;
@@ -1767,7 +2512,7 @@ function truncateContent(content: string, maxLength: number) {
   color: #666;
   max-width: 100%;
   overflow-x: auto;
-  /* 让英文单词也能断 */
+
   word-break: break-all;
   white-space: pre-wrap;
   box-sizing: border-box;
@@ -1778,7 +2523,7 @@ function truncateContent(content: string, maxLength: number) {
   font-family: monospace;
   max-width: 100%;
   overflow-x: auto;
-  /* 让英文单词也能断 */
+
   word-break: break-all;
   white-space: pre-wrap;
   box-sizing: border-box;
@@ -1792,13 +2537,13 @@ function truncateContent(content: string, maxLength: number) {
   position: relative;
   max-width: 100%;
   overflow-x: auto;
-  /* 让英文单词也能断 */
+ 
   word-break: break-all;
   white-space: pre-wrap;
   box-sizing: border-box;
 }
 
-/* 代码复制按钮 */
+
 .code-block-wrapper { position: relative; margin: 8px 0; }
 .copy-code-button {
   position: absolute;
@@ -1870,11 +2615,18 @@ function truncateContent(content: string, maxLength: number) {
 .my-message .markdown-content :deep(.hljs-number), .my-message .markdown-content :deep(.hljs-regexp), .my-message .markdown-content :deep(.hljs-literal) { color: #0cc; }
 .my-message .markdown-content :deep(.hljs-title), .my-message .markdown-content :deep(.hljs-section), .my-message .markdown-content :deep(.hljs-function) { color: #f66; }
 
-.chat-name { font-size: 15px; }
+.chat-name { font-size: 15px;font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif; }
 .avatar-container { display: flex; justify-content: center; align-items: start; }
+.header-title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0px;
+ 
+}
 .header-avatar {
-  width: 30px; height: 30px; border-radius: 50%; object-fit: cover;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.843); border: 2px solid black;
+  width: 33px; height: 33px; border-radius: 50%; object-fit: cover;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.843); border: 2px solid var(--ion-background-color);
 }
 
 .gradient-mask {
@@ -1905,8 +2657,8 @@ function truncateContent(content: string, maxLength: number) {
 .think-block {
   position: relative;
   align-self: start;
-  padding: 9px;
-  padding-bottom: 20px;
+  padding:7px 9px;
+  padding-bottom: 15px;
   border-radius: 23px;
   font-style: italic;
   font-size: 9px;
@@ -1919,7 +2671,7 @@ function truncateContent(content: string, maxLength: number) {
   z-index: -1;
   pointer-events: none;
   max-width: 90%;
-  min-width: 50px;
+  min-width: 39px;
   overflow: visible;
 }
 .think-own { right:-10px; top: 13px; left: auto; transform: none; }
@@ -1950,11 +2702,13 @@ ion-content { --content-bottom: 0px; transition: all 0.2s ease; }
 
 .input-toolbar {
   transition: all 0.2s ease;
-  position: relative; bottom: 0; width: 100vw; --background:transparent; overflow:visible;
+  position: relative; bottom: 0; width: 100vw; overflow:visible;
   /* --background: linear-gradient(to top, var(--ion-background-color) 70%, rgba(0, 0, 0, 0) 100%);
   */
-  background: var(--background-color-no);
-  backdrop-filter: blur(10px);
+  /* --background: var(--background-color-no);
+    background: var(--background-color-no);
+    */
+    backdrop-filter: blur(10px);
 }
 
 .message-container { height: 100vh;}
@@ -1965,7 +2719,7 @@ ion-content { --content-bottom: 0px; transition: all 0.2s ease; }
   overflow-y: auto;
   margin-top: -100px;
   padding-top:120px;
-  padding-bottom: 160px;
+  padding-bottom: 120px;
   overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
  
@@ -1988,28 +2742,30 @@ ion-content { --content-bottom: 0px; transition: all 0.2s ease; }
   margin-right: 10px;
 }
 .textchat{
-/* 
-  right: 0; */
-  padding: 5px 15px;
-  font-size: 13px;
+
+  font-size: 15px;
   display: inline-block;
   text-align: left;
   max-width: 100%;
   transform-origin: center;
   border-radius: 30px 30px 30px 5px !important;
-  background: var(--ion-color-dark-contrast);
+  background: #898a8a26;
   z-index: 9999;
+backdrop-filter: blur(10px);
+  padding: 16px;
+  padding-bottom: 0px;
 }
 .textchat.my-message{
-  padding: 5px 15px;
+
   font-size: 13px;
   display: inline-block;
   text-align: left;
   max-width: 100%;
   transform-origin: center;
   border-radius: 30px 30px 5px 30px !important;
-  background: #01b872;
+  background: #0165d7;
   z-index: 9999;
+  
 }
 .failed-message { background: #ff4d4d !important; opacity: 0.8; }
 .pending-message {
@@ -2017,24 +2773,18 @@ ion-content { --content-bottom: 0px; transition: all 0.2s ease; }
   animation: gradientBreath 6s ease infinite;
   /* box-shadow: 0 0 10px rgba(82, 238, 209, 0.7), 0 0 20px rgba(35, 213, 171, 0.5); */
 }
-.selected-message {
-  box-shadow: 0 0 10px rgba(82, 238, 209, 0.7), 0 0 20px rgba(35, 213, 171, 0.5);
-  color: #fff;
-  transition: all 0.3s ease-in-out;
-  z-index: 9999;
 
-}
 
 
 .voice-bubble { background: transparent !important; padding: 0 !important; }
 .voice-bar {
   display: flex; align-items: center; border-radius: 30px 30px 30px 5px !important; gap: 8px;
-  height: 50px; background: var(--ion-color-dark-contrast);
+  height: 39px; background: var(--ion-color-dark-contrast);
   cursor: pointer; transition: background 0.5s ease, box-shadow 0.5s ease, width 0.3s ease, transform 0.2s ease;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); touch-action: manipulation; min-width: 100px; max-width: 200px;
   transform-origin: center;
 }
-.my-message .voice-bar { color: #fff; background: #01b872; border-radius: 30px 30px 5px 30px !important; }
+.my-message .voice-bar { color: #fff; background: #0165d7; border-radius: 30px 30px 5px 30px !important; }
 .failed-voice { background: #ff9999 !important; opacity: 0.8; }
 .pending-voice {
   animation: gradientBreath 6s ease infinite;
@@ -2093,7 +2843,7 @@ ion-content { --content-bottom: 0px; transition: all 0.2s ease; }
 .gun-avatar { width: 30px; height: 30px; border-radius:50%; margin-right:10px; object-fit: cover; box-shadow: 0 2px 4px rgba(0, 0, 0, 0); }
 .message-avatar {
   width: 35px; height: 35px; border-radius:50%; object-fit: cover;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.649); margin-left:10px; border: 2px solid black;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.649); margin-left:10px; border: 2px solid var(--ion-background-color);
 }
 .my-message .message-avatar{ border-radius:50%; margin-left:0px; margin-right:10px; }
 
@@ -2115,17 +2865,70 @@ ion-content { --content-bottom: 0px; transition: all 0.2s ease; }
 .other-timestamp { justify-content: flex-start; margin-left:50px; }
 .pending-status { color: #00ffbb; font-style: italic;margin: 0 2px; }
 
+.sent-confirmation {
+  display: inline-flex;
+  align-items: center;
+  margin: 0 2px;
+  animation: sentSuccess 1.5s ease-in-out;
+}
+
+.checkmark-icon {
+  font-size: 16px;
+  color: #00d4aa;
+  animation: checkmarkPop 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes sentSuccess {
+  0% { opacity: 0; transform: scale(0.5); }
+  20% { opacity: 1; transform: scale(1.2); }
+  40% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.8); }
+}
+
+@keyframes checkmarkPop {
+  0% { transform: scale(0) rotate(-45deg); opacity: 0; }
+  50% { transform: scale(1.3) rotate(0deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
 .input-capsule {
-  display: flex; align-items: center; background: rgba(133, 133, 133, 0.123); border-radius: 30px;
+  display: flex; align-items: end;
+   background: rgba(133, 133, 133, 0.123); 
+   border-radius: 30px;
   width: 96%; margin: 3px auto; height: 46px; transition: all 0.2s ease;
+
+  padding: 3px;
 }
-.input-container { flex: 1; display: flex; align-items: center; margin: 0; padding: 0; }
-.text-input { width: 100%; display: flex; align-items: center; position: relative; }
-.text-input textarea {
-  width: 100%; min-height: 39px; max-height: 120px; padding: 12px;
-  border: none; border-radius: 30px; font-size: 16px; outline: none;
-  resize: none; overflow-y: auto; background: transparent;
+.input-container { 
+  flex: 1; display: flex; 
+  align-items:center;
+  justify-content: center;
+  width: 100%;
 }
+.text-input {  flex: 1;  width: 100%; display: flex; align-items: flex-end; justify-content: space-between; }
+
+
+textarea {
+  flex-grow: 1; 
+  color: var(--ion-text-color);
+  /* font-size: 16px; */
+  /* line-height: 1; */
+  outline: none;
+  height: auto;
+  max-height: 120px;
+  overflow-y: auto;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px ;
+ min-height: 40px;
+ 
+  border-radius: 24px;
+
+ 
+}
+
 .text-input.about textarea {
   background: rgb(1, 255, 238); box-shadow: 0 2px 8px rgb(1, 255, 238); color: black;
 }
@@ -2136,22 +2939,73 @@ ion-content { --content-bottom: 0px; transition: all 0.2s ease; }
 
 .voice-input {
   width: 100%; height: 39px; display: flex; align-items: center; justify-content: center; gap: 8px;
-  border-radius: 20px; background: rgba(0, 205, 137, 0.544); font-size: 16px; font-weight: 500;
+  border-radius: 20px; background: #0165d7; font-size: 16px; font-weight: 500;
   cursor: pointer; user-select: none; touch-action: manipulation; transition: all 0.3s ease-in-out; overflow: visible; left: 0px;
+ 
 }
 .voice-input.recording {
-  border-radius: 30px; position:absolute; width: 100vw; height: 59px;
+  border-radius: 30px; width: 100%; height: 39px;
   background: linear-gradient(-45deg, #00ffaa, #ff9999, #fff, #00cd89);
   background-size: 200% 200%;
   animation: gradientBreath 6s ease infinite;
   z-index: 9999; transition: all 0.3s ease-in-out; overflow: visible;
+  /* transform: translateY(-20px); */
 }
 .voice-input.cancel-recording {
   border-radius: 30px; background: #ff4d4d; transform: translateY(-20px);
   transition: all 0.3s ease-in-out; overflow: visible;
 }
 .voice-input span { font-size: 14px; }
-.drawer-toggle, .action-button { --padding-start: 8px; --padding-end: 8px; }
+
+.drawer-toggle{
+  
+  --padding-start: 5px;
+  --padding-end: 5px;
+  --background: rgb(38, 38, 38);
+  --color: #6e6e6e;
+--border-radius: 50%;
+width: 35px; /* Make it a circle */
+height: 35px;
+min-width: 35px;
+min-height: 35px;
+/* margin-right: -5px; */
+
+margin:2px;
+
+}
+.action-button{
+  
+  --padding-start: 5px;
+  --padding-end: 5px;
+--background: rgb(38, 38, 38);
+--color: #6e6e6e;
+--border-radius: 50%;
+width: 35px; /* Make it a circle */
+height: 35px;
+min-width: 35px;
+min-height: 35px;
+/* margin-right: -5px; */
+
+margin:2px;
+
+}
+.send-button{
+  
+  --padding-start: 9px;
+  --padding-end: 9px;
+  --background: rgb(38, 38, 38);
+  --color: #6e6e6e;
+--border-radius: 50%;
+width: 35px; /* Make it a circle */
+height: 35px;
+min-width: 35px;
+min-height: 35px;
+/* margin-right: -5px; */
+
+margin:2px;
+
+}
+
 
 .image-preview-overlay {
   position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.9); z-index: 2000;
@@ -2199,10 +3053,12 @@ ion-content { --content-bottom: 0px; transition: all 0.2s ease; }
 ion-button[disabled] ion-icon { opacity: 0.4; }
 .slide-up-enter-active, .slide-up-leave-active { transition: transform 0.3s ease; }
 .slide-up-enter-from, .slide-up-leave-to { transform: translateY(100%); }
+
 .url-link { color: #5900cd; background-color: rgb(0, 247, 255); border-radius: 5px; padding: 0 2px; text-decoration: underline; cursor: pointer; word-break: break-all; }
 .url-link:hover { color: #5900cd; text-decoration: underline; }
 .my-message .url-link { color: #5900cd; text-decoration: underline; }
 .my-message .url-link:hover { color: #5900cd; }
+
 .skeleton-container { height: 100vh; z-index:9999; }
 .skeleton-message { display: flex; align-items: flex-end; gap: 9px; margin: 15px 0; animation: fade 1.5s infinite ease-in-out; }
 .skeleton-message.my-message { justify-content: flex-end; }
@@ -2215,20 +3071,279 @@ ion-button[disabled] ion-icon { opacity: 0.4; }
 .fade-enter-active, .fade-leave-active { transition: opacity 0.5s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; }
 
+/* 群聊邀请卡片样式 - 符合消息模版主题 */
+.group-invitation-card {
+  background: var(--ion-background-color);
+  border: none;
+  border-radius: 30px 30px 30px 5px;
+  padding: 18px;
+  margin: 8px 0;
+  box-shadow: 0 2px 4px rgba(126, 126, 126, 0.146);
+  max-width: 280px;
+  color: var(--ion-text-color);
+  transition: all 0.3s ease;
+  transform-origin: center;
+  /* backdrop-filter: blur(10px); */
+}
+
+/* API URL 卡片样式 - 基于群聊邀请卡片 */
+.api-url-card {
+  background: var(--ion-color-dark-contrast);
+  border: none;
+  border-radius: 30px 30px 30px 5px;
+  padding: 18px;
+  margin: 8px 0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  max-width: 280px;
+  color: var(--ion-text-color);
+  transition: all 0.3s ease;
+  transform-origin: center;
+}
+
+.my-message .group-invitation-card {
+  background: #0165d7;
+  border-radius: 30px 30px 5px 30px;
+  color: #fff;
+}
+
+.my-message .api-url-card {
+  background: #0165d7;
+  border-radius: 30px 30px 5px 30px;
+  color: #fff;
+}
+
+.invitation-header, .api-url-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.invitation-icon, .api-url-icon {
+  font-size: 20px;
+  color: #8a8a8a;
+  /* background: rgba(82, 238, 209, 0.1);
+  border-radius: 50%; */
+  
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.api-url-icon {
+  color: #ff9500;
+  background: rgba(255, 149, 0, 0.1);
+}
+
+.my-message .invitation-icon, .my-message .api-url-icon {
+  color: #fff;
+ 
+}
+
+.invitation-title, .api-url-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--ion-text-color);
+  flex: 1;
+}
+
+.my-message .invitation-title, .my-message .api-url-title {
+  color: #fff;
+}
+
+.invitation-content, .api-url-content {
+  margin-bottom: 16px;
+}
+
+.invitation-message, .api-url-message {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ion-color-medium-shade);
+  background: rgba(0, 0, 0, 0.03);
+  padding: 12px;
+  border-radius: 16px;
+  /* border-left: 3px solid #0165d7; */
+}
+
+.api-url-message {
+  border-left-color: #ff9500;
+}
+
+.my-message .invitation-message, .my-message .api-url-message {
+  color: rgba(255, 255, 255, 0.9);
+  background: rgba(255, 255, 255, 0.1);
+  border-left-color: #fff;
+}
+
+.invitation-actions, .api-url-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.invitation-actions ion-button, .api-url-actions ion-button {
+  --border-radius: 20px;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  font-size: 13px;
+  font-weight: 500;
+  height: 36px;
+  transition: all 0.2s ease;
+}
+
+.invitation-actions ion-button[fill="outline"], .api-url-actions ion-button[fill="outline"] {
+  --border-color: var(--ion-color-medium);
+  --color: var(--ion-color-medium);
+  --background: transparent;
+}
+
+.invitation-actions ion-button[fill="outline"]:hover, .api-url-actions ion-button[fill="outline"]:hover {
+  --background: rgba(0, 0, 0, 0.05);
+  transform: scale(1.05);
+}
+
+.invitation-actions ion-button[color="primary"], .api-url-actions ion-button[color="primary"] {
+  --background: linear-gradient(135deg, #52eed1, #23d5ab);
+  --color: #000;
+  font-weight: 600;
+}
+
+.invitation-actions ion-button[color="primary"]:hover, .api-url-actions ion-button[color="primary"]:hover {
+  transform: scale(1.05);
+  /* box-shadow: 0 4px 12px rgba(82, 238, 209, 0.3); */
+}
+
+.my-message .invitation-actions ion-button[color="primary"], .my-message .api-url-actions ion-button[color="primary"] {
+  --background: #fff;
+  --color: #01b872;
+}
+
+.my-message .invitation-actions ion-button[fill="outline"], .my-message .api-url-actions ion-button[fill="outline"] {
+  --border-color: rgba(255, 255, 255, 0.6);
+  --color: rgba(255, 255, 255, 0.9);
+}
+
+.my-message .invitation-actions ion-button[fill="outline"]:hover, .my-message .api-url-actions ion-button[fill="outline"]:hover {
+  --background: rgba(255, 255, 255, 0.1);
+}
+
+/* 删除证书请求消息样式 */
+.delete-cert-request-card {
+  background: #f44336;
+  border-radius: 16px;
+  padding: 16px;
+  margin: 8px auto;
+  max-width: 280px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(244, 67, 54, 0.3);
+  transition: all 0.2s ease;
+}
+
+.delete-cert-request-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.delete-cert-request-icon {
+  font-size: 20px;
+  color: #fff;
+}
+
+.delete-cert-request-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+/* 删除确认消息样式 */
+.delete-ok-card {
+  background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+  border: 1px solid #4caf50;
+  border-radius: 16px;
+  padding: 16px;
+  margin: 8px 0;
+  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.15);
+  transition: all 0.2s ease;
+}
+
+.delete-ok-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.delete-ok-icon {
+  font-size: 20px;
+  color: #4caf50;
+  background: rgba(76, 175, 80, 0.1);
+  border-radius: 50%;
+  padding: 6px;
+  width: 32px;
+  height: 32px;
+}
+
+.delete-ok-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #2e7d32;
+  flex: 1;
+}
+
+.delete-ok-content {
+  margin-bottom: 0;
+}
+
+.delete-ok-message {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #388e3c;
+  background: rgba(76, 175, 80, 0.05);
+  padding: 12px;
+  border-radius: 12px;
+  border-left: 3px solid #4caf50;
+}
+
+.my-message .delete-ok-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.1));
+  border-color: rgba(138, 136, 136, 0.3);
+}
+
+.my-message .delete-ok-title {
+  color: var(--ion-text-color);
+}
+
+.my-message .delete-ok-icon {
+  color: var(--ion-text-color);
+  background: rgba(143, 142, 142, 0.2);
+}
+
+.my-message .delete-ok-message {
+  color: var(--ion-text-color);
+  background: rgba(255, 255, 255, 0.1);
+  border-left-color: var(--ion-text-color);
+}
+
 
 .mode-selection1 {  border-radius: 30px; display: flex; justify-content: start; transform: translateX(0); transition: transform 0.3s ease-in-out; z-index: 9999; }
 
 
 .meta-cards {
-  /* position: relative; */
+
   padding: 10px;
   display: flex;
   flex-direction: column;
-  /* gap: 8px; */
+
   background: var(--ion-background-color);
   z-index: 1000;
   transition: bottom 0.2s ease;
-  /* display: inline-block; */
+
   width: 100%;
 }
 .meta-card {
@@ -2239,9 +3354,94 @@ ion-button[disabled] ion-icon { opacity: 0.4; }
   border-radius: 30px;
   font-size: 14px;
 }
-/* .about-card { background: rgba(1, 255, 238, 0.2); }
-.think-card { background: rgba(0, 0, 0, 0.2); } */
+
 .meta-content { flex: 1; word-break: break-word; font-size: 13px; }
 .meta-icon { font-size: 20px; }
 
-</style> 
+/* 全圆角样式和动画 */
+.message-bubble.full-radius {
+  border-radius: 30px !important;
+  transition: border-radius 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.textchat.full-radius {
+  border-radius: 30px !important;
+  transition: border-radius 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 语音消息的全圆角 */
+.voice-bar.full-radius {
+  border-radius: 30px !important;
+  transition: border-radius 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 动画效果：从聊天泡泡变为全圆角 */
+@keyframes bubbleToFullRadius {
+  0% {
+    border-radius: 30px 30px 30px 5px;
+  }
+  100% {
+    border-radius: 30px;
+  }
+}
+
+@keyframes bubbleToFullRadiusMy {
+  0% {
+    border-radius: 30px 30px 5px 30px;
+  }
+  100% {
+    border-radius: 30px;
+  }
+}
+
+/* 应用动画 */
+.message-bubble.full-radius:not(.my-message) {
+  animation: bubbleToFullRadius 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.message-bubble.full-radius.my-message {
+  animation: bubbleToFullRadiusMy 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.textchat.full-radius:not(.my-message) {
+  animation: bubbleToFullRadius 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.textchat.full-radius.my-message {
+  animation: bubbleToFullRadiusMy 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 语音消息的全圆角动画 */
+.voice-bar.full-radius:not(.my-message) {
+  animation: bubbleToFullRadius 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.voice-bar.full-radius.my-message {
+  animation: bubbleToFullRadiusMy 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* 按钮过渡动画（桌面版） */
+.button-fade-enter-active {
+  transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.175);
+}
+
+.button-fade-leave-active {
+  transition: all 0.2s cubic-bezier(0.55, 0.055, 0.675, 0.19);
+}
+
+.button-fade-enter-from {
+  opacity: 0;
+  transform: translateX(20px) scale(0.7);
+}
+
+.button-fade-leave-to {
+  opacity: 0;
+  transform: translateX(-15px) scale(0.7);
+}
+
+.button-fade-enter-to,
+.button-fade-leave-from {
+  opacity: 1;
+  transform: translateX(0) scale(1);
+}
+</style>

@@ -36,13 +36,13 @@ export function useDateFormatter() {
 
     // 刚刚（小于60秒）
     if (diffInSeconds >= 0 && diffInSeconds < 60) {
-      return t('just now') ;
+      return t('Just now') ;
     }
 
     // 1到10分钟前
     const diffInMinutes = Math.floor(diffInSeconds / 60);
     if (diffInMinutes >= 1 && diffInMinutes <= 10) {
-      return t('mins ago');
+      return t('Mins ago');
     }
 
     // 今天
@@ -55,17 +55,17 @@ export function useDateFormatter() {
     yesterdayStart.setDate(yesterdayStart.getDate() - 1);
 
     if (date >= todayStart && date < tomorrowStart) {
-      return `today ${formatTime(date)}` ;
+      return `Today ${formatTime(date)}` ;
     }
 
     // 明天
     if (date >= tomorrowStart && date < dayAfterTomorrowStart) {
-      return `tomorrow ${formatTime(date)}`;
+      return `Tomorrow ${formatTime(date)}`;
     }
 
     // 昨天
     if (date >= yesterdayStart && date < todayStart) {
-      return `yesterday ${formatTime(date)}` ;
+      return `Yesterday ${formatTime(date)}` ;
     }
 
     // 其它

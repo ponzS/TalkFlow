@@ -4,16 +4,27 @@
     <ion-header :translucent="true" collapse="fade">
       <ion-toolbar class="liquid-toolbar">
         <ion-buttons slot="start">
-          <ion-back-button color="dark"></ion-back-button>
+          <ion-back-button :text="$t('back')" ></ion-back-button>
         </ion-buttons>
         <ion-title>Profile Settings</ion-title>
       </ion-toolbar>
     </ion-header>
 
     <ion-content :fullscreen="true" >
+
+<ion-header collapse="condense" >
+          <ion-toolbar>
+            <h1 style="margin: 10px;font-weight: 900;font-size: 39px;">
+        Profile Settings
+            </h1>
+          </ion-toolbar>
+        </ion-header>
+
+
+
       <ion-list class="list-container">
         <!-- Current Avatar -->
-        <ion-item  @click="editField('avatar')" class="list-item" lines="none">
+        <ion-item button @click="editField('avatar')" class="list-item" >
           <ion-label>Avatar</ion-label>
           <div slot="end" class="item-content">
             <img
@@ -28,28 +39,65 @@
               alt="Avatar"
               class="avatar-preview"
             />
-            <!-- <ion-icon :icon="pencilOutline" class="edit-icon"></ion-icon> -->
+            <!-- <ion-icon :icon="icons.pencilOutline" class="edit-icon"></ion-icon> -->
           </div>
         </ion-item>
 
         <!-- Current Name -->
-        <ion-item  @click="editField('name')" class="list-item" lines="none">
+        <ion-item button @click="editField('name')" class="list-item" >
           <ion-label>Name</ion-label>
           <div slot="end" class="item-content">
             <span class="item-value">{{ currentUserAlias || 'Not set' }}</span>
-            <!-- <ion-icon :icon="pencilOutline" class="edit-icon"></ion-icon> -->
+            <!-- <ion-icon :icon="icons.pencilOutline" class="edit-icon"></ion-icon> -->
           </div>
         </ion-item>
 
         <!-- Current Link -->
-        <ion-item  @click="editField('link')" class="list-item" lines="none">
+        <ion-item button @click="editField('link')" class="list-item" >
           <ion-label>Link</ion-label>
           <div slot="end" class="item-content">
             <span class="item-value">{{ currentUserAlias1 || 'Not set' }}</span>
             <!-- <ion-icon :icon="pencilOutline" class="edit-icon"></ion-icon> -->
           </div>
         </ion-item>
+
+        <!-- 🆕 Gun数据可视化 -->
+        <!-- <ion-item button @click="toggleEpubPoolVisualization" class="list-item">
+          <ion-label>Epub Pool Data</ion-label>
+          <div slot="end" class="item-content">
+            <span class="item-value">{{ epubPoolVisible ? 'Hide' : 'Show' }}</span>
+          </div>
+        </ion-item> -->
       </ion-list>
+
+      <!-- 🆕 Epub池数据可视化面板 -->
+      <!-- <div v-if="epubPoolVisible" class="epub-pool-panel">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Epub Pool Data Visualization</ion-card-title>
+            <ion-card-subtitle>Real-time Gun.js epub pool monitoring</ion-card-subtitle>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="data-section">
+              <h4>My Epub Pool Node: epub_pool/{{ currentUserPub?.slice(0, 8) }}...</h4>
+              <div class="data-container">
+                <pre v-if="epubPoolData && Object.keys(epubPoolData).length > 0" class="data-display">{{ JSON.stringify(epubPoolData, null, 2) }}</pre>
+                <p v-else class="no-data">No epub data received yet</p>
+              </div>
+            </div>
+            <div class="controls-section">
+              <ion-button @click="refreshEpubPoolData" fill="outline" size="small">
+                <ion-icon :icon="icons.refreshOutline" slot="start"></ion-icon>
+                Refresh
+              </ion-button>
+              <ion-button @click="clearEpubPoolData" fill="outline" size="small" color="danger">
+                <ion-icon :icon="icons.trashOutline" slot="start"></ion-icon>
+                Clear
+              </ion-button>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </div> -->
 
       <!-- Edit Modal -->
       <ion-modal :is-open="!!editingField"  @didDismiss="cancelEdit">
@@ -59,7 +107,7 @@
               <ion-title>Edit {{ editingField }}</ion-title>
               <ion-buttons slot="end">
                 <ion-button @click="cancelEdit">
-                  <ion-icon color="dark" :icon="closeOutline" slot="icon-only"></ion-icon>
+                  <ion-icon color="dark" :icon="icons.closeOutline" slot="icon-only"></ion-icon>
                 </ion-button>
               </ion-buttons>
             </ion-toolbar>
@@ -142,9 +190,9 @@ import { useRouter } from 'vue-router';
 import { getTalkFlowCore } from '@/composables/TalkFlowCore';
 import {
   IonPage, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent, IonList, IonItem,
-  IonLabel, IonInput, IonButton, IonModal, IonText, IonIcon,
+  IonLabel, IonInput, IonButton, IonModal, IonText, IonIcon, IonCard, IonCardHeader, IonCardTitle, IonCardSubtitle, IonCardContent,
 } from '@ionic/vue';
-import { pencilOutline, closeOutline } from 'ionicons/icons';
+import { pencilOutline, closeOutline, refreshOutline, trashOutline } from 'ionicons/icons';
 import { gunAvatar, extractFromFile, mountClass } from "gun-avatar";
 
 mountClass();
@@ -154,13 +202,44 @@ const {
   newAliasInput1, updateAlias1, currentUserAlias1, updateAliasMsg1,
   newAliasInput, updateAlias, updateAliasMsg,
   avatarFile, avatarUrl, handleAvatarUpload, updateAvatar, updateAvatarMsg,
-  userAvatars, currentUserPub, currentUserAlias,deleteOldAvatar
+  userAvatars, currentUserPub, currentUserAlias, deleteOldAvatar, gun
 } = chatFlow;
 
 // Edit state
 const editingField = ref<string | null>(null);
 const tempInput = ref<string>('');
 const isUpdating = ref(false);
+
+// 🆕 Epub池可视化状态
+const epubPoolVisible = ref(false);
+const epubPoolData = ref<Record<string, any>>({});
+
+// 🆕 Epub池可视化函数
+const toggleEpubPoolVisualization = () => {
+  epubPoolVisible.value = !epubPoolVisible.value;
+  if (epubPoolVisible.value) {
+    refreshEpubPoolData();
+  }
+};
+
+const refreshEpubPoolData = () => {
+  if (!currentUserPub.value) return;
+  
+ // console.log('🔍 刷新epub池数据...');
+  
+  // 监听自己的epub池节点
+  gun.get('epub_pool').get(currentUserPub.value).on((data: any, key: string) => {
+    if (data && key) {
+      epubPoolData.value = { ...epubPoolData.value, [key]: data };
+    //  console.log('📊 epub池数据更新:', { key: key.slice(0, 8), data });
+    }
+  });
+};
+
+const clearEpubPoolData = () => {
+  epubPoolData.value = {};
+ // console.log('🗑️ 已清空epub池数据显示');
+};
 
 const editField = (field: string) => {
   editingField.value = field;
@@ -189,7 +268,7 @@ const updateField = async () => {
       cancelEdit();
     }
   } catch (err) {
-    console.error('Update failed:', err);
+    // Update failed
   } finally {
     isUpdating.value = false;
   }
@@ -206,6 +285,14 @@ const cancelEdit = () => {
 import { useTheme } from '@/composables/useTheme';
 const { isDark } = useTheme();
 
+// 导出图标
+const icons = {
+  pencilOutline,
+  closeOutline,
+  refreshOutline,
+  trashOutline
+};
+
 // Generate avatar based on user's public key
 const getGunAvatar = (pub: string) => {
   return gunAvatar({
@@ -215,46 +302,13 @@ const getGunAvatar = (pub: string) => {
     dark: isDark.value,
     svg: true
     // draw: 'squares'
-  });
+  } as any);
 };
 </script>
 
 <style scoped>
-/* Liquid Toolbar */
-.liquid-toolbar {
-  --border-color: transparent;
- 
-}
-
-/* Liquid Content */
 
 
-/* List Container */
-.list-container {
-  --background: transparent;
-  margin-top: 39px;
-}
-
-/* List Item */
-.list-item {
-
-  --border-radius: 15px;
-  --padding-start: 16px;
-  --padding-end: 16px;
-  margin-bottom: 10px;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.list-item:hover {
-  transform: scale(1.02);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
-
-.list-item ion-label {
-
-  font-weight: 500;
-  font-size: 1.1rem;
-}
 
 .item-content {
   display: flex;
@@ -275,22 +329,17 @@ const getGunAvatar = (pub: string) => {
   transition: transform 0.3s ease;
 }
 
-.list-item:hover .edit-icon {
-  transform: scale(1.2);
-}
+
 
 /* Avatar Preview */
 .avatar-preview {
-  width: 48px;
-  height: 48px;
-  border-radius: 15px;
-  transition: transform 0.3s ease;
+  width: 39px;
+  height: 39px;
+  border-radius: 50%;
+
   object-fit: cover;
 }
 
-.avatar-preview:hover {
-  transform: scale(1.1);
-}
 
 
 
@@ -332,16 +381,13 @@ const getGunAvatar = (pub: string) => {
   padding: 12px;
   border: none;
   border-radius: 15px;
-  background: rgba(255, 255, 255, 0.3);
-  color: #fff;
+  background: rgba(140, 140, 140, 0.3);
+  
   font-size: 14px;
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.liquid-file-input:hover {
-  transform: scale(1.02);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
-}
+
 
 .avatar-preview-container {
   display: flex;
@@ -356,10 +402,6 @@ const getGunAvatar = (pub: string) => {
   transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.avatar-preview-large:hover {
-  transform: scale(1.05);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-}
 
 /* Modal Actions */
 .modal-actions {
@@ -380,8 +422,5 @@ const getGunAvatar = (pub: string) => {
   --background: linear-gradient(45deg, #77ddff, #aaf5ff);
 }
 
-ion-button[color="medium"] {
-  --border-radius: 15px;
- 
-}
+
 </style>

@@ -1,0 +1,11 @@
+name: TalkFlow
+package: cloud.lazycat.app.ponzs-talkflow
+version: 1.6.9
+description: 
+license: https://choosealicense.com/licenses/mit/
+homepage: 
+author: ponzS
+application:
+  subdomain: talkflow
+  routes:
+    - /=file:///lzcapp/pkg/content

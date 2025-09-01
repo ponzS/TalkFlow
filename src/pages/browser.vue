@@ -11,11 +11,11 @@
       </ion-toolbar>
     </ion-header> -->
       <ion-content :fullscreen="true" class="browser-content">
-        <div class="back-button1">
+        <!-- <div class="back-button1">
           <div class="back-button" @click="goBack">
             <div class="i-material-symbols-arrow-back-ios-new-rounded"></div>
           </div>
-        </div>
+        </div> -->
   
         <!-- <iframe src="https://gun-vue.js.org/app/#/chat/" class="iframe-container"></iframe> -->
         <div class="container">
@@ -299,7 +299,7 @@ async function openWebsite() {
             await Browser.open({ url: relayUrl });
             urlInput.value = '';
         } catch (error) {
-            console.error('Failed to open relay URL:', error);
+            // 无法打开中继URL
         }
         return;
     }
@@ -312,7 +312,7 @@ async function openWebsite() {
             await Browser.open({ url: chatUrl });
             urlInput.value = '';
         } catch (error) {
-            console.error('Failed to open chat room:', error);
+            // 无法打开聊天室
         }
         return;
     }
@@ -326,7 +326,7 @@ async function openWebsite() {
             showDataModal.value = true;
             urlInput.value = '';
         } catch (error) {
-            console.error('Failed to process Data URL:', error);
+            // 无法打开数据URL
         }
     } 
     // 检查是否为有效的URL
@@ -339,7 +339,7 @@ async function openWebsite() {
             await Browser.open({ url: formattedUrl });
             urlInput.value = '';
         } catch (error) {
-            console.error('Failed to open URL:', error);
+            // 无法打开URL
         }
     } 
     // 如果不是URL也不是Data URL，则执行Google搜索
@@ -349,7 +349,7 @@ async function openWebsite() {
             await Browser.open({ url: searchUrl });
             urlInput.value = '';
         } catch (error) {
-            console.error('Failed to perform search:', error);
+            // 搜索失败
         }
     }
 }

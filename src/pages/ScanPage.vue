@@ -1,6 +1,28 @@
 <template>
   <IonPage>
+  <ion-header :translucent="true" collapse="fade">
+      <ion-toolbar>
+        <ion-buttons slot="start">
+          <ion-back-button :text="$t('back')" @click="stopRealtimeScanAndGoBack"></ion-back-button>
+        </ion-buttons>
+        <ion-title>Scanner</ion-title>
+       
+      <ion-buttons slot="end">
+        <ion-button  @click="pickPhoto">
+          <ion-icon slot="start" :icon="imageOutline" />
+        </ion-button>
+      </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+
     <ion-content :fullscreen="true" class="beijing">
+            <ion-header collapse="condense" >
+          <ion-toolbar>
+            <h1 style="margin: 10px;font-weight: 900;font-size: 39px;">
+Scanner
+            </h1>
+          </ion-toolbar>
+        </ion-header>
       <!-- 全屏毛玻璃遮罩 -->
       <transition name="fade">
         <div v-if="showOverlay" class="glass-overlay"></div>
@@ -12,9 +34,9 @@
       </div>
 
       <!-- 返回按钮 -->
-      <div class="back-button" @click="stopRealtimeScanAndGoBack">
+      <!-- <div class="back-button" @click="stopRealtimeScanAndGoBack">
         <div class="i-material-symbols-arrow-back-ios-new-rounded"></div>
-      </div>
+      </div> -->
 
 
 <!-- 
@@ -25,9 +47,9 @@
 
 
       <!-- 从相册或拍照解析 -->
-      <button class="qr-photo" @click="pickPhoto">
+      <!-- <button class="qr-photo" @click="pickPhoto">
         <ion-icon slot="start" :icon="imageOutline" />
-      </button>
+      </button> -->
 
       <!-- 模态窗口：显示扫描结果或错误信息 -->
       <transition name="fade">
@@ -48,11 +70,11 @@
       </transition>
 
       <!-- 图片预览 -->
-      <transition name="fade-slide">
+      <!-- <transition name="fade-slide">
         <div v-if="photoSrc" class="photo-preview">
           <img :src="photoSrc"  />
         </div>
-      </transition>
+      </transition> -->
     </ion-content>
   </IonPage>
 </template>
@@ -60,7 +82,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue';
 import { useRouter } from 'vue-router';
-import { IonPage, IonContent } from '@ionic/vue';
+import { IonPage, IonContent,IonHeader, IonToolbar,IonBackButton,IonTitle,IonButtons,IonButton } from '@ionic/vue'; 
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { BrowserQRCodeReader } from '@zxing/browser';
@@ -75,7 +97,7 @@ const {
 import { toastController } from '@ionic/vue';
 const router = useRouter();
 const chatFlowStore = getTalkFlowCore();
-const { searchUserProfile, buddyList } = chatFlowStore;
+const { searchUserProfile, buddyList, gun } = chatFlowStore; // Destructure gun here
 
 const scanning = ref(false);
 const isSearching = ref(false);
@@ -237,24 +259,45 @@ function isPotentialDomain(text: string) {
 async function handlePublicKey(content: string) {
   const pub = content.replace('pubkey:', '');
   isSearching.value = true;
+  
+  // // console.log('🔍 扫码智能路由，目标 pub:', pub.slice(0, 8));
+
   try {
-    const userExists = await searchUserProfile(pub);
-    if (userExists) {
-      const isFriend = buddyList.value.some(b => b.pub === pub);
-      if (isFriend) {
-        router.push({ path: '/friend-profile', query: { pub } });
-      } else {
-        router.push({ path: '/stranger-profile', query: { pub } });
-      }
-    } else {
-      showModal('error', 'No user');
-    }
+    // 🆕 所有扫码结果都导航到朋友主页（弃用陌生人页面）
+    // // console.log('🔍 扫码用户，导航到朋友主页:', pub.slice(0, 8));
+    router.push({ path: '/friend-profile', query: { pub } });
+    
+    // 📡 后台启动数据同步
+    startBackgroundSync(pub);
+    
   } catch (err) {
-    showModal('error', 'check you net please');
-    // console.error('搜索用户失败:', err);
+    // // console.error('处理公钥失败:', err);
+    // 🔄 即使出错也要导航到朋友主页
+    router.push({ path: '/friend-profile', query: { pub } });
   } finally {
     isSearching.value = false;
   }
+}
+
+// 🔄 后台数据同步函数
+function startBackgroundSync(pub: string) {
+  // // console.log(`🔄 启动后台数据同步: ${pub.slice(0, 8)}`);
+  
+  // 非阻塞式数据获取
+  setTimeout(() => {
+    gun.get('users').get(pub).once((data: any) => {
+      if (data) {
+        // // console.log(`📥 后台同步成功: ${pub.slice(0, 8)}`, {
+        //   alias: data.alias,
+        //   hasAvatar: !!data.avatar,
+        //   hasSignature: !!data.signature,
+        //   hasEpub: !!data.epub
+        // });
+      } else {
+        // // console.log(`📭 后台同步无数据: ${pub.slice(0, 8)}`);
+      }
+    });
+  }, 100); // 延迟100ms避免阻塞UI
 }
 
 async function handleKeyPair(content: string) {
@@ -262,13 +305,20 @@ async function handleKeyPair(content: string) {
   isSearching.value = true;
 
   try {
-    const userExists = await joinGroupWithKeyPair(keyPairString);
-    if (userExists) {
-      setCurrentGroup(userExists.pub); // Use the pub from the returned KeyPair
-      router.push(`/group/${userExists.pub}/messages`);
+    const group = await joinGroupWithKeyPair(keyPairString); // This now returns GroupChatGroup | undefined
+    if (group && group.pub) { // Safely check if group is returned and has pub
+      setCurrentGroup(group.pub); // Use the pub from the returned KeyPair
+      router.push(`/group/${group.pub}/messages`);
+      const toast = await toastController.create({
+        message: 'Joined group successfully',
+        duration: 2000,
+        position: 'top',
+        color: 'success',
+      });
+      await toast.present();
     } else {
       const toast = await toastController.create({
-        message: 'flied',
+        message: 'Failed to join group or already in group',
         duration: 2000,
         position: 'top',
         color: 'danger',
@@ -276,9 +326,9 @@ async function handleKeyPair(content: string) {
       await toast.present();
     }
   } catch (err) {
-    console.error('处理密钥对失败:', err);
+    // // console.error('处理密钥对失败:', err);
     const toast = await toastController.create({
-      message: 'flied',
+      message: 'Failed to join group',
       duration: 2000,
       position: 'top',
       color: 'danger',
@@ -311,7 +361,7 @@ async function tryOpenDomain(domain: string) {
       showModal('http-confirm', httpUrl);
     } catch (httpErr) {
       showModal('error', `${domain} Unable to access (HTTPS and HTTP)`);
-      console.error('Domain access failed:', httpErr);
+      // // console.error('Domain access failed:', httpErr);
     }
   }
 }
@@ -322,7 +372,7 @@ async function openUrlInBrowser(url: string) {
     resetState();
   } catch (err) {
     showModal('error', 'open failed');
-    console.error('Browser open failed:', err);
+    // // console.error('Browser open failed:', err);
   }
 }
 
@@ -466,8 +516,7 @@ onBeforeUnmount(() => {
 }
 
 .qr-photo {
-  background-color: var(--background-color);
-  color: var(--text-color);
+
   border-radius: 10px;
   padding: 10px 20px;
   font-size: 39px;
@@ -480,7 +529,7 @@ onBeforeUnmount(() => {
 .photo-preview img {
   width: 200px;
   margin-top: 1rem;
-  border: 1px solid #ccc;
+ 
   z-index: 20;
   position: relative;
 }
