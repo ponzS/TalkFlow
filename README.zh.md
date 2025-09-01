@@ -85,6 +85,10 @@ node start.js
 
 <img src="https://github.com/user-attachments/assets/37ae341c-6595-4b70-89cc-375e5ed341a6" alt="" width="300" height="600">
 
+
+E2EE Video/Voice Call Relay:
+https://github.com/DeFUCC/gun-vue/tree/main/relay/skin/gun-vue-call-relay
+
 # 组件说明
 在扩展控制器时，您只需要关注LisenChat和SentChat的实现。
 

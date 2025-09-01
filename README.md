@@ -93,6 +93,8 @@ node start.js
 
 <img src="https://github.com/user-attachments/assets/37ae341c-6595-4b70-89cc-375e5ed341a6" alt="" width="300" height="600">
 
+E2EE Video/Voice Call Relay:
+https://github.com/DeFUCC/gun-vue/tree/main/relay/skin/gun-vue-call-relay
 
 # composables
 You only need to pay attention to the implementation of LisenChat and SentChat when expanding the controller.
