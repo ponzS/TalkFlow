@@ -160,7 +160,7 @@ Network Database
   async function fetchDatabases() {
     try {
       const dbList = await indexedDB.databases();
-      const dbDetails = [];
+      const dbDetails = [] as any;
       
       for (const dbInfo of dbList) {
         if (dbInfo.name) {
