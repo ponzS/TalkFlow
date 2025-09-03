@@ -19,6 +19,8 @@ What is TalkFlow?
 
 5.Global decentralized distributed mesh communication network artificial intelligence data solution.
 
+6.E2EE Video/Voice Call
+
 Decentralized artificial intelligence - robots - drones - communication facilities
 
 # Design
