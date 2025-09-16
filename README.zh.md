@@ -35,6 +35,9 @@
 
 # 快速开始
 
+E2EE Video/Voice Call Relay: https://github.com/DeFUCC/gun-vue/tree/main/relay/skin/gun-vue-call-relay
+
+
 安装 Ollama 客户端
 https://github.com/ollama/ollama
 

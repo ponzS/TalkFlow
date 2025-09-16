@@ -40,6 +40,8 @@ If you're interested in our open source project story, please scroll down the pa
 
 # Quick Start 
 
+E2EE Video/Voice Call Relay: https://github.com/DeFUCC/gun-vue/tree/main/relay/skin/gun-vue-call-relay
+
 install ollama client
 https://github.com/ollama/ollama
 
@@ -92,6 +94,9 @@ node start.js
 
 
 <img src="https://github.com/user-attachments/assets/37ae341c-6595-4b70-89cc-375e5ed341a6" alt="" width="300" height="600">
+
+
+
 
 
 # composables
