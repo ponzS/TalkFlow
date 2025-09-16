@@ -1,0 +1,22 @@
+name: TalkFlow
+package: cloud.lazycat.app.ponzs-talkflow
+version: 1.7.0
+description: 
+license: https://choosealicense.com/licenses/mit/
+homepage: 
+author: ponzS
+application:
+  subdomain: talkflow
+  routes:
+    - /=file:///lzcapp/pkg/content
+locales:
+  zh:
+    name: "TalkFlow"
+    description: "去中心化的即时通讯应用"
+  zh_CN:
+    name: "TalkFlow"
+    description: "去中心化的即时通讯应用"
+  en:
+    name: "TalkFlow"
+    description: "Decentralized instant messaging application"
+

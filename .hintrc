@@ -1,0 +1,12 @@
+{
+  "extends": [
+    "development"
+  ],
+  "hints": {
+    "typescript-config/strict": "off",
+    "typescript-config/consistent-casing": "off",
+    "meta-viewport": "off",
+    "manifest-app-name": "off",
+    "typescript-config/is-valid": "off"
+  }
+}
