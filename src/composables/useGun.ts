@@ -39,7 +39,7 @@ function loadEnabledPeersFromStorage(): string[] {
     const stored = localStorage.getItem('gun_enabled_peers');
     if (stored) {
       const parsed = JSON.parse(stored);
-      return Array.isArray(parsed) ? parsed : [];
+            return Array.isArray(parsed) ? parsed : defaultPeersList;
     }
   } catch (error) {
       return defaultPeersList;
