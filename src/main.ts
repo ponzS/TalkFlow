@@ -84,13 +84,13 @@ customElements.define('jeep-sqlite', JeepSqlite);
 const platform = Capacitor.getPlatform();
 
 const app = createApp(App)
-  // .use(IonicVue,{
-  //   rippleEffect: true,
-  //   mode: 'ios',
-  //   maxPageCacheSize: 10
+  .use(IonicVue,{
+    rippleEffect: true,
+    mode: 'ios',
+    maxPageCacheSize: 10
     
-  // })
-     .use(IonicVue)
+  })
+    //  .use(IonicVue)
 
   .use(VueVirtualScroller)
 

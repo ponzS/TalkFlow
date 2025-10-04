@@ -152,7 +152,7 @@
         <div class="version-card">
           <div class="version-info">
             <h3 class="app-name">TalkFlow</h3>
-            <p class="version-number">v1.7.0</p>
+            <p class="version-number">v1.7.2</p>
           </div>
           <ion-icon :icon="cubeOutline" class="version-icon"></ion-icon>
         </div>

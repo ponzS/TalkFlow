@@ -2230,8 +2230,6 @@ const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-4
   </ion-page>
 </template>
 
-
-
 <style scoped>
 .center-message-bubble .voice-bar {
   margin: 10px auto;
@@ -2857,8 +2855,7 @@ backdrop-filter: blur(10px);
 .play-icon { font-size: 48px; color: #666; position: absolute; z-index: 1; }
 .media-element { width: 100%; height: 180px; padding: 0; margin: 0; border-radius: 13px 13px 13px 5px !important; object-fit: cover; object-position: center; }
 .my-message .media-element { border-radius: 13px 13px 5px 13px !important; }
-.media-element[lazy="loading"] { opacity: 0.5; background: #f0f0f0 url('@/assets/loading.gif') no-repeat center; }
-.media-element[lazy="loaded"] { opacity: 1; }
+
 
 .timestamp-container { font-size: 8px; color: #bbb; display: flex; align-items: center; }
 .my-timestamp { justify-content: flex-end; margin-right:50px; }
@@ -3412,8 +3409,6 @@ ion-button[disabled] ion-icon { opacity: 0.4; }
 .textchat.full-radius.my-message {
   animation: bubbleToFullRadiusMy 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
-
-/* 语音消息的全圆角动画 */
 .voice-bar.full-radius:not(.my-message) {
   animation: bubbleToFullRadius 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
@@ -3421,8 +3416,6 @@ ion-button[disabled] ion-icon { opacity: 0.4; }
 .voice-bar.full-radius.my-message {
   animation: bubbleToFullRadiusMy 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
 }
-
-/* 按钮过渡动画（桌面版） */
 .button-fade-enter-active {
   transition: all 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.175);
 }
