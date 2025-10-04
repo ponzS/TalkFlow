@@ -1,202 +1,255 @@
 <template>
-
-  <div class="group-manager">
-    <div class="controls">
-      <input v-model="newGroupName" placeholder="Enter relay group name, e.g.: Office Network" @keyup.enter="createGroup" />
-      <ion-button size="small" fill="outline" @click="createGroup">Create Relay Group</ion-button>
-    </div>
-    <div class="tips">Custom groups are completely isolated from the default group. Enabling a group will create a new communication instance using the nodes within that group.</div>
-  </div>
-
-  <ion-accordion-group>
-    <ion-accordion value="first">
-      <ion-item slot="header" color="light">
-        <ion-label>
-          Main Network
-          <span class="count-tag" v-if="statsMain">（{{ statsMain.enabled }} / {{ statsMain.total }}）</span>
-          <span v-if="mainEnabled" class="enabled-tag">(Enabled)</span>
-        </ion-label>
-      </ion-item>
-      <div class="ion-padding" slot="content">
-        <RelayMode 
-          :enabled="mainEnabled"
-          @toggleMainEnabled="onToggleMainEnabled"
-          @stats="updateMainStats"
-        />
+  <IonPage>
+    <!-- <IonHeader>
+      <IonToolbar>
+        <IonTitle>Relay 管理</IonTitle>
+        <ion-buttons slot="end">
+          <IonButton size="small" @click="runAllTests" :disabled="connectedPeers.length === 0">全部测速</IonButton>
+        </ion-buttons>
+      </IonToolbar>
+    </IonHeader> -->
+    <IonContent :fullscreen="true">
+      <div class="section">
+        <h2>Add Relay</h2>
+        <IonItem>
+          <IonInput v-model="newRelayUrl" placeholder="Input relay URL"></IonInput>
+          <IonButton slot="end" @click="onAddRelay" :disabled="!canAdd">Add</IonButton>
+        </IonItem>
       </div>
-    </ion-accordion>
 
-    <!-- 动态自定义群组 -->
-    <ion-accordion v-for="g in groups" :key="g.id" :value="g.id">
-      <ion-item slot="header" color="light">
-        <ion-icon :icon="createOutline" class="edit-icon" @click.stop="startRename(g)" />
-        <ion-label>
-          {{ g.name }}
-          <span class="count-tag" v-if="stats[g.id]">（{{ stats[g.id].enabled }} / {{ stats[g.id].total }}）</span>
-          <span v-if="g.enabled" class="enabled-tag">(Enabled)</span>
-        </ion-label>
-      </ion-item>
-      <div class="ion-padding" slot="content">
-        <CustomRelayMode 
-          :group="g" 
-          @rename="renameGroup" 
-          @toggleEnabled="toggleGroupEnabled" 
-          @delete="deleteGroup"
-          @stats="updateStats"
-        />
+      <div class="section">
+        <h2>Relay List</h2>
+        <IonList>
+          <IonItemSliding v-for="url in peersList" :key="url">
+            <IonItem>
+              <div slot="start" class="status-dot" :class="{ connected: connectedPeersSet.has(url) }"></div>
+              <IonLabel class="relay-url">
+                <div class="url-line" @click.stop="() => runTest(url)">{{ url }}</div>
+                <div class="latency-row">
+                  <span class="dot">•</span>
+                  <span>WS: {{ formatMs(latencyByPeer[url]?.wsMs) }}</span>
+                  <span class="dot">•</span>
+                  <span>ACK: {{ formatMs(latencyByPeer[url]?.putMs) }}</span>
+                </div>
+              </IonLabel>
+              <IonToggle
+                :checked="enabledPeersSet.has(url)"
+                @ionChange="(ev) => onToggleEnable(url, !!ev.detail.checked)"
+              ></IonToggle>
+            </IonItem>
+            <IonItemOptions side="end">
+              <IonItemOption color="danger" @click="onRemove(url)">
+                <IonIcon :icon="trashOutline"></IonIcon>
+              </IonItemOption>
+            </IonItemOptions>
+          </IonItemSliding>
+        </IonList>
       </div>
-    </ion-accordion>
-
-  </ion-accordion-group>
-
-  <div style="height: 300px;">
-
-  </div>
+    </IonContent>
+  </IonPage>
 </template>
 
 <script setup lang="ts">
-  import { IonAccordion, IonAccordionGroup, IonItem, IonLabel, IonButton, IonIcon } from '@ionic/vue';
-  import { ref, onMounted, watch } from 'vue';
-  import { createOutline } from 'ionicons/icons';
-  import { recreateGunWithPeers } from '@/composables/useGun';
-  import RelayMode from './RelayMode.vue';
-  import CustomRelayMode from './CustomRelayMode.vue';
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonList,
+  IonItem,
+  IonItemSliding,
+  IonItemOptions,
+  IonItemOption,
+  IonLabel,
+  IonToggle,
+  IonButton,
+  IonIcon,
+  IonInput,
+} from '@ionic/vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { gun, peersList, enabledPeers } from '@/composables/useGun'
+import { addRelay, removeRelay, setRelayEnabled, createIsolatedGun } from '@/composables/useGun'
+import { v4 as uuidv4 } from 'uuid'
+import { trashOutline } from 'ionicons/icons'
 
-  type Group = { id: string; name: string; enabled: boolean };
+const newRelayUrl = ref('')
+const canAdd = computed(() => {
+  const u = newRelayUrl.value.trim()
+  return !!u && !peersList.value.includes(u)
+})
 
-  const STORAGE_KEY = 'gun_custom_groups_v1';
-  const MAIN_ENABLED_KEY = 'gun_main_enabled';
+function onAddRelay() {
+  const u = newRelayUrl.value.trim()
+  if (!u) return
+  addRelay(u)
+  // 默认不启用，用户可自行切换；如需默认启用，可取消下一行注释
+  // setRelayEnabled(u, true)
+  newRelayUrl.value = ''
+}
 
-  const groups = ref<Group[]>([]);
-  const newGroupName = ref('');
+function onToggleEnable(url: string, enabled: boolean) {
+  setRelayEnabled(url, enabled)
+}
 
-  type Stats = { enabled: number; total: number };
-  const stats = ref<Record<string, Stats>>({});
+function onRemove(url: string) {
+  removeRelay(url)
+}
 
-  const statsMain = ref<Stats | null>(null);
-  const mainEnabled = ref<boolean>(true);
+// 计算集合以便快速判断启用状态
+const enabledPeersSet = computed(() => new Set(enabledPeers.value))
+const connectedPeersSet = computed(() => new Set(connectedPeers.value))
 
-  function updateMainStats(id: string, enabled: number, total: number) {
-    if (id !== 'main') return;
-    statsMain.value = { enabled, total };
-    recomputeAndApplyPeers();
+// 根据给定代码获取 gun 当前使用的 relay（已连接的）
+const connectedPeers = ref<string[]>([])
+let timer: number | undefined
+
+function refreshConnectedPeers() {
+  try {
+    const opt_peers = (gun as any).back('opt.peers') as Record<string, any>
+    const list = Object.entries(opt_peers)
+      .filter(([, peer]) => {
+        return (
+          peer &&
+          peer.wire &&
+          peer.wire.readyState === 1 &&
+          peer.wire.OPEN === 1 &&
+          peer.wire.constructor?.name === 'WebSocket'
+        )
+      })
+      .map(([url]) => url)
+    connectedPeers.value = list
+  } catch {
+    connectedPeers.value = []
   }
-  function onToggleMainEnabled(enabled: boolean) {
-    mainEnabled.value = !!enabled;
-    try { localStorage.setItem(MAIN_ENABLED_KEY, JSON.stringify(mainEnabled.value)); } catch {}
-    recomputeAndApplyPeers();
-  }
+}
 
-  function updateStats(id: string, enabled: number, total: number) {
-    stats.value = { ...stats.value, [id]: { enabled, total } };
-    // 统计变化后也尝试合并并应用连接（覆盖式重建Gun实例）
-    recomputeAndApplyPeers();
-  }
+onMounted(() => {
+  refreshConnectedPeers()
+  timer = window.setInterval(refreshConnectedPeers, 1500)
 
-  function loadGroups() {
+  runAllTests()
+})
+
+onUnmounted(() => {
+  if (timer) window.clearInterval(timer)
+})
+
+// —— 延迟测速 ——
+type Latency = { wsMs?: number; putMs?: number; ts?: number }
+const latencyByPeer = ref<Record<string, Latency>>({})
+
+function formatMs(ms?: number): string {
+  if (ms === undefined) return '-'
+  if (!isFinite(ms)) return '∞'
+  return `${Math.round(ms)} ms`
+}
+
+function toWSUrl(url: string): string {
+  try {
+    const u = new URL(url)
+    if (u.protocol === 'http:') u.protocol = 'ws:'
+    if (u.protocol === 'https:') u.protocol = 'wss:'
+    return u.toString()
+  } catch {
+    return url
+  }
+}
+
+function testWS(url: string): Promise<number> {
+  return new Promise((resolve) => {
+    const wsUrl = toWSUrl(url)
+    const start = performance.now()
+    let settled = false
     try {
-      const s = localStorage.getItem(STORAGE_KEY);
-      groups.value = s ? JSON.parse(s) : [];
-    } catch { groups.value = []; }
-  }
-  function saveGroups() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(groups.value)); } catch {}
-  }
-
-  // 读取默认主网络启用的节点（不再回退到全部列表）
-  function getDefaultEnabledPeers(): string[] {
-    try {
-      const s = localStorage.getItem('gun_enabled_peers');
-      if (s) {
-        const parsed = JSON.parse(s);
-        if (Array.isArray(parsed)) return parsed;
+      const ws = new WebSocket(wsUrl)
+      const done = (ms: number) => {
+        if (settled) return
+        settled = true
+        try { ws.close() } catch {}
+        resolve(ms)
       }
-      return [];
+      ws.onopen = () => done(performance.now() - start)
+      ws.onerror = () => done(Infinity)
+      ws.onclose = () => done(performance.now() - start)
+      // 超时保护：5s
+      setTimeout(() => done(Infinity), 5000)
     } catch {
-      return [];
+      resolve(Infinity)
     }
-  }
+  })
+}
 
-  // 读取某个自定义群组启用的节点
-  function getGroupEnabledPeers(id: string): string[] {
+function testGunPutAck(url: string): Promise<number> {
+  return new Promise((resolve) => {
     try {
-      const key = `gun_group_${id}_enabled_peers`;
-      const s = localStorage.getItem(key);
-      const parsed = s ? JSON.parse(s) : [];
-      return Array.isArray(parsed) ? parsed : [];
-    } catch { return []; }
-  }
-
-  // 合并默认主网络与所有启用的自定义群组的节点，并重建Gun实例
-  function recomputeAndApplyPeers() {
-    const union = new Set<string>();
-    // 默认主网络 peers（仅当主网络启用时才合并）
-    if (mainEnabled.value) {
-      for (const p of getDefaultEnabledPeers()) union.add(p);
+      const g = createIsolatedGun([url])
+      const start = performance.now()
+      const key = uuidv4()
+      // 使用独立的根键，避免与已有节点类型冲突
+      g.get(`tf-relay-ping-${key}`).put({ t: Date.now(), k: key }, (ack: any) => {
+        if (ack?.err) return resolve(Infinity)
+        resolve(performance.now() - start)
+      })
+      // 超时保护：5s
+      setTimeout(() => resolve(Infinity), 5000)
+    } catch {
+      resolve(Infinity)
     }
-    // 所有已启用的自定义群组 peers
-    for (const g of groups.value) {
-      if (!g.enabled) continue;
-      for (const p of getGroupEnabledPeers(g.id)) union.add(p);
-    }
-    const finalPeers = Array.from(union).filter(Boolean);
-    if (finalPeers.length > 0) {
-      recreateGunWithPeers(finalPeers);
-    } else {
-      // 若没有任何启用的节点，也应重建为空集合，确保旧连接断开
-      recreateGunWithPeers([]);
-    }
-  }
+  })
+}
 
-  onMounted(() => {
-    loadGroups();
-    try { mainEnabled.value = JSON.parse(localStorage.getItem(MAIN_ENABLED_KEY) || 'true'); } catch { mainEnabled.value = true; }
-    // 不在这里立即 recompute，等待子组件挂载并通过 stats 回传后再合并，避免使用旧的本地启用缓存
-  });
-  watch(groups, () => { saveGroups(); }, { deep: true });
+async function runTest(url: string) {
+  const wsMs = await testWS(url)
+  const putMs = await testGunPutAck(url)
+  latencyByPeer.value[url] = { wsMs, putMs, ts: Date.now() }
+}
 
-  function createGroup() {
-    const name = (newGroupName.value || '').trim();
-    const id = `g_${Date.now()}_${Math.random().toString(36).slice(2,8)}`;
-    groups.value.push({ id, name: name || 'Unnamed Group', enabled: true });
-    newGroupName.value = '';
-    // 新建群组默认启用时，合并并应用一次
-    recomputeAndApplyPeers();
+async function runAllTests() {
+  for (const url of peersList.value) {
+    await runTest(url)
   }
-
-  function renameGroup(id: string, name: string) {
-    const g = groups.value.find(x => x.id === id); if (!g) return; g.name = name;
-  }
-
-  function startRename(g: Group) {
-    const name = prompt('Edit group name', g.name);
-    if (name != null) {
-      const n = name.trim();
-      if (n) renameGroup(g.id, n);
-    }
-  }
-
-  function toggleGroupEnabled(id: string, enabled: boolean) {
-    // 允许多个自定义群组同时启用：只更新目标群组的启用状态，不更改其他群组
-    groups.value = groups.value.map(g => g.id === id ? { ...g, enabled } : g);
-    // 启用状态变更后，合并并应用一次
-    recomputeAndApplyPeers();
-  }
-
-  function deleteGroup(id: string) {
-    groups.value = groups.value.filter(g => g.id !== id);
-    // 删除群组后，合并并应用一次
-    recomputeAndApplyPeers();
-  }
+}
 </script>
 
 <style scoped>
-.group-manager { margin-bottom: 12px; padding: 8px;  border-radius: 8px; }
-.controls { display: flex; gap: 8px; align-items: center; }
-.controls input { flex: 1; padding: 6px 8px; border: 1px solid var(--ion-color-medium); border-radius: 6px; }
-.tips { margin-top: 6px; color: var(--ion-color-medium); font-size: 12px; }
-.enabled-tag { color: var(--ion-color-success); font-size: 12px; margin-left: 6px; }
-.count-tag { color: var(--ion-color-medium); font-size: 12px; margin-left: 6px; }
-.edit-icon { margin-right: 8px; font-size: 18px; color: var(--ion-color-medium); cursor: pointer; }
-.edit-icon:hover { color: var(--ion-color-primary); }
+.section {
+  padding: 12px;
+}
+h2 {
+  margin: 8px 0 12px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.relay-url {
+  font-size: 14px;
+}
+.url-line {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+.latency-row {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--ion-text-color-step-600);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+
+}
+.dot { opacity: 0.6; }
+
+.status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #9e9e9e; /* 默认灰色 */
+  margin-right: 8px;
+}
+.status-dot.connected {
+  background: #2dd36f; /* Ionic 绿色 */
+}
 </style>

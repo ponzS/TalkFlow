@@ -9,11 +9,12 @@ const customRoutes = [
 
   {
     path: '/',
-    component: () => import('@/components/phone/IndexPage.vue'),
+          component: () => import('@/components/phone/IndexPage.vue'),
   },
   {
     path: '/index',
-    component: () => import('@/components/phone/IndexPage.vue'),
+     component: () => import('@/components/phone/IndexPage.vue'),
+    //  component: () => import('@/pages/index.vue')
   },
   {
     path: '/chatpage',
@@ -31,11 +32,6 @@ const customRoutes = [
 
   },
   {
-    path: '/stranger-profile',
-    component: () => import('@/pages/StrangerProfile.vue')
-
-  },
-  {
     path: '/FriendRequests',
     component: () => import('@/pages/FriendRequests.vue')
 
@@ -49,10 +45,6 @@ const customRoutes = [
     component: () => import('@/pages/GroupMembers.vue')
   },
  
-  {
-    path: '/user-guide',
-    component: () => import('@/pages/UserGuide.vue')
-  },
  
   {
     path: '/notifications',
@@ -64,6 +56,37 @@ const customRoutes = [
     name: 'CallPage',
     component: () => import('@/pages/CallPage.vue'),
   },
+//   {
+//     path: '/tabs',
+//   component: () => import('@/pages/index.vue'),
+//     children: [
+//       {
+//         path: 'chats',
+//         name: 'chats',
+//        component: () => import('@/components/phone/ChatS.vue'),
+//       },
+//       {
+//         path: 'contacts',
+//         name: 'contacts',
+//         component: () => import('@/components/phone/ContactsS.vue'),
+//       },
+//       {
+//         path: 'call',
+//         name: 'call',
+// component: () => import('@/components/phone/Call.vue'),
+//       },
+//       {
+//         path: 'maxflow',
+//         name: 'maxflow',
+//     component: () => import('@/components/phone/MaxFlow.vue'),
+//       },
+//         {
+//         path: 'me',
+//         name: 'me',
+//     component: () => import('@/components/phone/MeS.vue'),
+//       }
+//     ]
+//   },
 
   ...routes,
 ]

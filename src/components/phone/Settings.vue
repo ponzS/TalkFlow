@@ -1,25 +1,26 @@
 <template>
   <ion-page>
     <!-- Top Navigation Bar -->
-    <!-- <ion-header :translucent="true" collapse="fade">
+    <ion-header :translucent="true" collapse="fade">
       <ion-toolbar >
         <ion-buttons slot="start">
-          <ion-back-button ></ion-back-button>
+        <ion-back-button :text="$t('back')" ></ion-back-button>
         </ion-buttons>
         <ion-title>{{ $t('setting') }}</ion-title>
+
       </ion-toolbar>
-    </ion-header> -->
+    </ion-header>
 
     <!-- Main Content -->
     <ion-content :fullscreen="true" class="settings-content">
       <!-- Version Information Section -->
-   <!-- <ion-header collapse="condense" >
+   <ion-header collapse="condense" >
           <ion-toolbar>
             <h1 style="margin: 10px;font-weight: 900;font-size: 39px;">
       {{ $t('setting') }}
             </h1>
           </ion-toolbar>
-        </ion-header> -->
+        </ion-header>
 
 
       <!-- Account and Security Section -->
@@ -30,6 +31,8 @@
             <ion-icon slot="start" :icon="personOutline" class="cosmic-icon" style="color:blueviolet" />
             <ion-label class="cosmic-label">{{ $t('setforme') }}</ion-label>
           </ion-item>
+
+         
         </ion-list>
       </div>
 
@@ -223,7 +226,7 @@ import {
   IonAlert,
   IonButtons,
   IonBackButton,
-  IonToggle, // 新增 IonToggle
+  IonToggle
 } from '@ionic/vue';
 
 import { getTalkFlowCore } from '@/composables/TalkFlowCore'; // 修正导入
@@ -248,7 +251,9 @@ import {
   happyOutline,
   shareSocialOutline,
   storefrontOutline, 
-  serverOutline
+  serverOutline,
+  qrCodeOutline,
+  scanSharp
 } from 'ionicons/icons';
 
 const router = useRouter();
@@ -324,7 +329,7 @@ const confirmDeleteAccount = () => {
 const isClearChatsAlertOpen = ref(false);
 const confirmClearChats = () => {
   isClearChatsAlertOpen.value = true;
-
+ 
 };
 
 const logout = () => {

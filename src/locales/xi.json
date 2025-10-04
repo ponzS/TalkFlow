@@ -619,4 +619,62 @@
 "call7": "Guía para implementar un servidor de señalización privado",
 "call8": "Clave de cifrado de llamadas",
 "call9": "Regenerar clave"
+  ,
+  "webllm": {
+    "sidebar": {
+      "newConversation": "Nueva conversación",
+      "refresh": "Actualizar",
+      "export": "Exportar",
+      "delete": "Eliminar",
+      "empty": "Sin historial de conversaciones"
+    },
+    "warning": {
+      "noWebGPU": "WebGPU no detectado; el rendimiento puede ser menor."
+    },
+    "controls": {
+      "currentModel": "Modelo actual:",
+      "runtimeMode": "Modo de ejecución:",
+      "model": "Modelo",
+      "modelPlaceholder": "p. ej.: Qwen2-1.5B-Instruct-q4f32_1-MLC"
+    },
+    "common": {
+      "apply": "Aplicar",
+      "available": "Disponible",
+      "unavailable": "No disponible"
+    },
+    "consent": {
+      "tip": "Modelo no cargado. La primera vez requiere descarga y caché local.",
+      "loadDefault": "Aceptar y cargar modelo por defecto",
+      "confirm": "La primera vez requiere almacenar el modelo en caché local. ¿Continuar?"
+    },
+    "settings": {
+      "more": "Más ajustes",
+      "title": "Configuración de WebLLM",
+      "close": "Cerrar",
+      "runtimeMode": "Modo de ejecución",
+      "webgpuAvailable": "WebGPU disponible",
+      "installedModels": "Modelos instalados",
+      "noInstalledModels": "No hay modelos instalados",
+      "inUse": "En uso",
+      "use": "Usar",
+      "delete": "Eliminar",
+      "builtInModels": "Modelos integrados",
+      "pullRemoteModel": "Obtener modelo remoto",
+      "remoteModelPlaceholder": "Introduce ID de modelo, p.ej.: Qwen2-1.5B-Instruct-q4f32_1-MLC",
+      "pullAndUse": "Obtener y usar",
+      "importLocal": "Importar desde local",
+      "generationParams": "Parámetros de generación",
+      "enableThinking": "Activar modo de pensamiento (Qwen3)",
+      "logLevel": "Nivel de registro"
+    },
+    "autoreply": {
+      "title": "Configuración de respuesta automática",
+      "replyAll": "Responder automáticamente a todos los amigos",
+      "targeted": "Respuesta dirigida (mayor prioridad)",
+      "selectBuddies": "Seleccionar amigos para activar respuesta automática"
+    },
+    "import": {
+      "notSupported": "Importación local no compatible; obtén por ID de modelo."
+    }
+  }
 }

@@ -3,22 +3,21 @@
   <!-- <ion-header :translucent="true" >
    
   </ion-header> -->
-   <ion-toolbar class="large-screen-content">
+   <!-- <ion-toolbar class="large-screen-content">
       <ion-buttons slot="start">
         <ion-button @click="goToMyNode" fill="clear">
           <ion-icon :icon="personCircleOutline"></ion-icon>
         </ion-button>
       </ion-buttons>
       
-      <!-- <ion-title>Friend Feed</ion-title> -->
-      
+
       <ion-buttons slot="end">
       
         <ion-button @click="openPostModal" fill="clear">
           <ion-icon :icon="addOutline"></ion-icon>
         </ion-button>
       </ion-buttons>
-    </ion-toolbar>
+    </ion-toolbar> -->
 
   <ion-content :fullscreen="true">
 

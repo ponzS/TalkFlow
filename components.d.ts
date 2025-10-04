@@ -60,6 +60,7 @@ declare module 'vue' {
     LoginMode: typeof import('./src/components/LoginMode.vue')['default']
     MarkdownRenderer: typeof import('./src/components/ui/MarkdownRenderer.vue')['default']
     MaxFlow: typeof import('./src/components/phone/MaxFlow.vue')['default']
+    Menu: typeof import('./src/components/phone/Menu.vue')['default']
     MeS: typeof import('./src/components/phone/MeS.vue')['default']
     MeSetting: typeof import('./src/components/phone/MeSetting.vue')['default']
     MessageProvider: typeof import('./src/components/tools/MessageProvider.vue')['default']
@@ -107,5 +108,6 @@ declare module 'vue' {
     Video: typeof import('./src/components/tools/Video.vue')['default']
     VoiceBar: typeof import('./src/components/VoiceBar.vue')['default']
     Vortex: typeof import('./src/components/ui/vortex/Vortex.vue')['default']
+    WebLLM: typeof import('./src/components/phone/WebLLM.vue')['default']
   }
 }

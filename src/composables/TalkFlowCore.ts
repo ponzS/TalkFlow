@@ -1,5 +1,5 @@
 import { ref, computed, Ref } from 'vue';
-import { gun,peersList,enabledPeers,CreateNewGun,gun1 } from './useGun'
+import { gun,peersList,enabledPeers,CreateNewGun} from './useGun'
 import * as cryptoJs from 'crypto-js';
 import router from '@/router/index';
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
@@ -288,15 +288,12 @@ const autoSaveStorageServ = createAutoSaveWrapper();
 
 // Export the auto-save wrapper for use in other files
 export { autoSaveStorageServ };
-import { useAIAutoReply } from '@/composables/useAIAutoReply';
-import { generateReply } from '@/composables/ollamaService';
+
+import { useWebLLMChat } from '@/composables/useWebLLMChat';
+import type { ChatRole } from '@/composables/useWebLLMChat';
 import { ChatMessage } from '@/types/chat';
 import { Capacitor } from '@capacitor/core';
 import { settingsService } from '@/services/settingsService';
-
-// import { getGunSQLiteAdapter } from '@/composables/GunStorageAdapter';
-
-//  const gunSQLiteAdapter = getGunSQLiteAdapter(sqliteServ, dbVerServ, storageServ);
 
 // Platform detection
 const isWebPlatform = (): boolean => {
@@ -617,8 +614,7 @@ export interface KeyPair {
   alias?: string;
 }
 
-// Initialize AI auto-reply
-const aiAutoReply = useAIAutoReply();
+
 
 // Save deactivated account to SQLite
 async function saveDeactivatedAccount(pubKey: string): Promise<void> {
@@ -2782,35 +2778,6 @@ await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?
     // Active listener count
   }
 
- function listenAllChatsGun1(myPub: string): void {
-    // Resetting all chat listeners
-    
-    // 1. Clean up existing listeners
-    activeListeners.forEach((cleanup, key) => {
-      try {
-        cleanup()
-        // Cleaning up listener
-      } catch (error) {
-        // Failed to clean up listener
-      }
-    })
-    activeListeners.clear()
-    
-    // 2. Register new listeners
-    buddyList.value.forEach((buddy) => {
-      try {
-        const cleanup = listenChatGun1(buddy.pub)
-        if (cleanup) {
-          activeListeners.set(buddy.pub, cleanup)
-          // Registered listener
-        }
-      } catch (error) {
-        // Failed to register listener
-      }
-    })
-    
-    // Active listener count
-  }
 
   async function saveBuddyWithValidation(userPub: string, buddyPub: string, timestamp: number, alias?: string, avatar?: string, epub?:string): Promise<void> {
     try {
@@ -2950,7 +2917,7 @@ await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?
       await saveBuddyWithValidation(currentUserPub.value, pubB, timestamp, buddy.alias, buddy.avatar);
       buddyList.value.push(buddy);
       await saveBuddyListToDb(buddyList.value);
-      gun.get('users').get(currentUserPub.value).get('buddy').get(pubB).put(true);
+      gun.get('users').get(currentUserPub.value).get('buddy').get(pubB).put({ v: true });
 
       // 12. Send friend request to network
       await new Promise<void>((resolve, reject) => {
@@ -3115,7 +3082,7 @@ await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?
      // await saveBuddyListToDb(buddyList.value);
       
       // 10. Update Gun network status
-      gun.get('users').get(currentUserPub.value).get('buddy').get(fromPub).put(true);
+      gun.get('users').get(currentUserPub.value).get('buddy').get(fromPub).put({ v: true });
       gun.get('requests').get(currentUserPub.value).get('received').get(fromPub).put(null);
 
       // 🆕 10.5. 向对方发送自己的epub到epub池
@@ -3449,7 +3416,7 @@ await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?
     const targetPub = pubKey || blockPub.value.trim();
     if (!targetPub || !currentUserPub.value) return;
     if (blacklist.value.includes(targetPub)) return;
-    gun.get('users').get(currentUserPub.value).get('blacklist').get(targetPub).put(true);
+    gun.get('users').get(currentUserPub.value).get('blacklist').get(targetPub).put({ v: true });
     blacklist.value.push(targetPub);
     storageServ.saveBlacklist(targetPub, true);
     blockPub.value = '';
@@ -3892,7 +3859,7 @@ await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?
       await saveBuddyWithValidation(currentUserPub.value, pubB, timestamp, buddy.alias, buddy.avatar);
       buddyList.value.push(buddy);
       await saveBuddyListToDb(buddyList.value);
-      gun.get('users').get(currentUserPub.value).get('buddy').get(pubB).put(true);
+      gun.get('users').get(currentUserPub.value).get('buddy').get(pubB).put({ v: true });
       
       // 13. Send friend request to network
       await new Promise<void>((resolve, reject) => {
@@ -4423,10 +4390,13 @@ function closeBigWindow() {
         await sendMessageReceipt(chatId, msgId);
       }
 
-      // Handle AI auto-reply
+      // Handle AI auto-reply (WebLLM)
       if (
         data.from !== myPub &&
-        aiAutoReply.isAutoReplyEnabledForBuddy(pubKey) &&
+        ((): boolean => {
+          const { isAutoReplyEnabledForBuddy } = useWebLLMChat();
+          return isAutoReplyEnabledForBuddy(pubKey);
+        })() &&
         localMsg.type === 'text' && // Only reply to text messages for now
         localMsg.text
       ) {
@@ -4444,151 +4414,14 @@ function closeBigWindow() {
           // Add the latest message
           messages.push({ role: 'user', content: localMsg.text });
 
-          // Generate AI reply
-          const { settings } = aiAutoReply.state;
-          const reply = await generateReply(settings.model, messages, settings.mode, settings.stream);
+          // Generate reply using WebLLM (non-streaming)
+          const { generateWebLLMReply } = useWebLLMChat();
+          const openAiMessages = messages.map(m => ({ role: m.role as ChatRole, content: m.content }));
+          const reply = await generateWebLLMReply(openAiMessages);
 
-          // Send reply after delay
-          setTimeout(async () => {
-            currentChatPub.value = pubKey; // Set current chat to send message
-            await sendChat('text', reply);
-         //   console.log(`AI auto-reply sent to ${pubKey}: ${reply}`);
-          }, settings.replyDelay);
-        } catch (error) {
-        //  console.error('AI auto-reply failed:', error);
-         // showToast('Failed to generate AI reply', 'error');
-        }
-      }
-
-      if (data.from !== myPub) {
-        const lastNotified = lastNotifiedTimestamp.value[pubKey] || 0;
-        if (localMsg.timestamp > lastNotified && localMsg.timestamp <= Date.now()) {
-          lastNotifiedTimestamp.value[pubKey] = localMsg.timestamp;
-          await triggerLightHaptic();
-        }
-      }
-
-      // Update chat preview, but avoid overwriting sending status
-      const shortMsg = getPreviewText(localMsg).length > 10 ? getPreviewText(localMsg).slice(0, 10) + '...' : getPreviewText(localMsg);
-      const timeStr = formatTimestamp(localMsg.timestamp);
-      const idx = chatPreviewList.value.findIndex(c => c.pub === pubKey);
-      
-      // If it's a message sent by current user, check if sending status is being displayed to avoid overwriting
-      const shouldUpdatePreview = data.from !== myPub || 
-        (idx >= 0 && !chatPreviewList.value[idx].lastMsg.startsWith('⏳') && !chatPreviewList.value[idx].lastMsg.startsWith('✓'));
-      
-      if (shouldUpdatePreview) {
-        if (idx >= 0) {
-          chatPreviewList.value[idx].lastMsg = shortMsg;
-          chatPreviewList.value[idx].lastTime = timeStr;
-          chatPreviewList.value[idx].hidden = false;
-          chatPreviewList.value[idx].hasNew = data.from !== myPub && currentChatPub.value !== pubKey;
-          await autoSaveStorageServ.saveChatPreview(chatPreviewList.value[idx]);
-        } else {
-          const newPreview: ChatPreview = {
-            pub: pubKey,
-            lastMsg: shortMsg,
-            lastTime: timeStr,
-            hidden: false,
-            hasNew: data.from !== myPub && currentChatPub.value !== pubKey,
-          };
-          chatPreviewList.value.push(newPreview);
-          await autoSaveStorageServ.saveChatPreview(newPreview);
-        }
-        // Backup chat previews to IndexedDB (web version only)
-        await saveChatPreviewsToDb(chatPreviewList.value);
-        chatPreviewList.value = [...chatPreviewList.value];
-      }
-    });
-
-    // Start receipt listening
-    listenMessageReceipts(chatId);
-
-    const cleanup = () => {
-      deletedListener.off();
-      messageListener.off();
-    };
-    
-    chatListeners.value[pubKey] = cleanup;
-    return cleanup;
-  }
-
-  function listenChatGun1(pubKey: string): (() => void) | null {
-    const myPub = currentUserPub.value;
-    const chatId = generateChatId(myPub, pubKey);
-
-    if (!buddyList.value.some(b => b.pub === pubKey)) return null;
-    if (chatListeners.value[pubKey]) return chatListeners.value[pubKey];
-    gun1.get('chats').get(chatId).get('deleted').get(myPub).once((val: any) => {
-      deletedRecordsMap.value[chatId] = typeof val === 'number' ? val : 0;
-    });
-
-    const deletedListener = gun1.get('chats').get(chatId).get('deleted').get(myPub).once((val: any) => {
-      deletedRecordsMap.value[chatId] = typeof val === 'number' ? val : 0;
-      chatMessages.value[pubKey] = (chatMessages.value[pubKey] || []).filter(m => m.timestamp > deletedRecordsMap.value[chatId]);
-      chatMessages.value = { ...chatMessages.value };
-    });
-
-    const messageListener = gun1.get('chats').get(chatId).get('messages').map().on(async (data: NetworkChatMessage | undefined, msgId: string) => {
-      if (!data || !data.from || sentMessages.value.has(msgId)) return;
-      if (!buddyList.value.some(b => b.pub === data.from )) return;
-      if (data.from !== myPub && data.from !== pubKey) return;
-
-      const cutoff = deletedRecordsMap.value[chatId] || 0;
-      if (data.timestamp <= cutoff) return;
-
-      const existingInSqlite = await storageServ.query('SELECT id FROM messages WHERE chatID = ? AND msgId = ?', [chatId, msgId]);
-      if (existingInSqlite.values?.length > 0) return;
-
-      const localMsg = await decryptMessage(data, pubKey);
-      if (!localMsg) return;
-
-      localMsg.chatID = chatId;
-      const insertedId = await autoSaveStorageServ.insertMessage(chatId, localMsg);
-      localMsg.id = insertedId;
-
-      if(currentChatPub.value != null) {
-        chatMessages.value[pubKey] = chatMessages.value[pubKey] || [];
-        chatMessages.value[pubKey].push(localMsg);
-        chatMessages.value = { ...chatMessages.value };
-      }
-
-      // Send message receipt (confirmation that the other party received the message)
-      if (data.from !== myPub) {
-        await sendMessageReceipt(chatId, msgId);
-      }
-
-      // Handle AI auto-reply
-      if (
-        data.from !== myPub &&
-        aiAutoReply.isAutoReplyEnabledForBuddy(pubKey) &&
-        localMsg.type === 'text' && // Only reply to text messages for now
-        localMsg.text
-      ) {
-        try {
-          // Fetch conversation history for context
-          const history = await storageServ.getMessages(chatId, 10, undefined, 'DESC');
-          const messages: ChatMessage[] = history
-            .filter((msg: LocalChatMessage) => msg.type === 'text' && msg.text)
-            .map((msg: LocalChatMessage) => ({
-              role: msg.from === myPub ? 'user' : 'assistant',
-              content: msg.text!,
-            }))
-            .reverse(); // Ensure chronological order
-
-          // Add the latest message
-          messages.push({ role: 'user', content: localMsg.text });
-
-          // Generate AI reply
-          const { settings } = aiAutoReply.state;
-          const reply = await generateReply(settings.model, messages, settings.mode, settings.stream);
-
-          // Send reply after delay
-          setTimeout(async () => {
-            currentChatPub.value = pubKey; // Set current chat to send message
-            await sendChat('text', reply);
-         //   console.log(`AI auto-reply sent to ${pubKey}: ${reply}`);
-          }, settings.replyDelay);
+          // Send reply immediately
+          currentChatPub.value = pubKey;
+          await sendChat('text', reply);
         } catch (error) {
         //  console.error('AI auto-reply failed:', error);
          // showToast('Failed to generate AI reply', 'error');
@@ -5099,10 +4932,9 @@ function closeBigWindow() {
     listenMyAlias(pub);
     listenMyBlacklist(pub);
     listenMyRequests(pub);
-    listenMyRequestsGun1(pub);
+
     listenEpubPool(pub); 
     listenAllChats(pub);
-    listenAllChatsGun1(pub);
     listenMyAvatar(pub);
     buddyList.value.forEach(buddy => {
       listenUserAlias(buddy.pub);
@@ -5590,37 +5422,7 @@ async function listenMyRequests(myPub: string): Promise<void> {
       }
     });
   }
-  async function listenMyRequestsGun1(myPub: string): Promise<void> {
-    gun1.get('requests').get(myPub).get('received').on(async (data: any, key: string) => {
-      if (!data || !data.from) {
-        receivedRequests.value = receivedRequests.value.filter(r => r.from !== key);
-      } else {
-        if (isInMyBlacklist(data.from)) {
-           gun1.get('requests').get(myPub).get('received').get(key).put(null);
-          return;
-        }
-        const userInfo = await fetchUserInfo(data.from);
-        const existing = receivedRequests.value.find(r => r.from === data.from);
-        if (!existing) {
-          const newRequest = { 
-            from: data.from, 
-            message: data.message || '', 
-            alias: data.alias || userInfo.alias,
-            avatar: data.avatar || userInfo.avatar,
-            epub: data.epub || ''
-          };
-          receivedRequests.value.push(newRequest);
-          requestsViewed.value = false;
-          await saveRequestsViewedState();
-        } else if (existing.message !== data.message || existing.alias !== data.alias || existing.avatar !== data.avatar) {
-          existing.message = data.message || '';
-          existing.alias = data.alias || userInfo.alias;
-          existing.avatar = data.avatar || userInfo.avatar;
-        }
-      }
-    });
-  }
-
+ 
   // 🆕 epub池监听函数
   async function listenEpubPool(myPub: string): Promise<void> {
    // console.log('📡 开始监听epub池:', { myPub: myPub.slice(0, 8) });
@@ -6158,7 +5960,7 @@ async function listenMyRequests(myPub: string): Promise<void> {
     switchTo,
     setupListeners,
     restartAllListeners,
-    aiAutoReply,
+
     decryptMessageWithMyEpub,
     user,
     // isAccountDeactivated,

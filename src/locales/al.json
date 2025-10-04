@@ -621,4 +621,62 @@
 "call7": "دليل نشر خادم إشارة خاص",
 "call8": "مفتاح تشفير المكالمة",
 "call9": "إعادة إنشاء المفتاح"
+  ,
+  "webllm": {
+    "sidebar": {
+      "newConversation": "محادثة جديدة",
+      "refresh": "تحديث",
+      "export": "تصدير",
+      "delete": "حذف",
+      "empty": "لا يوجد سجل محادثات"
+    },
+    "warning": {
+      "noWebGPU": "لم يتم اكتشاف WebGPU؛ قد تكون الأداء أقل."
+    },
+    "controls": {
+      "currentModel": "النموذج الحالي:",
+      "runtimeMode": "وضع التشغيل:",
+      "model": "النموذج",
+      "modelPlaceholder": "مثال: Qwen2-1.5B-Instruct-q4f32_1-MLC"
+    },
+    "common": {
+      "apply": "تطبيق",
+      "available": "متاح",
+      "unavailable": "غير متاح"
+    },
+    "consent": {
+      "tip": "لم يتم تحميل النموذج. يتطلب الاستخدام الأول تنزيلًا وتخزينًا مؤقتًا محليًا.",
+      "loadDefault": "الموافقة وتحميل النموذج الافتراضي",
+      "confirm": "الاستخدام الأول يتطلب تخزين النموذج مؤقتًا محليًا. هل تريد المتابعة؟"
+    },
+    "settings": {
+      "more": "المزيد من الإعدادات",
+      "title": "إعدادات WebLLM",
+      "close": "إغلاق",
+      "runtimeMode": "وضع التشغيل",
+      "webgpuAvailable": "WebGPU متاح",
+      "installedModels": "النماذج المثبتة",
+      "noInstalledModels": "لا توجد نماذج مثبتة",
+      "inUse": "قيد الاستخدام",
+      "use": "استخدام",
+      "delete": "حذف",
+      "builtInModels": "نماذج مدمجة",
+      "pullRemoteModel": "سحب نموذج من خادم بعيد",
+      "remoteModelPlaceholder": "أدخل معرف النموذج، مثل: Qwen2-1.5B-Instruct-q4f32_1-MLC",
+      "pullAndUse": "سحب واستخدام",
+      "importLocal": "استيراد من المحلي",
+      "generationParams": "معلمات التوليد",
+      "enableThinking": "تمكين وضع التفكير (Qwen3)",
+      "logLevel": "مستوى السجل"
+    },
+    "autoreply": {
+      "title": "إعدادات الرد التلقائي",
+      "replyAll": "الرد تلقائياً على جميع الأصدقاء",
+      "targeted": "رد مستهدف (أولوية أعلى)",
+      "selectBuddies": "اختر الأصدقاء لتمكين الرد التلقائي"
+    },
+    "import": {
+      "notSupported": "الاستيراد المحلي غير مدعوم؛ الرجاء السحب باستخدام معرف النموذج."
+    }
+  }
 }

@@ -25,6 +25,7 @@ import '@ionic/vue/css/core.css';
 import '@ionic/vue/css/normalize.css';
 import '@ionic/vue/css/structure.css';
 import '@ionic/vue/css/typography.css';
+
 import '@ionic/vue/css/ionic.bundle.css'
 /* Optional CSS utils that can be commented out */
 import '@ionic/vue/css/padding.css';
@@ -37,6 +38,10 @@ import '@ionic/vue/css/display.css';
 /* Theme variables */
 import './theme/variables.css';
 
+
+/* Leaflet CSS */
+// import 'leaflet/dist/leaflet.css';
+
 import { Capacitor } from '@capacitor/core';
 import { JeepSqlite } from 'jeep-sqlite/dist/components/jeep-sqlite';
 import { defineCustomElements as pwaElements} from '@ionic/pwa-elements/loader';
@@ -47,7 +52,7 @@ import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
 import VueVirtualScroller from 'vue-virtual-scroller';
 import { DynamicScroller, DynamicScrollerItem } from 'vue-virtual-scroller';
 
-import './index.css';
+ import './index.css';
 
 
 
@@ -79,11 +84,13 @@ customElements.define('jeep-sqlite', JeepSqlite);
 const platform = Capacitor.getPlatform();
 
 const app = createApp(App)
-  .use(IonicVue,{
-    rippleEffect: true,
-    mode: 'ios',
+  // .use(IonicVue,{
+  //   rippleEffect: true,
+  //   mode: 'ios',
+  //   maxPageCacheSize: 10
     
-  })
+  // })
+     .use(IonicVue)
 
   .use(VueVirtualScroller)
 

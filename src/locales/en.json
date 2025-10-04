@@ -635,5 +635,63 @@
 "call6": "Signaling server",
 "call7": "Guide to deploy private signaling",
 "call8": "Call encryption key",
-"call9": "Regenerate key"
+  "call9": "Regenerate key"
+  ,
+  "webllm": {
+    "sidebar": {
+      "newConversation": "New conversation",
+      "refresh": "Refresh",
+      "export": "Export",
+      "delete": "Delete",
+      "empty": "No conversation history"
+    },
+    "warning": {
+      "noWebGPU": "WebGPU not detected; performance may be lower."
+    },
+    "controls": {
+      "currentModel": "Current model:",
+      "runtimeMode": "Runtime mode:",
+      "model": "Model",
+      "modelPlaceholder": "e.g., Qwen2-1.5B-Instruct-q4f32_1-MLC"
+    },
+    "common": {
+      "apply": "Apply",
+      "available": "Available",
+      "unavailable": "Unavailable"
+    },
+    "consent": {
+      "tip": "Model not loaded. First use requires downloading and caching locally.",
+      "loadDefault": "Agree and load default model",
+      "confirm": "First use needs to cache model locally. Proceed?"
+    },
+    "settings": {
+      "more": "More settings",
+      "title": "WebLLM Settings",
+      "close": "Close",
+      "runtimeMode": "Runtime Mode",
+      "webgpuAvailable": "WebGPU Available",
+      "installedModels": "Installed Models",
+      "noInstalledModels": "No installed models",
+      "inUse": "In use",
+      "use": "Use",
+      "delete": "Delete",
+      "builtInModels": "Built-in Models",
+      "pullRemoteModel": "Pull model from remote",
+      "remoteModelPlaceholder": "Enter model ID, e.g., Qwen2-1.5B-Instruct-q4f32_1-MLC",
+      "pullAndUse": "Pull and use",
+      "importLocal": "Import from local",
+      "generationParams": "Generation Parameters",
+      "enableThinking": "Enable thinking mode (Qwen3)",
+      "logLevel": "Log Level"
+    },
+    "autoreply": {
+      "title": "Auto-Reply Settings",
+      "replyAll": "Auto-reply to all friends",
+      "targeted": "Targeted reply (higher priority)",
+      "selectBuddies": "Select friends to enable auto-reply"
+    },
+    "import": {
+      "notSupported": "Local model import not supported; please pull by model ID."
+    }
+  }
 }

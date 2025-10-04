@@ -530,4 +530,62 @@
 "call7": "Guide pour déployer un serveur de signalisation privé",
 "call8": "Clé de chiffrement des appels",
 "call9": "Régénérer la clé"
+  ,
+  "webllm": {
+    "sidebar": {
+      "newConversation": "Nouvelle conversation",
+      "refresh": "Actualiser",
+      "export": "Exporter",
+      "delete": "Supprimer",
+      "empty": "Aucun historique de conversation"
+    },
+    "warning": {
+      "noWebGPU": "WebGPU non détecté ; performances potentiellement réduites."
+    },
+    "controls": {
+      "currentModel": "Modèle actuel :",
+      "runtimeMode": "Mode d’exécution :",
+      "model": "Modèle",
+      "modelPlaceholder": "ex. : Qwen2-1.5B-Instruct-q4f32_1-MLC"
+    },
+    "common": {
+      "apply": "Appliquer",
+      "available": "Disponible",
+      "unavailable": "Indisponible"
+    },
+    "consent": {
+      "tip": "Modèle non chargé. La première utilisation nécessite un téléchargement et une mise en cache locale.",
+      "loadDefault": "Accepter et charger le modèle par défaut",
+      "confirm": "La première utilisation nécessite une mise en cache locale du modèle. Continuer ?"
+    },
+    "settings": {
+      "more": "Plus de paramètres",
+      "title": "Paramètres WebLLM",
+      "close": "Fermer",
+      "runtimeMode": "Mode d’exécution",
+      "webgpuAvailable": "WebGPU disponible",
+      "installedModels": "Modèles installés",
+      "noInstalledModels": "Aucun modèle installé",
+      "inUse": "En cours d’utilisation",
+      "use": "Utiliser",
+      "delete": "Supprimer",
+      "builtInModels": "Modèles intégrés",
+      "pullRemoteModel": "Récupérer un modèle distant",
+      "remoteModelPlaceholder": "Saisir l’ID du modèle, ex. : Qwen2-1.5B-Instruct-q4f32_1-MLC",
+      "pullAndUse": "Récupérer et utiliser",
+      "importLocal": "Import local",
+      "generationParams": "Paramètres de génération",
+      "enableThinking": "Activer le mode pensée (Qwen3)",
+      "logLevel": "Niveau de journal"
+    },
+    "autoreply": {
+      "title": "Paramètres de réponse automatique",
+      "replyAll": "Répondre automatiquement à tous les amis",
+      "targeted": "Réponse ciblée (priorité supérieure)",
+      "selectBuddies": "Sélectionner des amis pour activer la réponse automatique"
+    },
+    "import": {
+      "notSupported": "Import local non pris en charge ; veuillez récupérer via l’ID de modèle."
+    }
+  }
 }

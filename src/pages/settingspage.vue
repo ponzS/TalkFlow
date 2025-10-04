@@ -58,10 +58,14 @@
             <ion-icon slot="start" :icon="homeOutline" class="cosmic-icon" style="color:chocolate"/>
             <ion-label class="cosmic-label">{{$t('github')}}</ion-label>
           </ion-item>
-          <ion-item  button @click="gotoDai" class="cosmic-item">
+          <!-- <ion-item  button @click="gotoDai" class="cosmic-item">
             <ion-icon slot="start" :icon="happyOutline" class="cosmic-icon" style="color:blue"/>
             <ion-label class="cosmic-label">D-AI / Linux&MacOS&Windows</ion-label>
           </ion-item>
+             <ion-item  button @click="gotoDaiSet" class="cosmic-item">
+            <ion-icon slot="start" :icon="settingsOutline" class="cosmic-icon" style="color:green"/>
+            <ion-label class="cosmic-label">AI Settings</ion-label>
+          </ion-item> -->
         </ion-list>
       </div>
 
@@ -228,7 +232,7 @@ import {
   IonToggle, // 新增 IonToggle
 } from '@ionic/vue';
 
-import { getTalkFlowCore } from '@/composables/TalkFlowCore'; // 修正导入
+import { getTalkFlowCore } from '@/composables/TalkFlowCore'; 
 import {
   personOutline,
   globeOutline,
@@ -250,7 +254,8 @@ import {
   happyOutline,
   shareSocialOutline,
   storefrontOutline, 
-  serverOutline
+  serverOutline,
+  settingsOutline
 } from 'ionicons/icons';
 
 const router = useRouter();
@@ -308,6 +313,9 @@ const gotoCache = () => {
 };
 const gotoDai = () => {
   router.push('/daipage');
+};
+const gotoDaiSet = () => {
+  router.push('/AiSetting');
 };
 
 // 修正：从 getTalkFlowCore 获取单例

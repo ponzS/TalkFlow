@@ -8,7 +8,7 @@ import AutoImport from 'unplugin-auto-import/vite'
 import Pages from 'vite-plugin-pages'
 import { VitePWA } from 'vite-plugin-pwa'
 import tailwindcss from '@tailwindcss/vite'
-
+//import { viteSingleFile } from "vite-plugin-singlefile"
 // import inject from "@rollup/plugin-inject";
 // https://vitejs.dev/config/
 
@@ -16,7 +16,7 @@ import tailwindcss from '@tailwindcss/vite'
 
 
 export default defineConfig({
-  base: './', // 使用相对路径，适用于任何部署路径
+  base: './', 
  
 
   plugins: [
@@ -24,7 +24,7 @@ export default defineConfig({
     legacy(),
     Components(),
      tailwindcss(),
-  
+  //viteSingleFile(),
     // inject({
     //   Buffer: ["buffer", "Buffer"],
     // }),
@@ -43,8 +43,7 @@ export default defineConfig({
         name: 'TalkFlow',
         short_name: 'TalkFlow',
         description: 'P2P Mesh E2EE Chat App',
-        theme_color: '#000000',
-        background_color: '#000000',
+       
         icons: [
           {
             src: 'assets/icons/icon-48.webp',

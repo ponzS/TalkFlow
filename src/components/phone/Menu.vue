@@ -1,109 +1,79 @@
 <template>
-  <ion-page ref="page">
-  <ion-content :fullscreen="true" class="cosmic-content" :scroll-y="false">
-    <div class="components-container ">
-      <div v-show="currentComponent === 'Chat'" class="page-component" :class="{ 'active': currentComponent === 'Chat' }">
-        <Chat />
-      </div>
-      <div v-if="currentComponent === 'Contacts'" class="page-component" :class="{ 'active': currentComponent === 'Contacts' }">
-        
-        <Contacts />
+  
 
-      </div>
-
-      <div v-if="currentComponent === 'Call'" class="page-component" :class="{ 'active': currentComponent === 'Call' }">
-        
-        <Call />
-
-      </div>
-
-
-      <div v-show="currentComponent === 'Link'" class="page-component " :class="{ 'active': currentComponent === 'Link' }">
-      
-         <MaxFlow ref="maxFlowRef"/>
-      </div>
-
-
-      <div v-if="currentComponent === 'Profile'" class="page-component" :class="{ 'active': currentComponent === 'Profile' }">
-        <MeS/>
-      </div>
-    </div>
-  </ion-content>
-
-
-
-
-
-
-
-
-
-  <ion-footer class="small-screen-footer" :translucent="true" >
-    <ion-toolbar :style="{ transform: `translateY(-${keyboardHeight}px)` }">
-
-
-      <ion-tab-bar style="--background: transparent;">
-        <ion-tab-button 
-          class="custom-tab-button"
-          :class="{ 'tab-selected': currentComponent === 'Chat' }"
-          @click="handleTabClick('Chat')"
-        >
-          <ion-icon :icon="currentComponent === 'Chat' ? chatbubbles : chatbubblesOutline"></ion-icon>
-          <!-- <ion-label style="font-size: 12px;">Chat</ion-label> -->
+    <ion-content>
+      <ion-list lines="none">
+        <ion-list-header>
+          MENU
+        </ion-list-header>
+        <ion-menu-toggle :auto-hide="false" >
+          <ion-item
+            button
+            :detail="false"
+            router-direction="root"
+     @click="handleTabClick('Chat')"
+            
+          >
+                  <!-- <ion-icon :icon="currentComponent === 'Chat' ? chatbubbles : chatbubblesOutline"></ion-icon> -->
+          <ion-label >Chat</ion-label>
           <ion-badge v-if="hasUnreadMessages" class="request-badge">●</ion-badge>
-        </ion-tab-button>
+          </ion-item>
 
-        <ion-tab-button 
-          class="custom-tab-button"
-          :class="{ 'tab-selected': currentComponent === 'Contacts' }"
-          @click="handleTabClick('Contacts')"
-        >
-          <ion-icon :icon="currentComponent === 'Contacts' ? people : peopleOutline"></ion-icon>
-          <!-- <ion-label style="font-size: 12px;">{{ $t('Contact') || 'Contact' }}</ion-label> -->
+
+
+            <ion-item
+            button
+            :detail="false"
+            router-direction="root"
+    @click="handleTabClick('Contacts')"
+            
+          >
+                 <!-- <ion-icon :icon="currentComponent === 'Contacts' ? people : peopleOutline"></ion-icon> -->
+          <ion-label >{{ $t('Contact') || 'Contact' }}</ion-label>
           <ion-badge v-if="hasNewRequests && !requestsViewed" class="request-badge">●</ion-badge>
-        </ion-tab-button>
-
-        <ion-tab-button 
-          class="custom-tab-button"
-          :class="{ 'tab-selected': currentComponent === 'Call' }"
-          @click="handleTabClick('Call')"
-        >
-          <ion-icon :icon="currentComponent === 'Call' ? call : callOutline"></ion-icon>
-          <!-- <ion-label style="font-size: 12px;">Call</ion-label> -->
+          </ion-item>
+          
+              <ion-item
+            button
+            :detail="false"
+            router-direction="root"
+   @click="handleTabClick('Call')"
+            
+          >
+   <!-- <ion-icon :icon="currentComponent === 'Call' ? call : callOutline"></ion-icon> -->
+          <ion-label>Call</ion-label>
         
-        </ion-tab-button>
+          </ion-item>
+          
+             <ion-item
+            button
+            :detail="false"
+            router-direction="root"
+   @click="handleTabClick('Link')"
+            
+          >
 
-        <ion-tab-button 
-          class="custom-tab-button"
-          :class="{ 'tab-selected': currentComponent === 'Link' }"
-          @click="handleTabClick('Link')"
-        >
-          <div class="tab-icon-container">
-            <transition name="icon-fade" mode="out-in">
+            <!-- <transition name="icon-fade" mode="out-in">
               <ion-icon 
                 :key="maxFlowTabIcon.active" 
                 :icon="currentComponent === 'Link' ? maxFlowTabIcon.active : maxFlowTabIcon.inactive"
               ></ion-icon>
             </transition>
-          </div>
-          <!-- <transition name="label-fade" mode="out-in">
-            <ion-label 
+  -->
+          <ion-label 
               :key="maxFlowTabLabel" 
-              style="font-size: 12px;"
-            >{{ maxFlowTabLabel }}</ion-label>
-          </transition> -->
-        </ion-tab-button>
+          
+            >MaxFlow</ion-label>
+          </ion-item>
 
- 
-
-     
-
-        <ion-tab-button 
-          class="custom-tab-button"
-          :class="{ 'tab-selected': currentComponent === 'Profile' }"
-          @click="handleTabClick('Profile')"
-        >
-          <div class="avatar-tab">
+ <ion-item
+            button
+            :detail="false"
+            router-direction="root"
+  @click="handleTabClick('Profile')"
+            
+          >
+    <!-- <div class="avatar-tab">
             <img
               v-if="userAvatars[currentUserPub!]"
               :src="userAvatars[currentUserPub!]"
@@ -114,22 +84,90 @@
               :src="avatarurl"
               class="tab-avatar"
             />
-          </div>
+          </div> -->
          
-          <!-- <ion-label style="font-size: 12px;">{{ currentUserAlias || 'Profile' }}</ion-label> -->
-        </ion-tab-button>
-      </ion-tab-bar>
-    </ion-toolbar>
-  </ion-footer>
+          <ion-label>{{ currentUserAlias || 'Profile' }}</ion-label>
+          </ion-item>
 
-</ion-page>
+        </ion-menu-toggle>
+      </ion-list>
+
+  <!-- <ion-list lines="none">
+        <ion-list-header>
+         System
+        </ion-list-header>
+        <ion-menu-toggle :auto-hide="false" >
+          <ion-item
+            button
+            :detail="false"
+            router-direction="root"
+     @click="router.push('/settingspage')"
+            
+          >
+          
+          <ion-label >Settings</ion-label>
+
+          </ion-item>
+
+
+
+            <ion-item
+            button
+            :detail="false"
+            router-direction="root"
+    @click="router.push('/AiSetting')"
+            
+          >
+
+          <ion-label >AI Settings</ion-label>
+
+          </ion-item>
+            <ion-item
+            button
+            :detail="false"
+            router-direction="root"
+    @click="router.push('/WebLLMChat')"
+            
+          >
+
+          <ion-label >WebLLM</ion-label>
+
+          </ion-item>
+  
+
+        </ion-menu-toggle>
+      </ion-list>
+ -->
+
+    </ion-content>
+
 </template>
 
 <script setup lang="ts">
-import { ref, shallowRef, onMounted, onUnmounted, onBeforeUnmount, watch, nextTick, computed } from 'vue'
+import { computed, defineComponent, onMounted, ref, watch } from 'vue';
+
+import {
+  IonContent,
+  IonMenuButton,
+  IonButtons,
+  IonHeader,
+  IonIcon,
+  IonItem,
+  IonLabel,
+  IonList,
+  IonListHeader,
+  IonMenu,
+  IonMenuToggle,
+  IonTitle,
+  IonToolbar,
+  IonToggle,
+} from '@ionic/vue';
+import * as ionIcons from "ionicons/icons";
+import {  shallowRef, onUnmounted, onBeforeUnmount,  nextTick,} from 'vue'
 import { useRouter } from 'vue-router'
 import Chat from './ChatS.vue'
 import Contacts from './ContactsS.vue'
+import AiChatSimple from './AiChatSimple.vue'
 
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard'
 import { 
@@ -178,18 +216,12 @@ import {
 } from 'ionicons/icons'
 import {
   IonFooter,
-  IonToolbar,
-  IonContent,
-  IonIcon,
-  IonHeader, 
-  IonMenu, 
   IonSplitPane, 
-  IonTitle, 
+
   IonModal, 
-  IonButtons, 
+
   IonButton, 
-  IonItem, 
-  IonLabel, 
+
   IonPage,
   IonBadge,
   toastController,
@@ -204,13 +236,15 @@ import { gunAvatar } from "gun-avatar";
 import { useTheme } from '@/composables/useTheme';
 import { getTalkFlowCore } from '@/composables/TalkFlowCore';
 import { useGroupChat } from '@/composables/useGroupChat';
+import ChatSpad from '../ipad/ChatSpad.vue'
 
 import MeS from './MeS.vue'
 
 import Moment from './Moment.vue'
 import { useI18n } from 'vue-i18n';
-
+import ChatModePage from '../ipad/ChatModePage.vue'
 import MaxFlow from './MaxFlow.vue'
+import RelayGroup from '../GunVue/RelayGroup.vue'
 
 
 const { isDark } = useTheme();
@@ -280,25 +314,6 @@ const loadLastSelectedSegment = (): string => {
 // 创建响应式的lastSelectedSegment状态
 const lastSelectedSegment = ref(loadLastSelectedSegment());
 
-// 监听maxFlowRef的变化，同步更新lastSelectedSegment
-watch(() => maxFlowRef.value?.selectedSegment, (newSegment) => {
-  if (newSegment && newSegment !== lastSelectedSegment.value) {
-    lastSelectedSegment.value = newSegment;
-    try {
-      localStorage.setItem(MAXFLOW_STORAGE_KEY, newSegment);
-    } catch (error) {
-   //   console.warn('Failed to save selected segment to localStorage:', error);
-    }
-    
-    // 🎯 当切换到需要键盘交互的段落时，确保键盘监听器激活（小屏模式）
-    if (newSegment === 'aichat' || newSegment === 'moment') {
-      
-      nextTick(() => {
-        initKeyboardListeners();
-      });
-    }
-  }
-}, { immediate: true });
 
 // 根据lastSelectedSegment动态显示图标和文字
 const maxFlowTabIcon = computed(() => {
@@ -440,13 +455,10 @@ function openContacts() {
   tabnumber.value = '1'
 }
 
-
-
-
-
-watch(activeTab, async (newTab, oldTab) => {
-  // 🔧 如果从AI聊天标签切换到其他标签，重置键盘状态
-  if (oldTab === 'Card' && newTab !== 'Card') {
+// 处理标签变化，包括键盘状态重置
+function handleTabChange(newTab: string) {
+  // 🔧 如果从AI聊天标签切换到其他标签，立即重置键盘状态
+  if (activeTab.value === 'Card' && newTab !== 'Card') {
     
     keyboardHeight.value = 0;
     
@@ -455,176 +467,41 @@ watch(activeTab, async (newTab, oldTab) => {
       bottomInputRef.value.blur();
     }
   }
-
-  const tabIndex = tabs.indexOf(newTab);
-  switch (tabIndex) {
-    case 0:
-      openChat();
-      break;
-    case 1:
-      openContacts();
-      break;
-    case 2:
-      switchTo('Link');
-      tabnumber.value = '2';
-      break;
-    case 3:
-      openKeyPair();
-      break;
-    case 4:
-      openMe();
-      break;
-    default:
-      break;
-  }
   
-  // 手动保存导航状态（针对 activeTab 变化）
-  if (currentUserPub.value) {
-    try {
-      await saveNavigationState();
-    } catch (error) {
-      
-    }
-  }
-});
+  // 设置新的标签
+  activeTab.value = newTab;
+}
 
-// 监听currentComponent变化，确保activeTab同步并管理键盘监听器
-watch(currentComponent, (newComponent, oldComponent) => {
-  // 🔧 离开AI对话页面时，主动重置键盘状态
-  if ((oldComponent === 'KeyPair' || oldComponent === 'Broswer') && 
-      (newComponent !== 'KeyPair' && newComponent !== 'Broswer')) {
+// 处理大屏模式侧边栏导航，包括键盘状态重置
+function handleSidebarNavigation(componentName: string) {
+  // 🔧 如果从AI聊天页面切换到其他页面，重置键盘状态
+  if ((currentComponent.value === 'Broswer' || currentComponent.value === 'KeyPair') && 
+      componentName !== 'Broswer' && componentName !== 'KeyPair') {
     
-    // 主动重置键盘状态，确保底部栏恢复原位
     keyboardHeight.value = 0;
-    
-    // 如果输入框有焦点，主动失焦触发键盘收起
-    if (bottomInputRef.value) {
-      bottomInputRef.value.blur();
-    }
-  }
-
-  switch (newComponent) {
-    case 'Chat':
-      activeTab.value = tabs[0];
-      break;
-    case 'Contacts':
-      activeTab.value = tabs[1];
-      break;
-    case 'Link':
-      activeTab.value = tabs[2];
-      break;
-    case 'KeyPair':
-      activeTab.value = tabs[3];
-      // 🎯 每次进入AI对话页面时重新初始化键盘监听器（小屏模式）
-      
-      nextTick(() => {
-        initKeyboardListeners();
-      });
-      break;
-    case 'Broswer':
-      // 🔄 每次进入AI对话页面时重新初始化键盘监听器（大屏模式）
-      
-      nextTick(() => {
-        if (aiChatRef.value && aiChatRef.value.reinitKeyboardListeners) {
-          aiChatRef.value.reinitKeyboardListeners();
-        }
-      });
-      break;
-    case 'Profile':
-      activeTab.value = tabs[4];
-      break;
-    case 'OS':
-      switchTo('OS');
-      tabnumber.value = '5';
-      break;
-    default:
-      break;
   }
   
-  // 🧹 离开AI对话页面时清理键盘监听器，避免冲突
-  if ((oldComponent === 'KeyPair' || oldComponent === 'Broswer') && 
-      (newComponent !== 'KeyPair' && newComponent !== 'Broswer')) {
+  // 调用原始的切换函数
+  switchTo(componentName);
+}
+
+// 处理大屏模式的Link按钮点击
+function handleSidebarLinkClick() {
+  // 🔧 如果从AI聊天页面切换，重置键盘状态
+  if (currentComponent.value === 'Broswer' || currentComponent.value === 'KeyPair') {
     
-    if (oldComponent === 'KeyPair') {
-      cleanupKeyboardListeners(); // 小屏模式清理
-    }
-    // 大屏模式的清理由AiChatSimple组件自己处理
+    keyboardHeight.value = 0;
   }
-});
+  
+  // 调用原始的Link处理函数
+  handleLinkClick();
+}
+
 
 const router = useRouter();
 
 // useGroupChat已在上方导入和使用
 
-  // 监听路由变化，当返回到index页面时清除当前群聊状态
-
-  watch(
-    () => router.currentRoute.value.path,
-    (newRoutePath) => {
-      if (newRoutePath === '/index' || newRoutePath === '/index/' || newRoutePath === 'index'|| newRoutePath === '/') {
-        // 清除当前群聊状态，确保未读状态可以正常工作
-        if (window.innerWidth > 768) {
-           return
-        }else{
-            currentGroup.value = null;
-          currentGroupName.value = '';
-          setCurrentGroup(null);
-        
-          closeChat();
-       
-        }
-      }
-    },
-    { immediate: false, deep: true }
-  );
-
-
-const midPoint = 0;
-const positionState = ref('middle');
-const encryptedPair = ref('');
-
-onMounted(async () => {
-  positionState.value = 'middle';
-  translateY.value = midPoint;
-  cardsTranslateY.value = 0;
-   
-  // 🎯 初始化键盘监听器（当可能需要底部输入框时）
-  nextTick(() => {
-    initKeyboardListeners();
-  });
-  
-  // 恢复导航状态
-  if (currentUserPub.value) {
-    try {
-      const savedState = await restoreNavigationState();
-      if (savedState) {
-        // 根据保存的状态更新 activeTab
-        activeTab.value = tabs[parseInt(savedState.activeTab)];
-        
-      }
-    } catch (error) {
-      
-    }
-    
-    const userData = await storageServ.getUser(currentUserPub.value);
-    if (userData) {
-      currentUserAlias.value = userData.alias || '';
-      userAvatars.value[currentUserPub.value] = userData.avatar || '';
-      encryptedPair.value = userData.encryptedKeyPair || '';
-    }
-    gun.get('users').get(currentUserPub.value).once((data: any) => {
-      if (data?.alias) currentUserAlias.value = data.alias;
-      if (data?.signature) currentUserAlias1.value = data.signature;
-      if (data?.avatar) userAvatars.value[currentUserPub.value!] = data.avatar;
-    });
-  }
-});
-
-onBeforeUnmount(() => {
-  // 清理键盘监听器
-  cleanupKeyboardListeners();
-  
-});
 
 
 const momentsRef = ref<InstanceType<typeof Moment> | null>(null);
@@ -679,6 +556,91 @@ const momentsRef = ref<InstanceType<typeof Moment> | null>(null);
 </script>
 
 <style scoped>
+ion-menu ion-content {
+  --padding-top: 20px;
+  --padding-bottom: 20px;
+  --background: var(--ion-item-background, var(--ion-background-color, #fff));
+}
+
+/* Remove background transitions for switching themes */
+ion-menu ion-item {
+  --transition: none;
+}
+
+ion-item.selected {
+  --color: var(--ion-color-primary);
+}
+
+/*
+ * Material Design Menu
+*/
+ion-menu.md ion-list {
+  padding: 20px 0;
+}
+
+ion-menu.md ion-list-header {
+  padding-left: 18px;
+  padding-right: 18px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: min(0.875rem, 32px);
+  font-weight: 450;
+}
+
+ion-menu.md ion-item {
+  --padding-start: 18px;
+  margin-right: 10px;
+  border-radius: 0 50px 50px 0;
+  font-weight: 500;
+}
+
+ion-menu.md ion-item.selected {
+  --background: rgba(var(--ion-color-primary-rgb), 0.14);
+}
+
+ion-menu.md ion-item.selected ion-icon {
+  color: var(--ion-color-primary);
+}
+
+ion-menu.md ion-list-header,
+ion-menu.md ion-item ion-icon {
+  color: var(--ion-color-step-650, #5f6368);
+}
+
+ion-menu.md ion-list:not(:last-of-type) {
+  border-bottom: 1px solid var(--ion-color-step-150, #d7d8da);
+}
+
+/*
+ * iOS Menu
+*/
+ion-menu.ios ion-list-header {
+  padding-left: 16px;
+  padding-right: 16px;
+  margin-bottom: 8px;
+  font-size: clamp(22px, 1.375rem, 40px);
+}
+
+ion-menu.ios ion-list {
+  padding: 20px 0 0;
+}
+
+ion-menu.ios ion-item {
+  --padding-start: 16px;
+  --min-height: 50px;
+}
+
+ion-menu.ios ion-item ion-icon {
+  font-size: 24px;
+  color: #73849a;
+}
+
+ion-menu.ios ion-item.selected ion-icon {
+  color: var(--ion-color-primary);
+}
+</style>
+
+<style scoped>
 .empty-icon {
   font-size: 100px;
   
@@ -686,6 +648,21 @@ const momentsRef = ref<InstanceType<typeof Moment> | null>(null);
   max-height: 300px;
   color: var(--ion-text-color);
 
+}
+
+.svg-icon {
+  width: min(400px, 80vw);
+  height: min(400px, 80vw);
+  max-width: 400px;
+  max-height: 400px;
+  background-color: var(--ion-text-color);
+  mask: url('@/assets/gun.svg') no-repeat center;
+  mask-size: contain;
+  -webkit-mask: url('@/assets/gun.svg') no-repeat center;
+  -webkit-mask-size: contain;
+  margin: 0 auto 30px auto;
+  transition: all 0.3s ease;
+  cursor: pointer;
 }
 
 .redboom{
@@ -1322,4 +1299,41 @@ right: 0;
   padding: 0;
 }
 
+/* 媒体查询：大屏幕显示逻辑 */
+@media (min-width: 768px) {
+  .large-screen-content {
+    display: block;
+  }
+  
+  .small-screen-content {
+    display: none;
+  }
+  
+  .small-screen-footer {
+    display: none;
+  }
+}
+
+/* 媒体查询：小屏幕显示逻辑 */
+@media (max-width: 767px) {
+  .large-screen-content {
+    display: none;
+  }
+  
+  .small-screen-content {
+    display: block;
+  }
+  
+  .small-screen-footer {
+    display: block;
+  }
+  
+  .modern-sidebar {
+    display: none;
+  }
+  
+  .components-container.with-sidebar {
+    margin-left: 0;
+  }
+}
 </style>

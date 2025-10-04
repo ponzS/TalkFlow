@@ -15,7 +15,25 @@
     <RelayGroup />
   </div>
 
-  <ion-router-outlet  v-if="isLoggedIn"/>
+
+
+    <ion-split-pane  content-id="main"  v-show="isLoggedIn">
+          <ion-menu  content-id="main">
+         
+                 <Menu> </Menu>
+      
+          </ion-menu>
+          <div class="ion-page" id="main">
+            <ion-content :scroll-y="false">
+          
+ <ion-router-outlet  />
+            </ion-content>
+          </div>
+        </ion-split-pane>
+
+
+ <!-- <ion-router-outlet  v-if="isLoggedIn"/> -->
+ 
 
 
     <ion-modal :is-open="!isLoggedIn" :can-dismiss="false" class="login-modal" :key="`modal-${isLoggedIn}`">
@@ -39,9 +57,12 @@
   </ion-app>
 </template>
 
-<script setup lang="ts" vapor>
+<script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
-import { IonApp, IonRouterOutlet, IonModal, IonHeader, IonToolbar, IonTitle, IonContent, IonButton } from '@ionic/vue';
+import { IonApp, IonRouterOutlet, IonModal, IonHeader, IonToolbar, IonTitle, IonContent, IonButton 
+  , IonMenu, 
+  IonSplitPane, 
+} from '@ionic/vue';
 import { getTalkFlowCore } from '@/composables/TalkFlowCore';
 import { useLanguage } from '@/composables/useLanguage';
 import RelayMode from './components/GunVue/RelayMode.vue';
@@ -50,7 +71,6 @@ const { initLanguage } = useLanguage();
 const chatFlowStore = getTalkFlowCore();
 
 import { peersList, enabledPeers,loadRelays } from '@/composables/useGun';
-
 
 const { 
   restoreLoginState, 
@@ -85,9 +105,9 @@ onMounted(async () => {
 
  
 
-  await loadRelays();
+  // await loadRelays();
   await storageServ.initializeDatabase();
-
+await loadRelays();
   await initLanguage();
   await setupNetworkListener(); 
   await restoreLoginState();
@@ -98,6 +118,7 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+
 .empty-icon {
   /* max-width: 100%;
   max-height: 300px; */
@@ -108,20 +129,6 @@ onMounted(async () => {
   /* color: var(--ion-text-color); */
 }
 
-.svg-icon {
-  width: min(200px, 50vw);
-  height: min(200px, 50vw);
-  max-width: 200px;
-  max-height: 200px;
-  background-color: var(--ion-text-color);
-  mask: url('@/assets/gun.svg') no-repeat center;
-  mask-size: contain;
-  -webkit-mask: url('@/assets/gun.svg') no-repeat center;
-  -webkit-mask-size: contain;
-  transition: all 0.3s ease;
-  cursor: pointer;
-  margin-top: -30px;
-}
 /* 加载遮罩层样式（毛玻璃效果） */
 .loading-overlay {
   position: fixed;

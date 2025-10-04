@@ -624,4 +624,62 @@
 "call7": "निजी सिग्नलिंग सर्वर तैनात करने की गाइड",
 "call8": "कॉल एन्क्रिप्शन कुंजी",
 "call9": "कुंजी पुनर्जनन करें"
+  ,
+  "webllm": {
+    "sidebar": {
+      "newConversation": "नई बातचीत",
+      "refresh": "रिफ्रेश",
+      "export": "निर्यात",
+      "delete": "हटाएँ",
+      "empty": "कोई वार्तालाप इतिहास नहीं"
+    },
+    "warning": {
+      "noWebGPU": "WebGPU नहीं मिला; प्रदर्शन कम हो सकता है।"
+    },
+    "controls": {
+      "currentModel": "वर्तमान मॉडल:",
+      "runtimeMode": "रनटाइम मोड:",
+      "model": "मॉडल",
+      "modelPlaceholder": "जैसे: Qwen2-1.5B-Instruct-q4f32_1-MLC"
+    },
+    "common": {
+      "apply": "लागू करें",
+      "available": "उपलब्ध",
+      "unavailable": "अनुपलब्ध"
+    },
+    "consent": {
+      "tip": "मॉडल लोड नहीं हुआ है। पहली बार उपयोग के लिए डाउनलोड और स्थानीय कैश आवश्यक है।",
+      "loadDefault": "सहमति दें और डिफ़ॉल्ट मॉडल लोड करें",
+      "confirm": "पहली बार उपयोग पर मॉडल स्थानीय कैश में सहेजा जाएगा। जारी रखें?"
+    },
+    "settings": {
+      "more": "और सेटिंग्स",
+      "title": "WebLLM सेटिंग्स",
+      "close": "बंद करें",
+      "runtimeMode": "रनटाइम मोड",
+      "webgpuAvailable": "WebGPU उपलब्ध",
+      "installedModels": "इंस्टॉल किए गए मॉडल",
+      "noInstalledModels": "कोई इंस्टॉल किए गए मॉडल नहीं",
+      "inUse": "उपयोग में",
+      "use": "उपयोग करें",
+      "delete": "हटाएँ",
+      "builtInModels": "अंतर्निर्मित मॉडल",
+      "pullRemoteModel": "रिमोट से मॉडल प्राप्त करें",
+      "remoteModelPlaceholder": "मॉडल आईडी दर्ज करें, जैसे: Qwen2-1.5B-Instruct-q4f32_1-MLC",
+      "pullAndUse": "प्राप्त करें और उपयोग करें",
+      "importLocal": "लोकल से आयात करें",
+      "generationParams": "जनरेशन पैरामीटर्स",
+      "enableThinking": "थिंकिंग मोड सक्षम करें (Qwen3)",
+      "logLevel": "लॉग स्तर"
+    },
+    "autoreply": {
+      "title": "स्वत: उत्तर सेटिंग्स",
+      "replyAll": "सभी मित्रों को स्वत: उत्तर दें",
+      "targeted": "लक्षित उत्तर (उच्च प्राथमिकता)",
+      "selectBuddies": "स्वत: उत्तर सक्षम करने के लिए मित्र चुनें"
+    },
+    "import": {
+      "notSupported": "लोकल मॉडल आयात समर्थित नहीं; कृपया मॉडल आईडी द्वारा प्राप्त करें।"
+    }
+  }
 }

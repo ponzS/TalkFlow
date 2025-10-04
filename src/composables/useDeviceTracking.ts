@@ -1,7 +1,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { Device, DeviceInfo } from '@capacitor/device';
 import { useToast } from '@/composables/useToast';
-import { useNetworkStatus } from '@/composables/useNetworkStatus';
+
 import { Preferences } from '@capacitor/preferences';
 
 const { showToast } = useToast();
@@ -34,7 +34,6 @@ export function useDeviceTracking(gun: any) {
   const historicalDevices = ref<DeviceRecord[]>([]);
   const keyPairRecoveryAttempted = ref(false);
 
-  const { networkStatus, peersStatus, updateStatus } = useNetworkStatus(storageServ);
 
   function hasValidKeyPair() {
     const isValid = currentUserPair.value && currentUserPair.value.epub;
@@ -405,7 +404,7 @@ export function useDeviceTracking(gun: any) {
   }
 
   function handleNetworkChange() {
-    updateStatus();
+    
     updateDeviceStatus();
   }
 

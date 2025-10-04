@@ -499,7 +499,8 @@ export function useMoments() {
     error.value = null;
     try {
       await new Promise<void>((resolve, reject) => {
-        gun.get('momentLikes').get(momentId).get(userPub).put(Date.now(), (ack: any) => {
+        // 存储对象而非原始数字，避免 Gun 合并时对数字加元数据导致报错
+        gun.get('momentLikes').get(momentId).get(userPub).put({ ts: Date.now() }, (ack: any) => {
           if (ack.err) reject(new Error(ack.err));
           else resolve();
         });
@@ -621,7 +622,8 @@ export function useMoments() {
 
       // 更新转发计数
       await new Promise<void>((resolve, reject) => {
-        gun.get('momentForwards').get(originalMomentId).get(currentUserPub.value!).put(Date.now(), (ack: any) => {
+        // 存储对象而非原始数字，避免 Gun 合并时对数字加元数据导致报错
+        gun.get('momentForwards').get(originalMomentId).get(currentUserPub.value!).put({ ts: Date.now() }, (ack: any) => {
           if (ack.err) reject(new Error(ack.err));
           else resolve();
         });

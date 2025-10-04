@@ -180,7 +180,7 @@ export function useNotifications() {
         .get(currentUserPub.value)
         .get(notificationId)
         .get('isRead')
-        .put(true);
+        .put({ v: true });
 
       // 更新本地状态
       const notification = notifications.value.find(n => n.notificationId === notificationId);
@@ -207,7 +207,7 @@ export function useNotifications() {
           .get(currentUserPub.value!)
           .get(notification.notificationId)
           .get('isRead')
-          .put(true);
+          .put({ v: true });
         
         notification.isRead = true;
       });
@@ -332,4 +332,4 @@ export function useNotifications() {
   };
 }
 
-export default useNotifications; 
+export default useNotifications;

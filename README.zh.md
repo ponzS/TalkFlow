@@ -35,8 +35,12 @@
 
 # 快速开始
 
-安装 Ollama 客户端
-https://github.com/ollama/ollama
+E2EE Video/Voice Call Relay: https://github.com/DeFUCC/gun-vue/tree/main/relay/skin/gun-vue-call-relay
+
+
+使用 WebLLM（浏览器端推理，无需独立客户端）
+https://webllm.mlc.ai
+https://github.com/mlc-ai/web-llm
 
 iOS版本：
 
@@ -65,19 +69,7 @@ yarn tauri dev
 yarn tauri build
 ```
 
-运行 Gun-Relay和Ollama
-
-```base
-cd gun-ollama
-```
-安装依赖
-```base
-yarn install
-```
-启动
-```base
-node start.js
-```
+WebLLM 在浏览器内运行，无需单独的 AI 后端。
 
 ![talkflow](https://github.com/user-attachments/assets/83733bed-e28d-4b3f-af6a-6212e3ed402a)
 
@@ -111,7 +103,7 @@ Gun-Vue/relay
 
 gun-avatar
 
-OllamaJs
+WebLLM
 
 Tauri
 

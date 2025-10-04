@@ -13,12 +13,12 @@
           <ion-segment-button value="relay">
             <ion-label>Relay</ion-label>
           </ion-segment-button>
-          <ion-segment-button value="tool">
+          <!-- <ion-segment-button value="tool">
             <ion-label>TApp</ion-label>
           </ion-segment-button>
           <ion-segment-button value="setting">
             <ion-label>Setting</ion-label>
-          </ion-segment-button>
+          </ion-segment-button> -->
           
           <!-- 
             <ion-segment-button value="game">
@@ -57,28 +57,28 @@
       </div>
 
       <!-- AiChat View -->
-      <div v-if="selectedSegment === 'aichat'" class="view-container">
+      <div v-show="selectedSegment === 'aichat'" class="view-container">
        
-        <AiChatSimplemax ref="aiChatRef"/>
-
+        <!-- <AiChatSimplemax ref="aiChatRef"/> -->
+        <WebLLM/>
       </div>
 
 
 
       <!-- Relay View -->
-      <div v-if="selectedSegment === 'relay'" class="view-container" style="overflow-y:auto;">
+      <div v-show="selectedSegment === 'relay'" class="view-container" style="overflow-y:auto;">
      <!-- <RelayMode/> -->
       <RelayGroup/>
       </div>
 
       <!-- Tool View -->
-      <div v-show="selectedSegment === 'tool'" class="view-container">
+      <!-- <div v-show="selectedSegment === 'tool'" class="view-container">
       <gunOS/>
       </div>
 
  <div v-if="selectedSegment === 'setting'" class="view-container">
      <settings/>
-      </div>
+      </div> -->
             <!-- Game View -->
       <!-- <div v-show="selectedSegment === 'game'" class="view-container">
         <div class="content-placeholder">

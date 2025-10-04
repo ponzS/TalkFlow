@@ -116,7 +116,7 @@
 <script lang="ts" setup>
 import { ref, onMounted, onUnmounted, watch, computed, nextTick } from 'vue';
 import { useI18n } from 'vue-i18n';
-import { useNetworkStatus } from '@/composables/useNetworkStatus';
+import { peersList as peersListFromUseGun, enabledPeers as enabledPeersFromUseGun, addRelay } from '@/composables/useGun';
 import { getTalkFlowCore } from '@/composables/TalkFlowCore';
 
 // 定义事件发射器
@@ -165,8 +165,50 @@ const {
   isRelaySharingEnabled
 } = chatFlowStore;
 
-// 直接调用 useNetworkStatus 获取最新的网络状态
-const { peersList, peerStatuses, addPeer, enabledPeers } = useNetworkStatus(storageServ);
+// 改为使用 RelayGroup 中的逻辑：来自 useGun 的列表与启用项
+const peersList = peersListFromUseGun;
+const enabledPeers = enabledPeersFromUseGun;
+// 基于 gun 实例定期计算连接状态
+const peerStatuses = ref<Record<string, 'connected' | 'disconnected' | 'unknown'>>({});
+const connectedPeers = ref<string[]>([]);
+let connectedTimer: number | undefined;
+
+function refreshConnectedPeers() {
+  try {
+    const opt_peers = (gun as any).back('opt.peers') as Record<string, any>;
+    const list = Object.entries(opt_peers)
+      .filter(([, peer]) => {
+        return (
+          peer &&
+          peer.wire &&
+          peer.wire.readyState === 1 &&
+          peer.wire.OPEN === 1 &&
+          peer.wire.constructor?.name === 'WebSocket'
+        );
+      })
+      .map(([url]) => url);
+    connectedPeers.value = list;
+  } catch {
+    connectedPeers.value = [];
+  }
+  // 更新状态映射
+  const set = new Set(connectedPeers.value);
+  const next: Record<string, 'connected' | 'disconnected' | 'unknown'> = {};
+  for (const url of peersList.value) {
+    next[url] = set.has(url) ? 'connected' : 'disconnected';
+  }
+  peerStatuses.value = next;
+}
+
+onMounted(() => {
+  // 初始化并轮询连接状态（与 RelayGroup 保持一致周期）
+  refreshConnectedPeers();
+  connectedTimer = window.setInterval(refreshConnectedPeers, 1500);
+});
+
+onUnmounted(() => {
+  if (connectedTimer) window.clearInterval(connectedTimer);
+});
 
 // 新增：好友和共享节点的状态
 const friendsRelays = ref<Record<string, string[]>>({});
@@ -1369,7 +1411,7 @@ const openStrangerRelayModal = () => {
 
 // 新增：处理添加陌生节点逻辑
 const handleAddStrangerRelay = (url: string) => {
-  addPeer(url);
+  addRelay(url);
   showToast(t('relayAddedRestart'), 'success');
   // 从列表中移除，提供即时反馈
   strangerRelaysList.value = strangerRelaysList.value.filter(item => item !== url);

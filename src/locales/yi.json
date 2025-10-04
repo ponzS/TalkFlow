@@ -620,4 +620,62 @@
 "call7": "Guida per distribuire un server di segnalazione privato",
 "call8": "Chiave di crittografia delle chiamate",
 "call9": "Rigenera chiave"
+  ,
+  "webllm": {
+    "sidebar": {
+      "newConversation": "Nuova conversazione",
+      "refresh": "Aggiorna",
+      "export": "Esporta",
+      "delete": "Elimina",
+      "empty": "Nessuna cronologia conversazioni"
+    },
+    "warning": {
+      "noWebGPU": "WebGPU non rilevato; prestazioni potenzialmente inferiori."
+    },
+    "controls": {
+      "currentModel": "Modello corrente:",
+      "runtimeMode": "Modalità di esecuzione:",
+      "model": "Modello",
+      "modelPlaceholder": "es.: Qwen2-1.5B-Instruct-q4f32_1-MLC"
+    },
+    "common": {
+      "apply": "Applica",
+      "available": "Disponibile",
+      "unavailable": "Non disponibile"
+    },
+    "consent": {
+      "tip": "Modello non caricato. La prima volta richiede download e cache locale.",
+      "loadDefault": "Accetta e carica il modello predefinito",
+      "confirm": "Al primo uso è necessario memorizzare il modello in cache localmente. Procedere?"
+    },
+    "settings": {
+      "more": "Altre impostazioni",
+      "title": "Impostazioni WebLLM",
+      "close": "Chiudi",
+      "runtimeMode": "Modalità di esecuzione",
+      "webgpuAvailable": "WebGPU disponibile",
+      "installedModels": "Modelli installati",
+      "noInstalledModels": "Nessun modello installato",
+      "inUse": "In uso",
+      "use": "Usa",
+      "delete": "Elimina",
+      "builtInModels": "Modelli integrati",
+      "pullRemoteModel": "Recupera modello remoto",
+      "remoteModelPlaceholder": "Inserisci ID modello, es.: Qwen2-1.5B-Instruct-q4f32_1-MLC",
+      "pullAndUse": "Recupera e usa",
+      "importLocal": "Importa da locale",
+      "generationParams": "Parametri di generazione",
+      "enableThinking": "Abilita modalità pensiero (Qwen3)",
+      "logLevel": "Livello di log"
+    },
+    "autoreply": {
+      "title": "Impostazioni risposte automatiche",
+      "replyAll": "Rispondi automaticamente a tutti gli amici",
+      "targeted": "Risposta mirata (priorità maggiore)",
+      "selectBuddies": "Seleziona amici per abilitare risposta automatica"
+    },
+    "import": {
+      "notSupported": "Import locale non supportato; recupera tramite ID modello."
+    }
+  }
 }

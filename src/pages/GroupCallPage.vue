@@ -10,7 +10,7 @@
           <h2 v-if="roomName"></h2>
             <h2 v-else class="no-room"></h2>
             <p v-if="call.roomPub" class="room-id">Room ID: {{ shortId(call.roomPub) }}</p>
-            <p v-if="!call.hasPrivate" class="warning">请先配置房间密钥</p></ion-title>
+            <p v-if="!call.hasPrivate" class="warning">KeyPair is null</p></ion-title>
         <ion-buttons slot="end">
           <ion-button @click="openLogs = !openLogs">log</ion-button>
         
@@ -123,7 +123,7 @@
 <div style="display: flex; margin:5px auto;width: 200px;justify-content: center;">
  <ion-button fill="outline" size="small" @click="quickShareRoom" :disabled="!call.hasPrivate">
                  
-                  复制当前房间分享链接
+                  {{ $t('call1') }}
                 </ion-button>
 </div>
 
@@ -142,31 +142,31 @@
                 <ion-textarea
                   auto-grow
                   :rows="1"
-                  label="使用分享链接加入房间"
+                  :label="$t('call2')"
                   label-placement="stacked"
                   v-model="pasteString"
-                  placeholder="在此粘贴房间分享链接..."
+                  :placeholder="$t('call3')"
                 />
                
               </ion-item>
               
               <ion-buttons class="ion-margin-top">
                 <ion-button @click="parseShareString" :disabled="!pasteString.trim()" expand="block" color="primary">
-                  加入房间
+                  {{ $t('call4') }}
                 </ion-button>
              
                 <ion-button  @click="pasteFromClipboard" expand="block">
-                  从剪贴板粘贴
+                  {{ $t('call5') }}
                 </ion-button>
               </ion-buttons>
               <ion-item>
                 <ion-input
-                  label="信令服务器"
+                  :label="$t('call6')"
                   label-placement="stacked"
                   v-model="call.signalingOrigin"
                   placeholder="https://your-signaling-server"
                 />
-                      <ion-button size="small" fill="outline" :href="relayDocs" target="_blank" rel="noopener">部署私人信令指南</ion-button>
+                      <ion-button size="small" fill="outline" :href="relayDocs" target="_blank" rel="noopener">  {{ $t('call7') }}</ion-button>
               </ion-item>
     
          
@@ -176,7 +176,7 @@
               readonly
               auto-grow
               :rows="3"
-              label="通话加密密钥(JSON)"
+              :label="$t('call8')"
               label-placement="stacked"
               :value="call.pairText"
             />
@@ -185,7 +185,7 @@
           <ion-buttons class="ion-margin-top">
             <ion-button @click="regenerateKeypair" expand="block" color="warning">
              
-              重新生成密钥对
+              {{ $t('call9') }}
             </ion-button>
  
           </ion-buttons>
@@ -206,7 +206,7 @@
       <ion-modal :is-open="openLogs" @didDismiss="openLogs=false">
         <ion-header>
           <ion-toolbar>
-            <ion-title>日志</ion-title>
+            <ion-title>log</ion-title>
             <ion-buttons slot="end"><ion-button @click="openLogs=false">close</ion-button></ion-buttons>
           </ion-toolbar>
         </ion-header>
@@ -313,7 +313,7 @@ function ShareLink(){
 
 function quickShareRoom() {
   if (!call.hasPrivate || !call.pair) {
-    alert('请先创建房间')
+    alert('The room key is empty. Please make it the key.')
     return
   }
   
@@ -329,10 +329,10 @@ function quickShareRoom() {
   
   try {
     navigator.clipboard.writeText(shareStr)
-    alert('分享链接已复制到剪贴板！')
+    alert('Copied to clipboard!')
   } catch (err) {
     console.error('Failed to copy:', err)
-    alert('复制失败，请手动复制')
+    alert('Failed to copy')
   }
 }
 
@@ -342,11 +342,11 @@ function handleStartMeeting() {
 
  // console.log('handleStartMeeting 被调用')
   if (call.connected) {
-    console.log('当前已连接，执行停止操作')
+   // console.log('当前已连接，执行停止操作')
     call.stop()
   } else {
       localopen.value = true
-    console.log('当前未连接，执行开始会议操作')
+   // console.log('当前未连接，执行开始会议操作')
     enterVideoCall()
   }
 }
@@ -356,7 +356,7 @@ function handleEndMeeting() {
  // console.log('handleEndMeeting 被调用 - 挂断会议')
   if (call.connected) {
     call.stop()
-    console.log('会议已挂断')
+  //  console.log('会议已挂断')
   }
 }
 
@@ -370,19 +370,19 @@ function enterVideoCall() {
   // })
   
   if (!call.hasPrivate) {
-    console.log('没有私钥，提示创建房间')
-    alert('请先创建房间')
+   // console.log('没有私钥，提示创建房间')
+    alert('The room key is empty. Please make it the key.')
     return
   }
   
   // 确保密钥对象存在
   if (!call.pair) {
-    console.log('密钥对象不存在，尝试重新加载')
+    //console.log('密钥对象不存在，尝试重新加载')
     call.loadPair()
     
     if (!call.pair) {
-      console.log('重新加载后仍然没有密钥对象')
-      alert('密钥对象丢失，请重新创建房间')
+   //   console.log('重新加载后仍然没有密钥对象')
+      alert('The room key is empty. Please make it the key.')
       return
     }
   }
@@ -392,12 +392,12 @@ function enterVideoCall() {
   
   try {
     // 启动视频通话
-    console.log('调用 call.start()')
+  //  console.log('调用 call.start()')
     call.start()
-    console.log('call.start() 调用完成')
+  //  console.log('call.start() 调用完成')
   } catch (error) {
-    console.error('启动视频通话时出错:', error)
-    alert('启动视频通话失败: ' + error.message)
+  //  console.error('启动视频通话时出错:', error)
+    alert(error.message)
   }
 }
 
@@ -406,7 +406,7 @@ async function pasteFromClipboard() {
   try {
     const text = await navigator.clipboard.readText()
     pasteString.value = text
-    alert('分享字符串已从剪贴板粘贴！')
+    alert('Done')
   } catch (err) {
     console.error('Failed to paste:', err)
   }
@@ -438,14 +438,14 @@ function parseShareString() {
       roomName.value = shareData.roomName
     }
     
-    alert('分享字符串解析成功！')
+    alert('Done')
     
     // 切换到创建房间面板显示加载的信息
     activeTab.value = 'create'
     
   } catch (err) {
-    console.error('Parse error:', err)
-    alert('无效的分享字符串格式')
+   // console.error('Parse error:', err)
+    alert(err)
   }
 }
 
@@ -466,7 +466,7 @@ function shortId(id: string){
 /* 视频区域 - 占据上半部分 */
 .video-section {
   flex: 1;
-  min-height: 50vh;
+  min-height: 70vh;
   background: #000;
   position: relative;
   overflow: hidden;
@@ -564,7 +564,7 @@ function shortId(id: string){
 /* 工具栏区域 - 占据下半部分 */
 .toolbar-section {
   flex: 0 0 auto;
-  max-height: 50vh;
+  max-height: 30vh;
   padding: 12px;
   background: var(--ion-background-color);
   /* border-top: 1px solid var(--ion-color-light); */

@@ -779,12 +779,12 @@ function extractUrls(text: string): { text: string; isUrl: boolean }[] {
       parts.push({
         text: text.slice(lastIndex, startIndex),
         isUrl: false
-      });
+      } as any);
     }
     parts.push({
       text: url,
       isUrl: true
-    });
+    } as any);
     lastIndex = urlRegex.lastIndex;
   }
   if (lastIndex < text.length) {
@@ -2702,7 +2702,7 @@ ion-content { --content-bottom: 0px; transition: all 0.2s ease; }
 
 .input-toolbar {
   transition: all 0.2s ease;
-  position: relative; bottom: 0; width: 100vw; overflow:visible;
+  position: relative; bottom: 0; width: 100%; overflow:visible;
   /* --background: linear-gradient(to top, var(--ion-background-color) 70%, rgba(0, 0, 0, 0) 100%);
   */
   /* --background: var(--background-color-no);
@@ -2905,7 +2905,9 @@ backdrop-filter: blur(10px);
   justify-content: center;
   width: 100%;
 }
-.text-input {  flex: 1;  width: 100%; display: flex; align-items: flex-end; justify-content: space-between; }
+.text-input {  
+  flex: 1;  width: 100%; display: flex; 
+  align-items: flex-end; justify-content: space-between; }
 
 
 textarea {

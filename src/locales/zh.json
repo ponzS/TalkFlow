@@ -647,4 +647,62 @@
   "call7": "部署私人信令指南",
   "call8": "通话加密密钥",
   "call9": "重新生成密钥"
+  ,
+  "webllm": {
+    "sidebar": {
+      "newConversation": "新建对话",
+      "refresh": "刷新",
+      "export": "导出",
+      "delete": "删除",
+      "empty": "暂无历史对话"
+    },
+    "warning": {
+      "noWebGPU": "你的浏览器未检测到 WebGPU，性能可能较低。"
+    },
+    "controls": {
+      "currentModel": "当前模型：",
+      "runtimeMode": "推理模式：",
+      "model": "模型",
+      "modelPlaceholder": "如：Qwen2-1.5B-Instruct-q4f32_1-MLC"
+    },
+    "common": {
+      "apply": "应用",
+      "available": "可用",
+      "unavailable": "不可用"
+    },
+    "consent": {
+      "tip": "尚未加载模型。首次使用需下载模型并缓存到本地。",
+      "loadDefault": "同意并加载默认模型",
+      "confirm": "首次使用需要下载模型到本地缓存，是否同意？"
+    },
+    "settings": {
+      "more": "更多设置",
+      "title": "WebLLM 设置",
+      "close": "关闭",
+      "runtimeMode": "运行模式",
+      "webgpuAvailable": "WebGPU 可用",
+      "installedModels": "已安装模型",
+      "noInstalledModels": "暂无已安装模型",
+      "inUse": "已使用",
+      "use": "使用",
+      "delete": "删除",
+      "builtInModels": "内置模型列表",
+      "pullRemoteModel": "从远程拉取模型",
+      "remoteModelPlaceholder": "输入模型ID，如：Qwen2-1.5B-Instruct-q4f32_1-MLC",
+      "pullAndUse": "拉取并使用",
+      "importLocal": "从本地导入",
+      "generationParams": "生成参数",
+      "enableThinking": "启用思维模式（Qwen3）",
+      "logLevel": "日志等级"
+    },
+    "autoreply": {
+      "title": "自动回复设置",
+      "replyAll": "自动回复所有好友消息",
+      "targeted": "针对性回复（优先级更高）",
+      "selectBuddies": "选择启用自动回复的好友"
+    },
+    "import": {
+      "notSupported": "当前版本暂不支持直接导入本地模型文件，请使用模型ID进行拉取。"
+    }
+  }
 }

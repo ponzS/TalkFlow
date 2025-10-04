@@ -623,4 +623,62 @@
 "call7": "Anleitung zum Bereitstellen eines privaten Signaling-Servers",
 "call8": "Verschlüsselungsschlüssel für Anrufe",
 "call9": "Schlüssel neu generieren"
+  ,
+  "webllm": {
+    "sidebar": {
+      "newConversation": "Neue Unterhaltung",
+      "refresh": "Aktualisieren",
+      "export": "Exportieren",
+      "delete": "Löschen",
+      "empty": "Keine Gesprächsverläufe"
+    },
+    "warning": {
+      "noWebGPU": "WebGPU nicht erkannt; Leistung möglicherweise geringer."
+    },
+    "controls": {
+      "currentModel": "Aktuelles Modell:",
+      "runtimeMode": "Laufzeitmodus:",
+      "model": "Modell",
+      "modelPlaceholder": "z. B.: Qwen2-1.5B-Instruct-q4f32_1-MLC"
+    },
+    "common": {
+      "apply": "Übernehmen",
+      "available": "Verfügbar",
+      "unavailable": "Nicht verfügbar"
+    },
+    "consent": {
+      "tip": "Modell nicht geladen. Beim ersten Gebrauch wird lokal zwischengespeichert.",
+      "loadDefault": "Zustimmen und Standardmodell laden",
+      "confirm": "Beim ersten Gebrauch wird Modell lokal gespeichert. Fortfahren?"
+    },
+    "settings": {
+      "more": "Weitere Einstellungen",
+      "title": "WebLLM-Einstellungen",
+      "close": "Schließen",
+      "runtimeMode": "Laufzeitmodus",
+      "webgpuAvailable": "WebGPU verfügbar",
+      "installedModels": "Installierte Modelle",
+      "noInstalledModels": "Keine installierten Modelle",
+      "inUse": "In Verwendung",
+      "use": "Verwenden",
+      "delete": "Löschen",
+      "builtInModels": "Eingebaute Modelle",
+      "pullRemoteModel": "Modell aus Remote abrufen",
+      "remoteModelPlaceholder": "Modell-ID eingeben, z. B.: Qwen2-1.5B-Instruct-q4f32_1-MLC",
+      "pullAndUse": "Abrufen und verwenden",
+      "importLocal": "Lokal importieren",
+      "generationParams": "Generierungsparameter",
+      "enableThinking": "Denkmodus aktivieren (Qwen3)",
+      "logLevel": "Protokollstufe"
+    },
+    "autoreply": {
+      "title": "Auto-Antwort-Einstellungen",
+      "replyAll": "Alle Freunde automatisch beantworten",
+      "targeted": "Zielgerichtete Antwort (höhere Priorität)",
+      "selectBuddies": "Freunde für Auto-Antwort auswählen"
+    },
+    "import": {
+      "notSupported": "Lokaler Modellimport nicht unterstützt; bitte per Modell-ID abrufen."
+    }
+  }
 }

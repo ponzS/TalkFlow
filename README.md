@@ -40,8 +40,11 @@ If you're interested in our open source project story, please scroll down the pa
 
 # Quick Start 
 
-install ollama client
-https://github.com/ollama/ollama
+E2EE Video/Voice Call Relay: https://github.com/DeFUCC/gun-vue/tree/main/relay/skin/gun-vue-call-relay
+
+Use WebLLM (browser-based inference, no external client)
+https://webllm.mlc.ai
+https://github.com/mlc-ai/web-llm
 
 iOS:
 
@@ -71,19 +74,7 @@ build the installation package
 yarn tauri build
 ```
 
-Run Gun-Relay&Ollama
-
-```base
-cd gun-ollama
-```
-install dep
-```base
-yarn install
-```
-start
-```base
-node start.js
-```
+WebLLM runs fully in the browser; no separate AI backend required.
 ![talkflow](https://github.com/user-attachments/assets/83733bed-e28d-4b3f-af6a-6212e3ed402a)
 
 
@@ -92,6 +83,9 @@ node start.js
 
 
 <img src="https://github.com/user-attachments/assets/37ae341c-6595-4b70-89cc-375e5ed341a6" alt="" width="300" height="600">
+
+
+
 
 
 # composables
@@ -120,7 +114,7 @@ Gun-Vue/relay
 
 gun-avatar
 
-OllamaJs
+WebLLM
 
 Tauri
 

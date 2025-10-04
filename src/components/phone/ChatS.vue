@@ -1058,19 +1058,19 @@ const handleTouchMove = () => {
   <ion-page ref="page" @click="closeOpenedItems">
     <ion-header :translucent="true"   collapse="fade">
 
-      <ion-toolbar v-show="!isSearchFocused">
-         <ion-buttons slot="start" v-show="!isSearchFocused">
+      <ion-toolbar >
+         <ion-buttons slot="start">
           <ion-button  expand="block" fill="clear" @click="openRoomsModal">
             <!-- <ion-icon :icon="walletOutline" ></ion-icon> -->
              GroupCard
           </ion-button>
         </ion-buttons>
 
-        <ion-title v-show="!isSearchFocused">
+        <ion-title >
          TalkFlow
         </ion-title>
 
-        <ion-buttons slot="end"  v-show="!isSearchFocused">
+        <ion-buttons slot="end" >
           <ion-button  expand="block" fill="clear" id="menu-trigger">
             <ion-icon  :icon="addOutline" ></ion-icon>
           </ion-button>
@@ -1500,7 +1500,7 @@ const handleTouchMove = () => {
       <!-- Chats View -->
       <div v-show="selectedSegment === 'chats'" class="view-container">
      
-<ion-header collapse="condense" v-show="!isSearchFocused">
+<ion-header collapse="condense" >
           <ion-toolbar>
             <h1 ref="titleRef" class="talkflow-header-title" style="margin: 10px;font-weight: 900;font-size: 39px;">
            <span style="color:var(--ion-text-color)">Talk</span>Flow
@@ -1510,10 +1510,10 @@ const handleTouchMove = () => {
 
 
 
-        <div style="height: 50px;" v-show="isSearchFocused"></div>
+        <!-- <div style="height: 50px;" v-show="isSearchFocused"></div> -->
                <ion-searchbar
-        show-cancel-button="focus"
-         :animated="true"
+       
+        
           v-model="searchQuery"
           placeholder="Search any"
           @keydown.enter.prevent="onSearchEnter"
