@@ -75,12 +75,6 @@ yarn tauri build
 ```
 
 WebLLM runs fully in the browser; no separate AI backend required.
-![talkflow](https://github.com/user-attachments/assets/83733bed-e28d-4b3f-af6a-6212e3ed402a)
-
-
-
-<img src="https://github.com/user-attachments/assets/6edc4642-7928-4b6c-b5bf-a67cbe13e97d" alt="" width="600" height="390">
-
 
 <img src="https://github.com/user-attachments/assets/37ae341c-6595-4b70-89cc-375e5ed341a6" alt="" width="300" height="600">
 
