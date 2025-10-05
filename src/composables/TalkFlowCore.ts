@@ -5943,13 +5943,9 @@ async function listenMyRequests(myPub: string): Promise<void> {
     saveNavigationState,
     restoreNavigationState,
     diagnoseDbStorage,
-    // New additions
     isRelaySharingEnabled,
     toggleRelaySharing,
     startSyncStatusListener,
-
-
-        // User data caching functions
     getUserDataOnce,
     fetchUserDataFromGun,
     preloadUserData,

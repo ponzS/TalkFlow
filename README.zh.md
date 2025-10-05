@@ -37,11 +37,6 @@
 
 E2EE Video/Voice Call Relay: https://github.com/DeFUCC/gun-vue/tree/main/relay/skin/gun-vue-call-relay
 
-
-使用 WebLLM（浏览器端推理，无需独立客户端）
-https://webllm.mlc.ai
-https://github.com/mlc-ai/web-llm
-
 iOS版本：
 
 AppStore：TalkFlow

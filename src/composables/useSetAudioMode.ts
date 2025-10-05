@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 
-declare var cordova: any; // For cordova-plugin-audiotoggle
+declare var cordova: any; 
 
 interface AudioState {
   mode: 'speaker' | 'earpiece';

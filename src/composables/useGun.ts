@@ -8,10 +8,10 @@ const DEFAULT_PEERS: string[] = [
   'https://gun.defucc.me/gun',
   'wss://gun.defucc.me/gun',
   'https://relay.peer.ooo/gun',
-  'wss://relay.peer.ooo/gun',
-  'http://localhost:8765/gun',
+  'wss://relay.peer.ooo/gun'
+  
 ];
-
+// 'http://localhost:8765/gun',
 const LS_KEYS = {
   list: 'gun_peers_list',
   enabled: 'gun_enabled_peers',

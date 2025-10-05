@@ -42,10 +42,6 @@ If you're interested in our open source project story, please scroll down the pa
 
 E2EE Video/Voice Call Relay: https://github.com/DeFUCC/gun-vue/tree/main/relay/skin/gun-vue-call-relay
 
-Use WebLLM (browser-based inference, no external client)
-https://webllm.mlc.ai
-https://github.com/mlc-ai/web-llm
-
 iOS:
 
 AppStore:TalkFlow
