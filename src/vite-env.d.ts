@@ -5,7 +5,9 @@ declare module 'virtual:generated-pages' {
     const pages: RouteRecordRaw[]
     export default pages
   }
-
+declare module 'vue-i18n';
+ declare module '@capacitor/keyboard';
+declare module 'gun-avatar';
 declare module 'lodash';
 
 declare module 'crypto-js';

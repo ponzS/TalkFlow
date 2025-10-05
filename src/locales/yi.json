@@ -678,4 +678,25 @@
       "notSupported": "Import locale non supportato; recupera tramite ID modello."
     }
   }
+  ,
+  "modelPersona": {
+    "title": "Messa a punto del modello · Impostazioni persona",
+    "currentModel": { "label": "Modello corrente" },
+    "personaSegments": {
+      "label": "Segmenti predefiniti compositi",
+      "tip": "Aggiungi più prompt system/user/assistant; vengono inseriti all’inizio del contesto in ordine.",
+      "addSystem": "Aggiungi segmento System",
+      "addUser": "Aggiungi segmento User",
+      "addAssistant": "Aggiungi segmento Assistant"
+    },
+    "segment": {
+      "placeholder": "Testo del prompt per questo segmento",
+      "actions": { "moveUp": "Sposta su", "moveDown": "Sposta giù", "remove": "Elimina" }
+    },
+    "systemPrompt": {
+      "label": "Prompt di sistema (opzionale)",
+      "tip": "Se serve un prompt di sistema separato, inseriscilo qui; ha priorità ed è inserito prima dei segmenti compositi.",
+      "placeholder": "Prompt di sistema aggiuntivo (opzionale)"
+    }
+  }
 }

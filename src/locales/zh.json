@@ -705,4 +705,25 @@
       "notSupported": "当前版本暂不支持直接导入本地模型文件，请使用模型ID进行拉取。"
     }
   }
+  ,
+  "modelPersona": {
+    "title": "模型微调 · 角色设置",
+    "currentModel": { "label": "当前模型" },
+    "personaSegments": {
+      "label": "组合预设段",
+      "tip": "可添加多段 system / user / assistant 提示，按顺序注入到上下文最前。",
+      "addSystem": "添加 System 段",
+      "addUser": "添加 User 段",
+      "addAssistant": "添加 Assistant 段"
+    },
+    "segment": {
+      "placeholder": "此段提示词内容",
+      "actions": { "moveUp": "上移", "moveDown": "下移", "remove": "删除" }
+    },
+    "systemPrompt": {
+      "label": "系统提示（可选）",
+      "tip": "如需额外补充单独的系统提示，可在此处填写；会优先注入于组合段之前。",
+      "placeholder": "额外系统提示（可留空）"
+    }
+  }
 }

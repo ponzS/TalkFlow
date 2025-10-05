@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <ion-header>
+    <!-- <ion-header> -->
       <ion-toolbar>
         <ion-buttons slot="start">
         <p class="model-id">{{ modelId }}</p>
@@ -13,44 +13,46 @@
           <ion-button @click="toggleSidebar(true)">
            <ion-icon :icon="chatboxEllipsesOutline"></ion-icon>
         </ion-button>
-         
+            <ion-button @click="$router.push('/ModelPersona')">
+        <ion-icon :icon="personOutline"></ion-icon>    
+        </ion-button>
           <!-- <ion-button @click="clearChat" :disabled="isStreaming">清空</ion-button> -->
           <ion-button @click="openSettings">
         <ion-icon :icon="settingsOutline"></ion-icon>    
         </ion-button>
         </ion-buttons>
       </ion-toolbar>
-    </ion-header>
+    <!-- </ion-header> -->
 
-    <ion-content :fullscreen="true">
-      <!-- 历史侧边栏 -->
-      <div v-if="sidebarOpen" class="history-sidebar">
-        <div class="history-header">
-          <div class="title"></div>
-          <ion-buttons>
-            <ion-button size="small" @click="toggleSidebar(false)">Close</ion-button>
-          </ion-buttons>
-        </div>
-        <!-- <div style="padding: 6px 8px; display:flex; gap:8px;">
-          <ion-button size="small" @click="newConversation">{{ t('webllm.sidebar.newConversation') }}</ion-button>
-          <ion-button size="small" color="medium" @click="refreshList">{{ t('webllm.sidebar.refresh') }}</ion-button>
-        </div> -->
-        <ion-list>
-          <ion-item v-for="conv in conversations" :key="conv.id" lines="none">
-            <ion-label @click="loadConversation(conv.id)" style="cursor:pointer;">
-              <div style="font-weight:600">{{ conv.title || conv.id }}</div>
-              <div style="font-size:12px;color:var(--ion-color-medium)">{{ formatTimestamp(conv.timestamp) }}</div>
-            </ion-label>
+    <ion-content ref="contentRef" :fullscreen="true" :scroll-y="true" :style="{ '--content-bottom': keyboardHeight + 'px' }">
+      <!-- 历史消息模态窗口 -->
+      <ion-modal :is-open="sidebarOpen" @didDismiss="toggleSidebar(false)">
+        <ion-header>
+          <ion-toolbar>
+            <ion-title>History</ion-title>
             <ion-buttons slot="end">
-              <ion-button size="small" @click="exportConv(conv)">{{ t('webllm.sidebar.export') }}</ion-button>
-              <ion-button size="small" color="danger" @click="removeConversation(conv.id)">{{ t('webllm.sidebar.delete') }}</ion-button>
+              <ion-button size="small" @click="toggleSidebar(false)">Close</ion-button>
             </ion-buttons>
-          </ion-item>
-          <ion-item v-if="conversations.length === 0" lines="none">
-            <ion-label>{{ t('webllm.sidebar.empty') }}</ion-label>
-          </ion-item>
-        </ion-list>
-      </div>
+          </ion-toolbar>
+        </ion-header>
+        <ion-content>
+          <ion-list>
+            <ion-item v-for="conv in conversations" :key="conv.id" lines="none">
+              <ion-label @click="loadConversation(conv.id)" style="cursor:pointer;">
+                <div style="font-weight:600">{{ conv.title || conv.id }}</div>
+                <div style="font-size:12px;color:var(--ion-color-medium)">{{ formatTimestamp(conv.timestamp) }}</div>
+              </ion-label>
+              <ion-buttons slot="end">
+                <ion-button size="small" @click="exportConv(conv)">{{ t('webllm.sidebar.export') }}</ion-button>
+                <ion-button size="small" color="danger" @click="removeConversation(conv.id)">{{ t('webllm.sidebar.delete') }}</ion-button>
+              </ion-buttons>
+            </ion-item>
+            <ion-item v-if="conversations.length === 0" lines="none">
+              <ion-label>{{ t('webllm.sidebar.empty') }}</ion-label>
+            </ion-item>
+          </ion-list>
+        </ion-content>
+      </ion-modal>
 
       <div class="container">
         <div v-if="!hasWebGPU" class="warning">
@@ -94,8 +96,8 @@
       </div>
     </ion-content>
 
-    <ion-footer>
-      <ion-toolbar>
+    <!-- <ion-footer> -->
+      <ion-toolbar :style="{ transform: keyboardHeight ? 'translateY(-' + keyboardHeight + 'px)' : 'none' }">
         <!-- 图片预览（移动到输入框上方） -->
         <div v-if="attachedImageDataUrl" class="attachment-preview">
           <img :src="attachedImageDataUrl" alt="" />
@@ -122,34 +124,34 @@
 
             <!-- 发送/停止：使用过渡与图标按钮 -->
             <div class="button-container">
+                
               <transition name="button-fade" mode="out-in">
-                <ion-button
-                  v-if="isStreaming"
-                  key="stop"
-              
-                  fill="solid"
-                  @click="stopStreaming"
-                  class="stop-button action-button"
-                >
-                  <ion-icon :icon="stopOutline"></ion-icon>
-                </ion-button>
-                <ion-button
-                  v-else
-                  key="send"
-                  color="primary"
-                  fill="solid"
-                  :disabled="!canSend"
-                  @click="send"
-                  class="send-button action-button"
-                >
-                  <ion-icon :icon="sendOutline"></ion-icon>
-                </ion-button>
+                <div v-if="isStreaming" key="stop" class="action-wrap">
+                  <ion-button
+                    fill="solid"
+                    @click="stopStreaming"
+                    class="stop-button action-button"
+                  >
+                    <ion-icon :icon="stopOutline"></ion-icon>
+                  </ion-button>
+                </div>
+                <div v-else key="send" class="action-wrap">
+                  <ion-button
+                    color="primary"
+                    fill="solid"
+                    :disabled="!canSend"
+                    @click="send"
+                    class="send-button action-button"
+                  >
+                    <ion-icon :icon="sendOutline"></ion-icon>
+                  </ion-button>
+                </div>
               </transition>
             </div>
           </div>
     
       </ion-toolbar>
-    </ion-footer>
+    <!-- </ion-footer> -->
 
     <!-- 设置模态 -->
     <ion-modal :is-open="isSettingsOpen" @didDismiss="closeSettings">
@@ -196,7 +198,7 @@
             <ion-item v-for="mid in installedModels" :key="mid" lines="none">
               <ion-label>
                 {{ mid }}
-                <ion-badge v-if="mid === modelId" color="success" style="margin-left:8px;">{{ t('webllm.settings.inUse') }}</ion-badge>
+                <ion-badge v-if="mid === modelId" color="success" style="margin-left:8px;padding:0 5px;">{{ t('webllm.settings.inUse') }}</ion-badge>
               </ion-label>
               <ion-buttons slot="end">
                 <ion-button @click="useInstalled(mid)">{{ t('webllm.settings.use') }}</ion-button>
@@ -216,7 +218,7 @@
               </ion-label>
               <ion-buttons slot="end">
                 <ion-button @click="applyBuiltIn(m.id)" :disabled="isInitializing">{{ t('webllm.settings.use') }}</ion-button>
-                <ion-badge v-if="m.id === modelId" color="success" style="margin-left:8px;">{{ t('webllm.settings.inUse') }}</ion-badge>
+                <ion-badge v-if="m.id === modelId" color="success" style="margin-left:2px;padding: 3px;">{{ t('webllm.settings.inUse') }}</ion-badge>
               </ion-buttons>
             </ion-item>
             <!-- 自定义远程模型拉取输入框：置于本地导入项上方 -->
@@ -299,6 +301,28 @@
               <ion-checkbox :checked="targetedBuddyPubs.includes(friend.pub)" @ionChange="(ev) => onToggleBuddy(friend.pub, ev)" />
             </ion-item>
           </ion-list>
+
+          <!-- 群聊自动回复设置 -->
+          <ion-list>
+            <ion-item lines="full">
+              <ion-label>Group Auto-Reply</ion-label>
+            </ion-item>
+            <ion-item>
+              <ion-label>Reply All Groups</ion-label>
+              <ion-toggle :checked="groupAutoReplyAllEnabled" @ionChange="onGroupAutoReplyAllToggle" />
+            </ion-item>
+            <ion-item>
+              <ion-label>Targeted Groups</ion-label>
+              <ion-toggle :checked="groupTargetedReplyEnabled" @ionChange="onGroupTargetedReplyToggle" />
+            </ion-item>
+            <ion-item v-if="groupTargetedReplyEnabled" lines="none">
+              <ion-label>Select groups to auto-reply</ion-label>
+            </ion-item>
+            <ion-item v-if="groupTargetedReplyEnabled" v-for="g in allGroups" :key="g.pub" lines="none">
+              <ion-label>{{ g.name || g.pub.slice(0, 8) + '…' }}</ion-label>
+              <ion-checkbox :checked="targetedGroupPubs.includes(g.pub)" @ionChange="(ev) => onToggleGroup(g.pub, ev)" />
+            </ion-item>
+          </ion-list>
         </div>
       </ion-content>
     </ion-modal>
@@ -330,11 +354,13 @@ import {
   IonCheckbox,
   IonIcon,
 } from '@ionic/vue';
-import { ref, computed, nextTick, onMounted, watch } from 'vue';
+import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
 import { useWebLLMChat } from '@/composables/useWebLLMChat';
+import { useGroupChat } from '@/composables/useGroupChat';
 import { getTalkFlowCore } from '@/composables/TalkFlowCore';
-import { sendOutline, stopOutline, imageOutline, closeOutline, settingsOutline, createOutline, addCircleOutline, chatboxEllipsesOutline } from 'ionicons/icons';
+import { sendOutline, stopOutline, imageOutline, closeOutline, settingsOutline, createOutline, addCircleOutline, chatboxEllipsesOutline, personOutline } from 'ionicons/icons';
+import { useKeyboardState } from '@/composables/useKeyboardState';
 import {
   useChatHistory,
   addConversation,
@@ -345,7 +371,7 @@ import {
   deriveTitleFromMessages,
 } from '@/composables/useChatHistory';
 
-// i18n translation function
+
 const { t } = useI18n();
 
 const {
@@ -396,6 +422,17 @@ const {
 // 好友列表（用于针对性自动回复选择）
 const talkFlow = getTalkFlowCore();
 const { buddyList, getAliasRealtime } = talkFlow;
+// 群聊（用于针对性自动回复选择群组）
+const groupChat = useGroupChat();
+const {
+  groups: allGroups,
+  groupAutoReplyAllEnabled,
+  groupTargetedReplyEnabled,
+  targetedGroupPubs,
+  setGroupAutoReplyAllEnabled,
+  setGroupTargetedReplyEnabled,
+  setTargetedGroupPubs,
+} = groupChat;
 
 const inputText = ref('');
 const canSend = computed(() => inputText.value.trim().length > 0);
@@ -404,6 +441,24 @@ const engineReady = ref(false);
 const isSettingsOpen = ref(false);
 const pullModelId = ref('');
 const userConsented = ref<boolean>(localStorage.getItem('webllm_user_consented') === 'true');
+
+// 内容滚动引用与工具方法
+const contentRef = ref<any>(null);
+async function scrollToBottom(smooth: boolean = true) {
+  try {
+    const el = await contentRef.value?.$el?.getScrollElement?.();
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior: smooth ? 'smooth' : 'auto' });
+  } catch {
+    // 兜底：直接操作 DOM
+    const el: HTMLElement | null = contentRef.value?.$el || contentRef.value;
+    if (!el) return;
+    el.scrollTop = el.scrollHeight;
+  }
+}
+
+// 键盘共享状态（统一管理，避免冲突）
+const { keyboardHeight, inputFocused, initKeyboard, cleanupKeyboard } = useKeyboardState();
 
 // 历史记录管理
 const { conversations, sidebarOpen, refreshList, toggleSidebar, exportConversation } = useChatHistory();
@@ -475,6 +530,7 @@ async function send() {
 
   await sendMessage(text);
   await nextTick();
+  await scrollToBottom(true);
 
   // 流式结束或更新时再精确更新到最新消息
   const conv = {
@@ -520,6 +576,13 @@ async function applyBuiltIn(id: string) {
 onMounted(async () => {
   // 默认不自动下载模型，需用户同意并手动加载
   await refreshList();
+  // 初始化统一键盘监听
+  await initKeyboard();
+});
+
+onUnmounted(() => {
+  // 清理统一键盘监听
+ // cleanupKeyboard();
 });
 
 // 当消息变化时，如果当前会话已保存，则持续更新到 IndexedDB（覆盖最新内容）
@@ -533,6 +596,8 @@ watch(messages, async (val) => {
       messages: toPlainMessages(val as any),
     } as any);
     await refreshList();
+    await nextTick();
+    await scrollToBottom(true);
   } catch {}
 }, { deep: true });
 
@@ -627,6 +692,22 @@ function onToggleBuddy(pub: string, ev: CustomEvent) {
   setTargetedBuddyPubs(Array.from(set));
 }
 
+// 群聊自动回复设置事件
+function onGroupAutoReplyAllToggle(ev: CustomEvent) {
+  const checked = (ev as any).detail?.checked as boolean;
+  setGroupAutoReplyAllEnabled(!!checked);
+}
+function onGroupTargetedReplyToggle(ev: CustomEvent) {
+  const checked = (ev as any).detail?.checked as boolean;
+  setGroupTargetedReplyEnabled(!!checked);
+}
+function onToggleGroup(pub: string, ev: CustomEvent) {
+  const checked = (ev as any).detail?.checked as boolean;
+  const set = new Set<string>(targetedGroupPubs.value);
+  if (checked) set.add(pub); else set.delete(pub);
+  setTargetedGroupPubs(Array.from(set));
+}
+
 // 历史记录相关方法
 function formatTimestamp(ts: number): string {
   const d = new Date(ts);
@@ -646,6 +727,8 @@ async function loadConversation(id: string) {
   currentConversationId.value = id;
   hasBeenSaved.value = true;
   toggleSidebar(false);
+  await nextTick();
+  await scrollToBottom(false);
 }
 
 async function removeConversation(id: string) {
@@ -671,6 +754,7 @@ function newConversation() {
 </script>
 
 <style scoped>
+.ion-page, ion-content { --content-bottom: 0px; transition: all 0.2s ease; }
 .container {
   max-width: 900px;
   margin: 0 auto;
@@ -706,6 +790,7 @@ function newConversation() {
 }
 .message-list {
   background: transparent;
+  padding-bottom: calc(60px + var(--content-bottom));
 }
 .bubble {
   max-width: 100%;
@@ -745,7 +830,7 @@ function newConversation() {
 .input-bar {
   display: flex;
   gap: 8px;
-  align-items: flex-end;
+  align-items: center;
 
 }
 .input-actions {
@@ -757,24 +842,55 @@ function newConversation() {
   display: flex;
   align-items: center;
   justify-content: center;
+  margin: 0 5px;
 }
 
-.action-button {
-  width: 50px;
-  height: 50px;
-  --border-radius: 50%;
-  padding: 0;
-  --padding-start: 0;
-  --padding-end: 0;
-  margin:0 5px;
-}
-.action-button ion-icon {
+.action-wrap {
   display: flex;
   align-items: center;
   justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  position: relative;
+  align-self: center;
+}
 
-  font-size: 20px;
-
+.action-button {
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  min-height: 40px;
+  max-height: 40px;
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  --border-radius: 50%;
+  --min-height: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  padding: 0;
+  margin: 0 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 40px;
+  align-self: center;
+  position: static;
+  box-sizing: border-box;
+}
+.action-button::part(native) {
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  padding: 0;
+  border-radius: 50%;
+}
+.action-button ion-icon {
+  font-size: 18px;
 }
 /* 发送/停止按钮过渡动画 */
 .button-fade-enter-active {

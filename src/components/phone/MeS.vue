@@ -684,6 +684,7 @@ html.light .friend-label, html.light .user-label, html.light .relay-label {
 </style>
 
 <template>
+  <ion-page>
   <div class="canvas-container" >
     <!-- 3D网络拓扑图组件 -->
         <NetworkCanvas 
@@ -839,7 +840,7 @@ html.light .friend-label, html.light .user-label, html.light .relay-label {
   </ion-modal>
 
     
-
+</ion-page>
 </template>
 
 <script lang="ts" setup>
@@ -854,7 +855,7 @@ import NetworkCanvas from './NetworkCanvas.vue';
 
 import { Haptics, ImpactStyle } from '@capacitor/haptics';
 import { chatbubblesOutline, chatbubbleOutline, peopleOutline, personOutline, planetOutline, settingsOutline, rocketOutline, browsersOutline, atOutline, sparklesOutline, chatbubbleEllipsesOutline, compassOutline, walletOutline, reorderFourOutline, reorderThreeOutline, appsOutline, serverOutline, happyOutline } from 'ionicons/icons';
-import { IonFooter, IonToolbar, IonContent, IonIcon, IonHeader, IonMenu, IonSplitPane, IonTitle,menuController,} from '@ionic/vue';
+import { IonFooter, IonToolbar, IonContent, IonIcon, IonHeader, IonMenu, IonSplitPane, IonTitle,menuController,IonPage} from '@ionic/vue';
 import { gunAvatar } from "gun-avatar";
 import ChatSpad from '../ipad/ChatSpad.vue';
 import RelayMode from '../GUNtest/RelayMode.vue';

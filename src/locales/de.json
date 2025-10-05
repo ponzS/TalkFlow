@@ -681,4 +681,25 @@
       "notSupported": "Lokaler Modellimport nicht unterstützt; bitte per Modell-ID abrufen."
     }
   }
+  ,
+  "modelPersona": {
+    "title": "Modell-Feinabstimmung · Persona-Einstellungen",
+    "currentModel": { "label": "Aktuelles Modell" },
+    "personaSegments": {
+      "label": "Zusammengesetzte Vorgabesegmente",
+      "tip": "Mehrere System/User/Assistant-Prompts hinzufügen; sie werden in Reihenfolge am Anfang des Kontexts eingefügt.",
+      "addSystem": "System-Segment hinzufügen",
+      "addUser": "User-Segment hinzufügen",
+      "addAssistant": "Assistant-Segment hinzufügen"
+    },
+    "segment": {
+      "placeholder": "Prompt-Text für dieses Segment",
+      "actions": { "moveUp": "Nach oben", "moveDown": "Nach unten", "remove": "Löschen" }
+    },
+    "systemPrompt": {
+      "label": "System-Prompt (optional)",
+      "tip": "Bei Bedarf hier eine separate System-Prompt ergänzen; sie hat Priorität und wird vor den Segmenten eingefügt.",
+      "placeholder": "Zusätzlicher System-Prompt (optional)"
+    }
+  }
 }

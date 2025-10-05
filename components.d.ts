@@ -78,6 +78,7 @@ declare module 'vue' {
     RadiantText: typeof import('./src/components/ui/radiant-text/RadiantText.vue')['default']
     Rays: typeof import('./src/components/ui/lens/Rays.vue')['default']
     RelayGroup: typeof import('./src/components/GunVue/RelayGroup.vue')['default']
+    RelayList: typeof import('./src/components/GunVue/RelayList.vue')['default']
     RemoteMD: typeof import('./src/components/RemoteMD.vue')['default']
     RippleButton: typeof import('./src/components/ui/ripple-button/RippleButton.vue')['default']
     RouterLink: typeof import('vue-router')['RouterLink']

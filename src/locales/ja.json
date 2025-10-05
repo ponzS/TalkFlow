@@ -582,4 +582,25 @@
       "notSupported": "ローカルモデルのインポートは未対応です。モデルIDで取得してください。"
     }
   }
+  ,
+  "modelPersona": {
+    "title": "モデル微調整・ペルソナ設定",
+    "currentModel": { "label": "現在のモデル" },
+    "personaSegments": {
+      "label": "複合プリセットセグメント",
+      "tip": "system / user / assistant のプロンプトを複数追加可能。順番どおりにコンテキスト冒頭へ挿入されます。",
+      "addSystem": "System セグメントを追加",
+      "addUser": "User セグメントを追加",
+      "addAssistant": "Assistant セグメントを追加"
+    },
+    "segment": {
+      "placeholder": "このセグメントのプロンプト内容",
+      "actions": { "moveUp": "上へ移動", "moveDown": "下へ移動", "remove": "削除" }
+    },
+    "systemPrompt": {
+      "label": "システムプロンプト（任意）",
+      "tip": "個別のシステムプロンプトを追加入力する場合はこちら。複合セグメントより優先して挿入されます。",
+      "placeholder": "追加のシステムプロンプト（任意）"
+    }
+  }
 }

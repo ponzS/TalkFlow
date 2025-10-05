@@ -44,6 +44,10 @@ const customRoutes = [
     path: '/group/:pub/members',
     component: () => import('@/pages/GroupMembers.vue')
   },
+  {
+    path: '/ModelPersona',
+    component: () => import('@/pages/ModelPersona.vue')
+  },
  
  
   {

@@ -110,6 +110,7 @@ declare global {
   const useGunSQLiteAdapter: typeof import('./composables/GunStorageAdapter')['useGunSQLiteAdapter']
   const useId: typeof import('vue')['useId']
   const useKeyboardManager: typeof import('./composables/useKeyboardManager')['useKeyboardManager']
+  const useKeyboardState: typeof import('./composables/useKeyboardState')['useKeyboardState']
   const useLanguage: typeof import('./composables/useLanguage')['default']
   const useLink: typeof import('vue-router')['useLink']
   const useModel: typeof import('vue')['useModel']

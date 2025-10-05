@@ -694,4 +694,25 @@
       "notSupported": "Local model import not supported; please pull by model ID."
     }
   }
+  ,
+  "modelPersona": {
+    "title": "Model Tuning · Persona Settings",
+    "currentModel": { "label": "Current Model" },
+    "personaSegments": {
+      "label": "Composite Preset Segments",
+      "tip": "Add multiple system/user/assistant prompts; injected first in context order.",
+      "addSystem": "Add System segment",
+      "addUser": "Add User segment",
+      "addAssistant": "Add Assistant segment"
+    },
+    "segment": {
+      "placeholder": "Prompt text for this segment",
+      "actions": { "moveUp": "Move up", "moveDown": "Move down", "remove": "Remove" }
+    },
+    "systemPrompt": {
+      "label": "System Prompt (optional)",
+      "tip": "Optional extra system prompt; injected before the segments.",
+      "placeholder": "Extra system prompt (optional)"
+    }
+  }
 }

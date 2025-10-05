@@ -588,4 +588,25 @@
       "notSupported": "Import local non pris en charge ; veuillez récupérer via l’ID de modèle."
     }
   }
+  ,
+  "modelPersona": {
+    "title": "Réglage du modèle · Paramètres de persona",
+    "currentModel": { "label": "Modèle actuel" },
+    "personaSegments": {
+      "label": "Segments prédéfinis composés",
+      "tip": "Ajoutez plusieurs invites system/user/assistant; elles sont injectées en tête du contexte dans l’ordre.",
+      "addSystem": "Ajouter un segment System",
+      "addUser": "Ajouter un segment User",
+      "addAssistant": "Ajouter un segment Assistant"
+    },
+    "segment": {
+      "placeholder": "Texte d’invite pour ce segment",
+      "actions": { "moveUp": "Monter", "moveDown": "Descendre", "remove": "Supprimer" }
+    },
+    "systemPrompt": {
+      "label": "Invite système (optionnel)",
+      "tip": "Ajoutez ici une invite système distincte si nécessaire; elle est prioritaire et injectée avant les segments composés.",
+      "placeholder": "Invite système supplémentaire (optionnel)"
+    }
+  }
 }

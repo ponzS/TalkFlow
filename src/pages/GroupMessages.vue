@@ -20,7 +20,7 @@ import {
   addOutline,
   callOutline
 } from 'ionicons/icons';
-import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
+import { useKeyboardState } from '@/composables/useKeyboardState';
 import { mountClass, gunAvatar } from 'gun-avatar';
 import { Browser } from '@capacitor/browser';
 import { useDateFormatter } from '@/composables/useDateFormatter';
@@ -123,11 +123,10 @@ function toggleVoicePlayback(item: GroupChatMessage) {
 }
 const router = useRouter();
 const route = useRoute();
-const keyboardHeight = ref(0);
+const { keyboardHeight, inputFocused, initKeyboard } = useKeyboardState();
 const isVoiceMode = ref(false);
 const cancelRecording = ref(false);
 let touchStartY = 0;
-const inputFocused = ref(false);
 const textInputRef = ref<HTMLTextAreaElement | null>(null);
 const newMessage = ref('');
 const scrollerRef = ref<any>(null);
@@ -749,22 +748,21 @@ onMounted(async () => {
   scrollerEl.value = scrollerRef.value?.$el; // Re-add this line
 
   try {
-    Keyboard.setResizeMode({ mode: KeyboardResize.None });
-    Keyboard.addListener('keyboardWillShow', (info: { keyboardHeight: any }) => {
-      keyboardHeight.value = info.keyboardHeight;
-      inputFocused.value = true;
-      nextTick(() => scrollToBottom());
-    });
-    Keyboard.addListener('keyboardWillHide', () => {
-      keyboardHeight.value = 0;
-      inputFocused.value = false;
-      nextTick(() => {
-        if (scrollerRef.value) {
-          scrollerRef.value.reset();
-          setTimeout(() => scrollToBottom(), 100);
-        }
-        if (capsuleRef.value) capsuleRef.value.style.transform = 'none';
-      });
+    // 初始化共享键盘状态
+    initKeyboard();
+    // 保持原有滚动行为：根据焦点状态处理
+    watch(inputFocused, (focused) => {
+      if (focused) {
+        nextTick(() => scrollToBottom());
+      } else {
+        nextTick(() => {
+          if (scrollerRef.value) {
+            scrollerRef.value.reset();
+            setTimeout(() => scrollToBottom(), 100);
+          }
+          if (capsuleRef.value) capsuleRef.value.style.transform = 'none';
+        });
+      }
     });
   } catch (error) {
     console.error('Keyboard setup error:', error);
@@ -779,8 +777,7 @@ onMounted(async () => {
 });
 
 onUnmounted(() => {
-  Keyboard.removeAllListeners();
-
+  // 使用共享键盘状态，无需移除所有监听
   // no interval to clear
 });
 

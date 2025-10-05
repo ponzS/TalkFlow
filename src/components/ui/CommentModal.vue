@@ -9,7 +9,7 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content class="ion-padding comments-content">
+    <ion-content class="ion-padding comments-content" :style="{ '--content-bottom': keyboardHeight + 'px' }">
       <!-- 评论加载状态 -->
       <div v-if="commentsLoading" class="loading-comments">
         <ion-spinner name="crescent"></ion-spinner>
@@ -166,7 +166,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+
 import { useI18n } from 'vue-i18n';
 import {
   IonModal, IonHeader, IonToolbar, IonButtons, IonButton, IonContent, IonTitle,
@@ -178,7 +178,7 @@ import {
 import { useNotifications } from '@/composables/useNotifications';
 import { useMoments, type CommentHow } from '@/composables/useMoments';
 import { getTalkFlowCore } from '@/composables/TalkFlowCore';
-import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
+import { useKeyboardState } from '@/composables/useKeyboardState';
 import { gunAvatar, mountClass } from 'gun-avatar';
 
 interface MomentV2 {
@@ -219,8 +219,7 @@ const inputContent = ref('');
 const replyingTo = ref<{ comment: CommentHow | null; parentComment: CommentHow | null }>({ comment: null, parentComment: null });
 const textareaEl = ref<HTMLIonTextareaElement | null>(null);
 const commentsLoading = ref(false);
-const keyboardHeight = ref(0);
-const inputFocused = ref(false);
+const { keyboardHeight, inputFocused, initKeyboard, cleanupKeyboard } = useKeyboardState();
 
 // 监听动态变化，加载评论
 watch(() => props.moment, async (newMoment) => {
@@ -243,22 +242,15 @@ watch(() => props.isOpen, async (isOpen) => {
     try {
       await getComments(props.moment.momentId);
       
-      // 重新初始化键盘设置
-      await Keyboard.setResizeMode({ mode: KeyboardResize.None });
-      await Keyboard.setAccessoryBarVisible({ isVisible: false });
+
     } catch (error) {
       console.error('加载评论失败:', error);
     } finally {
       commentsLoading.value = false;
     }
   } else if (!isOpen) {
-    // 模态窗口关闭时恢复键盘设置
-    try {
-      await Keyboard.setResizeMode({ mode: KeyboardResize.Body });
-      await Keyboard.setAccessoryBarVisible({ isVisible: true });
-    } catch (error) {
-      console.warn('恢复键盘设置失败:', error);
-    }
+    
+  
   }
 });
 
@@ -407,40 +399,7 @@ const onBlur = () => {
   inputFocused.value = false;
 };
 
-// 键盘监听和初始化
-onMounted(async () => {
-  try {
-    // 初始化键盘配置
-    await Keyboard.setResizeMode({ mode: KeyboardResize.None });
-    
-    // 设置键盘监听器
-    Keyboard.addListener('keyboardWillShow', (info) => {
-      keyboardHeight.value = info.keyboardHeight;
-    });
-    
-    Keyboard.addListener('keyboardWillHide', () => {
-      keyboardHeight.value = 0;
-    });
-    
-    // 确保键盘配置生效
-    await Keyboard.setAccessoryBarVisible({ isVisible: false });
-  } catch (error) {
-    console.warn('键盘初始化失败:', error);
-  }
-});
 
-onUnmounted(async () => {
-  try {
-    // 移除所有键盘监听器
-    Keyboard.removeAllListeners();
-    
-    // 恢复默认键盘设置
-    await Keyboard.setResizeMode({ mode: KeyboardResize.Body });
-    await Keyboard.setAccessoryBarVisible({ isVisible: true });
-  } catch (error) {
-    console.warn('键盘清理失败:', error);
-  }
-});
 
 const handleEnterKey = (event: KeyboardEvent) => {
   if (event.shiftKey) {
@@ -453,6 +412,14 @@ const handleEnterKey = (event: KeyboardEvent) => {
     postComment();
   }
 };
+
+onMounted(async () => {
+  await initKeyboard();
+});
+
+onUnmounted(() => {
+  //cleanupKeyboard();
+});
 </script>
 
 <style scoped>
@@ -720,4 +687,5 @@ const handleEnterKey = (event: KeyboardEvent) => {
 .comments-content {
   padding-bottom: 80px;
 }
+.comments-content { --content-bottom: 0px; transition: all 0.2s ease; }
 </style>

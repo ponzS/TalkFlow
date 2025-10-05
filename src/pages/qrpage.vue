@@ -70,17 +70,17 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+
 import { useQR } from "@gun-vue/composables";
 import { IonPage, IonContent, IonIcon } from '@ionic/vue';
 import { closeCircleOutline, clipboardOutline } from 'ionicons/icons';
-import { Keyboard, KeyboardResize, KeyboardInfo } from '@capacitor/keyboard';
+import { useKeyboardState } from '@/composables/useKeyboardState';
 
 const { processFile } = useQR();
 const router = useRouter();
 const input = ref('');
 const isFocused = ref(false);
-const keyboardHeight = ref(0);
+const { keyboardHeight, initKeyboard } = useKeyboardState();
 const keyboardOffset = ref(0);
 const isTouching = ref(false);
 const touchTimeout = ref<number | null>(null);
@@ -170,48 +170,31 @@ onMounted(() => {
   // 添加全局点击监听
   document.addEventListener('click', handleDocumentClick);
 
+  // 初始化共享键盘状态（Capacitor）
   if (hasCapacitor) {
-    Keyboard.setResizeMode({ mode: KeyboardResize.None });
-
-    Keyboard.addListener('keyboardWillShow', (info: KeyboardInfo) => {
-      keyboardHeight.value = info.keyboardHeight;
-      if (isFocused.value) {
-        keyboardOffset.value = keyboardHeight.value + 10;
-        const inputElement = document.querySelector('.qr-input') as HTMLInputElement;
-        inputElement?.focus();
+    initKeyboard();
+  } else if (window.visualViewport) {
+    const resizeHandler = () => {
+      const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
+      const wh = window.innerHeight;
+      const newHeight = wh - vh;
+      keyboardHeight.value = newHeight;
+      if (isFocused.value && newHeight > 0) {
+        keyboardOffset.value = newHeight + 10;
+      } else {
+        keyboardOffset.value = 0;
       }
+    };
+    window.visualViewport.addEventListener('resize', resizeHandler);
+    onUnmounted(() => {
+      window.visualViewport?.removeEventListener('resize', resizeHandler);
     });
-
-    Keyboard.addListener('keyboardWillHide', () => {
-      keyboardHeight.value = 0;
-      keyboardOffset.value = 0;
-    });
-  } else {
-    if (window.visualViewport) {
-      const resizeHandler = () => {
-        const vh = window.visualViewport!.height;
-        const wh = window.innerHeight;
-        const newHeight = wh - vh;
-        keyboardHeight.value = newHeight;
-        if (isFocused.value && newHeight > 0) {
-          keyboardOffset.value = newHeight + 10;
-        } else {
-          keyboardOffset.value = 0;
-        }
-      };
-      window.visualViewport.addEventListener('resize', resizeHandler);
-      onUnmounted(() => {
-        window.visualViewport!.removeEventListener('resize', resizeHandler);
-      });
-    }
   }
 });
 
 onUnmounted(() => {
   const hasCapacitor = 'Capacitor' in window;
-  if (hasCapacitor) {
-    Keyboard.removeAllListeners();
-  }
+  // 使用共享键盘状态，无需移除所有监听
   // 移除全局点击监听
   document.removeEventListener('click', handleDocumentClick);
 });

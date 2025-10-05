@@ -38,11 +38,11 @@
 
 
 
-  <ion-footer class="small-screen-footer" :translucent="true" >
-    <ion-toolbar :style="{ transform: `translateY(-${keyboardHeight}px)` }">
+  <ion-footer  :translucent="true" >
+    <ion-toolbar class="liquid-toolbar" :style="{ marginBottom: `-${keyboardHeight}px` }">
 
 
-      <ion-tab-bar style="--background: transparent;">
+      <ion-tab-bar style="--background: transparent;" :style="{ transform: `translateY(-${keyboardHeight}px)` }">
         <ion-tab-button 
           class="custom-tab-button"
           :class="{ 'tab-selected': currentComponent === 'Chat' }"
@@ -131,7 +131,7 @@ import { useRouter } from 'vue-router'
 import Chat from './ChatS.vue'
 import Contacts from './ContactsS.vue'
 
-import { Keyboard, KeyboardResize } from '@capacitor/keyboard'
+import { useKeyboardState } from '@/composables/useKeyboardState'
 import { 
   chatbubblesOutline, 
   chatbubbleOutline, 
@@ -294,7 +294,7 @@ watch(() => maxFlowRef.value?.selectedSegment, (newSegment) => {
     if (newSegment === 'aichat' || newSegment === 'moment') {
       
       nextTick(() => {
-        initKeyboardListeners();
+       // initKeyboardListeners();
       });
     }
   }
@@ -318,7 +318,7 @@ const maxFlowTabIcon = computed(() => {
     case 'game':
       return { active: gameController, inactive: gameControllerOutline };
     default:
-      return { active: planet, inactive: planetOutline }; // 默认显示moment图标
+      return { active: planet, inactive: planetOutline }; 
   }
 });
 
@@ -344,8 +344,8 @@ const maxFlowTabLabel = computed(() => {
 });
 
 
-const bottomInputValue = ref('');
-const keyboardHeight = ref(0);
+
+const { keyboardHeight, initKeyboard, cleanupKeyboard } = useKeyboardState();
 const bottomInputRef = ref<HTMLInputElement | null>(null);
 const aiChatRef = ref<any>(null);
 const localIsSending = ref(false);
@@ -360,57 +360,7 @@ const isSending = computed(() => {
   return localIsSending.value;
 });
 
-// 存储监听器引用，避免全局清理
-let keyboardShowListener: any = null;
-let keyboardHideListener: any = null;
-
-// 键盘监听器初始化和清理函数
-const initKeyboardListeners = () => {
-  try {
-    // 先清理可能存在的旧监听器
-    cleanupKeyboardListeners();
-    
-    Keyboard.setResizeMode({ mode: KeyboardResize.None });
-    keyboardShowListener = Keyboard.addListener('keyboardWillShow', (info: { keyboardHeight: any }) => {
-      
-      keyboardHeight.value = info.keyboardHeight;
-      
-      // 如果在AI聊天页面，让聊天内容滚动到底部
-      if (currentComponent.value === 'KeyPair' && aiChatRef.value) {
-        // 延迟触发，与输入框动画同步
-        setTimeout(() => {
-          const scrollEvent = new CustomEvent('keyboard-adjusted');
-          document.dispatchEvent(scrollEvent);
-          
-        }, 100);
-      }
-    });
-
-    keyboardHideListener = Keyboard.addListener('keyboardWillHide', () => {
-      
-      keyboardHeight.value = 0;
-    });
-    
-  } catch (error) {
-    
-  }
-};
-
-const cleanupKeyboardListeners = () => {
-  try {
-    if (keyboardShowListener) {
-      keyboardShowListener.remove();
-      keyboardShowListener = null;
-    }
-    if (keyboardHideListener) {
-      keyboardHideListener.remove();
-      keyboardHideListener = null;
-    }
-    
-  } catch (error) {
-    
-  }
-};
+// 统一键盘监听改为使用共享状态
 
 const tabnumber = ref('0');
 const tabs = ["Chat", "Content", "Moment", "Card","Me","OS"];
@@ -515,10 +465,9 @@ watch(currentComponent, (newComponent, oldComponent) => {
       break;
     case 'KeyPair':
       activeTab.value = tabs[3];
-      // 🎯 每次进入AI对话页面时重新初始化键盘监听器（小屏模式）
-      
-      nextTick(() => {
-        initKeyboardListeners();
+      // 🎯 每次进入AI对话页面时初始化共享键盘监听（小屏模式）
+      nextTick(async () => {
+        await initKeyboard();
       });
       break;
     case 'Broswer':
@@ -542,14 +491,14 @@ watch(currentComponent, (newComponent, oldComponent) => {
   }
   
   // 🧹 离开AI对话页面时清理键盘监听器，避免冲突
-  if ((oldComponent === 'KeyPair' || oldComponent === 'Broswer') && 
-      (newComponent !== 'KeyPair' && newComponent !== 'Broswer')) {
+  // if ((oldComponent === 'KeyPair' || oldComponent === 'Broswer') && 
+  //     (newComponent !== 'KeyPair' && newComponent !== 'Broswer')) {
     
-    if (oldComponent === 'KeyPair') {
-      cleanupKeyboardListeners(); // 小屏模式清理
-    }
-    // 大屏模式的清理由AiChatSimple组件自己处理
-  }
+  //   if (oldComponent === 'KeyPair') {
+  //     cleanupKeyboard(); 
+  //   }
+
+  // }
 });
 
 const router = useRouter();
@@ -589,9 +538,9 @@ onMounted(async () => {
   cardsTranslateY.value = 0;
    
   // 🎯 初始化键盘监听器（当可能需要底部输入框时）
-  nextTick(() => {
-    initKeyboardListeners();
-  });
+  // nextTick(() => {
+  //   initKeyboardListeners();
+  // });
   
   // 恢复导航状态
   if (currentUserPub.value) {
@@ -621,8 +570,8 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  // 清理键盘监听器
-  cleanupKeyboardListeners();
+
+  // cleanupKeyboardListeners();
   
 });
 

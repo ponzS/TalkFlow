@@ -22,7 +22,7 @@ import {
 } from 'ionicons/icons';
 import { useI18n } from 'vue-i18n';
 const { t } = useI18n();
-import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
+import { useKeyboardState } from '@/composables/useKeyboardState';
 import { mountClass, gunAvatar } from 'gun-avatar';
 import { Browser } from '@capacitor/browser';
 import { useDateFormatter } from '@/composables/useDateFormatter';
@@ -105,9 +105,8 @@ const getGunAvatar = (pub: string) => {
 
 const audioMap = ref<Record<string, HTMLAudioElement>>({});
 const router = useRouter();
-const keyboardHeight = ref(0);
+const { keyboardHeight, inputFocused, initKeyboard } = useKeyboardState();
 const isVoiceMode = ref(false);
-const inputFocused = ref(false);
 const isDrawerOpen = ref(false);
 const textInputRef = ref<HTMLTextAreaElement | null>(null);
 const capsuleRef = ref<HTMLDivElement | null>(null);
@@ -890,17 +889,13 @@ onMounted(async () => {
     isLoadingMessages.value = true;
   }
 
-  try {
-    Keyboard.setResizeMode({ mode: KeyboardResize.None });
-    Keyboard.addListener('keyboardWillShow', (info: { keyboardHeight: any }) => {
-      keyboardHeight.value = info.keyboardHeight;
-      inputFocused.value = true;
+  // 统一初始化共享键盘状态
+  initKeyboard();
+  // 保留原有滚动行为：根据焦点状态处理滚动和复位
+  watch(inputFocused, (focused) => {
+    if (focused) {
       nextTick(() => scrollToBottom());
-     
-    });
-    Keyboard.addListener('keyboardWillHide', () => {
-      keyboardHeight.value = 0;
-      inputFocused.value = false;
+    } else {
       nextTick(() => {
         if (scrollerRef.value) {
           scrollerRef.value.reset();
@@ -908,10 +903,8 @@ onMounted(async () => {
         }
         if (capsuleRef.value) capsuleRef.value.style.transform = 'none';
       });
-    });
-  } catch (err) {
-   // console.error('Keyboard setup failed:', err);
-  }
+    }
+  });
 
   document.addEventListener('click', handleGlobalClick);
 
@@ -940,7 +933,7 @@ onMounted(async () => {
   onUnmounted(() => {
     document.removeEventListener('click', handleGlobalClick);
     // closeChat();
-    Keyboard.removeAllListeners();
+  // 使用共享键盘状态，无需在此移除所有监听
     // 清理所有定时器和间隔器
     cleanupAllTimers();
     // 清理长按定时器

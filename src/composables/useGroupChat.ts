@@ -4,6 +4,7 @@ import { toastController } from '@ionic/vue';
 import dayjs from 'dayjs';
 import { storageServ } from '@/services/globalServices';
 import { v4 as uuidv4 } from 'uuid';
+import { useWebLLMChat } from '@/composables/useWebLLMChat';
 
 // Helper function: extract clean text content from message templates
 function extractCleanTextFromGroupMessage(content: string): string {
@@ -274,6 +275,42 @@ let lastMessageReceivedTime = 0;
 const messageListeners: { [groupPub: string]: any } = {};
 const memberListeners: { [groupPub: string]: any } = {};
 const voteListeners: { [groupPub: string]: any } = {};
+
+// 群聊自动回复设置（持久化到 localStorage）
+const GROUP_AUTO_REPLY_ALL_KEY = 'group_auto_reply_all_enabled';
+const GROUP_TARGETED_REPLY_ENABLED_KEY = 'group_targeted_reply_enabled';
+const GROUP_TARGETED_GROUPS_KEY = 'group_targeted_groups';
+
+const groupAutoReplyAllEnabled = ref<boolean>((localStorage.getItem(GROUP_AUTO_REPLY_ALL_KEY) ?? 'false') === 'true');
+const groupTargetedReplyEnabled = ref<boolean>((localStorage.getItem(GROUP_TARGETED_REPLY_ENABLED_KEY) ?? 'false') === 'true');
+const targetedGroupPubs = ref<string[]>((() => {
+  try {
+    const raw = localStorage.getItem(GROUP_TARGETED_GROUPS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+})());
+
+function setGroupAutoReplyAllEnabled(v: boolean) {
+  groupAutoReplyAllEnabled.value = !!v;
+  localStorage.setItem(GROUP_AUTO_REPLY_ALL_KEY, v ? 'true' : 'false');
+}
+function setGroupTargetedReplyEnabled(v: boolean) {
+  groupTargetedReplyEnabled.value = !!v;
+  localStorage.setItem(GROUP_TARGETED_REPLY_ENABLED_KEY, v ? 'true' : 'false');
+}
+function setTargetedGroupPubs(pubs: string[]) {
+  const uniq = Array.from(new Set(pubs || []));
+  targetedGroupPubs.value = uniq;
+  localStorage.setItem(GROUP_TARGETED_GROUPS_KEY, JSON.stringify(uniq));
+}
+function isAutoReplyEnabledForGroup(pub: string): boolean {
+  if (groupTargetedReplyEnabled.value) {
+    return targetedGroupPubs.value.includes(pub);
+  }
+  return groupAutoReplyAllEnabled.value;
+}
 
 export const useGroupChat = () => {
   const { currentUserPub, currentUserAlias, gun, triggerLightHaptic, getAliasRealtime } = getTalkFlowCore();
@@ -654,6 +691,56 @@ export const useGroupChat = () => {
     });
   };
 
+  // 发送到指定群组的辅助方法（用于自动回复）
+  const sendMessageToGroup = async (groupPub: string, content: string, contentType: 'text' | 'voice' = 'text', duration?: number) => {
+    if (!content.trim()) return;
+
+    const message = {
+        msg_id: uuidv4(),
+        group_pub: groupPub,
+        sender_pub: safeUserPub.value,
+        sender_alias: safeUserAlias.value,
+        content: content.trim(),
+        content_type: contentType,
+        timestamp: Date.now(),
+        status: 'pending',
+        isSending: true,
+        justSent: false,
+        ...(contentType === 'voice' && duration !== undefined && { duration })
+    };
+
+    const dbMessage = await storageService.insertGroupMessage(message);
+    if (!messagesByGroup.value[groupPub]) messagesByGroup.value[groupPub] = [];
+    messagesByGroup.value[groupPub]?.push({ ...dbMessage, formattedTime: formatMessageTime(dbMessage.timestamp), isSending: true });
+
+    const previewText = getGroupMessagePreviewText(content.trim());
+    await storageService.updateGroupPreview(groupPub, previewText, message.timestamp);
+    groupPreviews.value[groupPub] = { last_msg: previewText, last_time: message.timestamp };
+
+    const gunMessage = { ...message, id: message.msg_id };
+    gun.get(`group_${groupPub}`).get(message.msg_id).put(gunMessage, async (ack: any) => {
+      if (ack.err) {
+        const msgIndex = messagesByGroup.value[groupPub]?.findIndex(m => m.msg_id === message.msg_id);
+        if (msgIndex > -1) {
+          messagesByGroup.value[groupPub][msgIndex].isSending = true; // Still sending
+        }
+      } else {
+        await storageService.updateGroupMessageStatus(message.msg_id, 'sent');
+        const msgIndex = messagesByGroup.value[groupPub]?.findIndex(m => m.msg_id === message.msg_id);
+        if (msgIndex > -1) {
+          messagesByGroup.value[groupPub][msgIndex].status = 'sent';
+          messagesByGroup.value[groupPub][msgIndex].isSending = false;
+          messagesByGroup.value[groupPub][msgIndex].justSent = true;
+          setTimeout(() => {
+            if (messagesByGroup.value[groupPub][msgIndex]) {
+              messagesByGroup.value[groupPub][msgIndex].justSent = false;
+            }
+          }, 1500);
+        }
+      }
+    });
+  };
+
   const listenToGroupMessages = (groupPub: string) => {
     if (messageListeners[groupPub]) messageListeners[groupPub].off();
 
@@ -753,6 +840,24 @@ export const useGroupChat = () => {
                     // console.error('标记群组已读失败:', error);
                 });
             }
+        }
+
+        // 自动回复：仅对他人文本消息触发
+        try {
+          const isOtherUser = data.sender_pub !== safeUserPub.value;
+          const isTextMsg = (data.content_type || 'text') === 'text';
+          if (isOtherUser && isTextMsg && isAutoReplyEnabledForGroup(groupPub)) {
+            const { generateWebLLMReply } = useWebLLMChat();
+            const aiMessages = [
+              { role: 'user' as const, content: String(data.content || '') }
+            ];
+            const reply = (await generateWebLLMReply(aiMessages)) || '';
+            if (reply.trim()) {
+              await sendMessageToGroup(groupPub, reply.trim());
+            }
+          }
+        } catch (err) {
+          // console.error('[Group AutoReply] failed:', err);
         }
 
         // Only push to messagesByGroup if the group is currently selected
@@ -1216,6 +1321,7 @@ function setGroupName(pair: GroupChatKeyPair, name: string) {
     selectGroup,
     loadMoreMessages,
     sendMessage,
+    sendMessageToGroup,
     copyKeyPair,
     initiateClearChat, // This now takes groupPub
     agreeCount,
@@ -1227,6 +1333,15 @@ function setGroupName(pair: GroupChatKeyPair, name: string) {
     markGroupAsRead,
     isInitialGroupMessageSyncing,
     cleanupInvalidMessages, // 新增：清理无效消息功能
+    
+    // 群聊自动回复设置导出
+    groupAutoReplyAllEnabled,
+    groupTargetedReplyEnabled,
+    targetedGroupPubs,
+    setGroupAutoReplyAllEnabled,
+    setGroupTargetedReplyEnabled,
+    setTargetedGroupPubs,
+    isAutoReplyEnabledForGroup,
     
     // ... any other functions needed, like voteToClear
   };

@@ -677,4 +677,25 @@
       "notSupported": "Importación local no compatible; obtén por ID de modelo."
     }
   }
+  ,
+  "modelPersona": {
+    "title": "Ajuste de modelo · Configuración de persona",
+    "currentModel": { "label": "Modelo actual" },
+    "personaSegments": {
+      "label": "Segmentos preestablecidos compuestos",
+      "tip": "Añade múltiples prompts de system/user/assistant; se inyectan al inicio del contexto en orden.",
+      "addSystem": "Agregar segmento System",
+      "addUser": "Agregar segmento User",
+      "addAssistant": "Agregar segmento Assistant"
+    },
+    "segment": {
+      "placeholder": "Texto del prompt para este segmento",
+      "actions": { "moveUp": "Subir", "moveDown": "Bajar", "remove": "Eliminar" }
+    },
+    "systemPrompt": {
+      "label": "Prompt del sistema (opcional)",
+      "tip": "Si necesitas un prompt de sistema independiente adicional, escríbelo aquí; tiene prioridad y se inyecta antes de los segmentos compuestos.",
+      "placeholder": "Prompt de sistema adicional (opcional)"
+    }
+  }
 }

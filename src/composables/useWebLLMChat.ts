@@ -1,6 +1,6 @@
-import { ref, shallowRef, computed, nextTick } from 'vue';
-import type { Ref } from 'vue';
+// 使用全局自动导入的 Vue API（ref、computed、nextTick 等），避免直接依赖 'vue' 模块解析
 import { CreateMLCEngine } from '@mlc-ai/web-llm';
+import { Preferences } from '@capacitor/preferences';
 
 export type ChatRole = 'system' | 'user' | 'assistant';
 export interface ChatMessage {
@@ -15,12 +15,15 @@ interface InitProgressInfo {
   text?: string;
 }
 
-// 默认更小模型（1.5B），以便低配置设备测试
-const DEFAULT_MODEL_ID = 'Qwen2-1.5B-Instruct-q4f32_1-MLC';
 
 // 内置模型列表：从 WebLLM 预置配置派生，避免手动硬编码
 // 仅展示基本信息（id 与可读名），保持与 web-llm-chat 一致的来源
 import { prebuiltAppConfig } from '@mlc-ai/web-llm';
+
+
+
+const DEFAULT_MODEL_ID = 'SmolLM2-135M-Instruct-q0f32-MLC';
+
 // 使用 model_id 作为显示名称，避免访问不存在的 display_name 属性
 const builtInModels = prebuiltAppConfig.model_list.map((m) => ({
   id: m.model_id,
@@ -71,14 +74,130 @@ export function useWebLLMChat() {
   const engine = engineRef;
   const isInitializing = ref(false);
   const initProgress: Ref<InitProgressInfo | null> = ref(null);
+  const MODEL_PREF_KEY = 'webllm_last_model_id';
   const modelId = ref<string>((() => {
-    const saved = localStorage.getItem('webllm_last_model_id');
+    const saved = localStorage.getItem(MODEL_PREF_KEY);
     return saved || DEFAULT_MODEL_ID;
   })());
+
+  (async () => {
+    try {
+      const { value } = await Preferences.get({ key: MODEL_PREF_KEY });
+      if (value && typeof value === 'string') {
+        modelId.value = value;
+      }
+    } catch {}
+  })();
 
   const messages = ref<ChatMessage[]>([
     // { role: 'system', content: 'You are a helpful AI assistant.', timestamp: Date.now() },
   ]);
+
+  // 系统角色（Persona），用于给当前模型赋予灵魂（持久化）
+  const SYSTEM_PERSONA_KEY = 'webllm_system_persona';
+  const systemPersona = ref<string>(localStorage.getItem(SYSTEM_PERSONA_KEY) || '');
+  function setSystemPersona(text: string) {
+    const v = String(text || '');
+    systemPersona.value = v;
+    localStorage.setItem(SYSTEM_PERSONA_KEY, v);
+  }
+
+  // 组合预设段（可包含多段 system/user/assistant），持久化
+  type PersonaSegment = { role: ChatRole; content: string };
+  const PERSONA_RECIPE_KEY = 'webllm_persona_recipe';
+  const personaRecipe = ref<PersonaSegment[]>((() => {
+    try {
+      const raw = localStorage.getItem(PERSONA_RECIPE_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      const validRoles: ChatRole[] = ['system', 'user', 'assistant'];
+      return Array.isArray(arr)
+        ? arr
+            .filter((s: any) => s && typeof s.content === 'string' && validRoles.includes(s.role))
+            .map((s: any) => ({ role: s.role as ChatRole, content: String(s.content || '') }))
+        : [];
+    } catch {
+      return [];
+    }
+  })());
+  function persistPersonaRecipe() {
+    localStorage.setItem(PERSONA_RECIPE_KEY, JSON.stringify(personaRecipe.value));
+  }
+  function setPersonaRecipe(list: PersonaSegment[]) {
+    const validRoles: ChatRole[] = ['system', 'user', 'assistant'];
+    personaRecipe.value = Array.from(list || [])
+      .filter(s => s && typeof s.content === 'string' && validRoles.includes(s.role))
+      .map(s => ({ role: s.role, content: String(s.content || '') }));
+    persistPersonaRecipe();
+  }
+  function addPersonaSegment(role: ChatRole = 'system', content = '') {
+    personaRecipe.value.push({ role, content: String(content || '') });
+    // 强制触发响应式更新
+    personaRecipe.value = [...personaRecipe.value];
+    persistPersonaRecipe();
+  }
+  function updatePersonaSegment(index: number, patch: Partial<PersonaSegment>) {
+    if (index >= 0 && index < personaRecipe.value.length) {
+      const cur = personaRecipe.value[index];
+      const next: PersonaSegment = {
+        role: (patch.role ?? cur.role) as ChatRole,
+        content: String(patch.content ?? cur.content ?? ''),
+      };
+      personaRecipe.value[index] = next;
+      personaRecipe.value = [...personaRecipe.value];
+      persistPersonaRecipe();
+    }
+  }
+  function removePersonaSegment(index: number) {
+    if (index >= 0 && index < personaRecipe.value.length) {
+      personaRecipe.value.splice(index, 1);
+      personaRecipe.value = [...personaRecipe.value];
+      persistPersonaRecipe();
+    }
+  }
+  function movePersonaSegment(from: number, to: number) {
+    if (from === to) return;
+    const len = personaRecipe.value.length;
+    if (from < 0 || from >= len || to < 0 || to >= len) return;
+    const [seg] = personaRecipe.value.splice(from, 1);
+    personaRecipe.value.splice(to, 0, seg);
+    personaRecipe.value = [...personaRecipe.value];
+    persistPersonaRecipe();
+  }
+
+  // 角色预设（持久化数组）
+  const PERSONA_PRESETS_KEY = 'webllm_persona_presets';
+  const personaPresets = ref<string[]>((() => {
+    try {
+      const raw = localStorage.getItem(PERSONA_PRESETS_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr.filter(x => typeof x === 'string') : [];
+    } catch {
+      return [];
+    }
+  })());
+  function persistPersonaPresets() {
+    localStorage.setItem(PERSONA_PRESETS_KEY, JSON.stringify(personaPresets.value));
+  }
+  function setPersonaPresets(list: string[]) {
+    personaPresets.value = Array.from(list || []).map(x => String(x || ''));
+    persistPersonaPresets();
+  }
+  function addPersonaPreset(text = '') {
+    personaPresets.value.push(String(text || ''));
+    persistPersonaPresets();
+  }
+  function updatePersonaPreset(index: number, text: string) {
+    if (index >= 0 && index < personaPresets.value.length) {
+      personaPresets.value[index] = String(text || '');
+      persistPersonaPresets();
+    }
+  }
+  function removePersonaPreset(index: number) {
+    if (index >= 0 && index < personaPresets.value.length) {
+      personaPresets.value.splice(index, 1);
+      persistPersonaPresets();
+    }
+  }
 
   const isStreaming = ref(false);
   const abortController = ref<AbortController | null>(null);
@@ -189,7 +308,8 @@ export function useWebLLMChat() {
         // 注：当前 WebLLM 无显式禁用 WebGPU 的选项；此偏好仅用于 UI 告知
         logLevel: (logLevel.value as any) || 'INFO',
       });
-      localStorage.setItem('webllm_last_model_id', selected);
+      localStorage.setItem(MODEL_PREF_KEY, selected);
+      try { await Preferences.set({ key: MODEL_PREF_KEY, value: selected }); } catch {}
       markModelInstalled(selected);
     } finally {
       isInitializing.value = false;
@@ -201,7 +321,8 @@ export function useWebLLMChat() {
     if (!engine.value) {
       await initEngine(newModelId);
       markModelInstalled(newModelId);
-      localStorage.setItem('webllm_last_model_id', newModelId);
+      localStorage.setItem(MODEL_PREF_KEY, newModelId);
+      try { await Preferences.set({ key: MODEL_PREF_KEY, value: newModelId }); } catch {}
       return;
     }
     isInitializing.value = true;
@@ -209,7 +330,8 @@ export function useWebLLMChat() {
     try {
       await engine.value.reload(newModelId);
       markModelInstalled(newModelId);
-      localStorage.setItem('webllm_last_model_id', newModelId);
+      localStorage.setItem(MODEL_PREF_KEY, newModelId);
+      try { await Preferences.set({ key: MODEL_PREF_KEY, value: newModelId }); } catch {}
     } finally {
       isInitializing.value = false;
     }
@@ -275,7 +397,7 @@ export function useWebLLMChat() {
 
     // Build OpenAI-style messages excluding the streaming placeholder
     // 仅传递非流式且非 assistant 的消息，确保最后一条为 user（或 system）
-    const openAiMessages = messages.value
+    let openAiMessages = messages.value
       .filter(m => !m.streaming && m.role !== 'assistant')
       .map(m => {
         if (m.role === 'user' && m.timestamp === now) {
@@ -292,6 +414,27 @@ export function useWebLLMChat() {
         }
         return ({ role: m.role, content: m.content } as any);
       });
+
+    // 组合预设段与系统提示注入到上下文最前（保证第一个为 system）
+    const personaSystem: any[] = [];
+    const personaOthers: any[] = [];
+    if (systemPersona.value?.trim()) {
+      personaSystem.push({ role: 'system', content: systemPersona.value.trim() } as any);
+    }
+    if (personaRecipe.value.length > 0) {
+      for (const seg of personaRecipe.value) {
+        if (seg?.content?.trim()) {
+          const msg = { role: seg.role, content: seg.content.trim() } as any;
+          if (seg.role === 'system') personaSystem.push(msg); else personaOthers.push(msg);
+        }
+      }
+    }
+    let personaMsgs: any[] = [...personaSystem, ...personaOthers];
+    // 无论是否存在 persona 段，都要保证首条为 system
+    if (personaMsgs.length === 0 || personaMsgs[0]?.role !== 'system') {
+      personaMsgs = [{ role: 'system', content: 'You are a helpful AI assistant.' } as any, ...personaMsgs];
+    }
+    openAiMessages = [...personaMsgs, ...openAiMessages];
 
     abortController.value = new AbortController();
     isStreaming.value = true;
@@ -332,6 +475,9 @@ export function useWebLLMChat() {
       isStreaming.value = false;
       assistantMsg.streaming = false;
       abortController.value = null;
+      // 强制触发视图更新，确保移除闪烁样式
+      messages.value = [...messages.value];
+      await nextTick();
     }
   }
 
@@ -345,6 +491,26 @@ export function useWebLLMChat() {
     if (!engine.value) {
       await initEngine();
     }
+    // 非流式场景也注入组合预设段与系统提示（保证第一个为 system）
+    const personaSystem: any[] = [];
+    const personaOthers: any[] = [];
+    if (systemPersona.value?.trim()) {
+      personaSystem.push({ role: 'system', content: systemPersona.value.trim() } as any);
+    }
+    if (personaRecipe.value.length > 0) {
+      for (const seg of personaRecipe.value) {
+        if (seg?.content?.trim()) {
+          const msg = { role: seg.role, content: seg.content.trim() } as any;
+          if (seg.role === 'system') personaSystem.push(msg); else personaOthers.push(msg);
+        }
+      }
+    }
+    let personaMsgs: any[] = [...personaSystem, ...personaOthers];
+    // 无论是否存在 persona 段，都要保证首条为 system
+    if (personaMsgs.length === 0 || personaMsgs[0]?.role !== 'system') {
+      personaMsgs = [{ role: 'system', content: 'You are a helpful AI assistant.' } as any, ...personaMsgs];
+    }
+    openAiMessages = [...personaMsgs, ...openAiMessages];
     // 针对 Qwen3 + 思维模式的推荐参数
     const isQwen3 = modelId.value.toLowerCase().startsWith('qwen3');
     const thinkingEnabled = enableThinking.value;
@@ -415,6 +581,20 @@ export function useWebLLMChat() {
     setTargetedReplyEnabled,
     setTargetedBuddyPubs,
     isAutoReplyEnabledForBuddy,
+    // persona
+    systemPersona,
+    setSystemPersona,
+    personaRecipe,
+    setPersonaRecipe,
+    addPersonaSegment,
+    updatePersonaSegment,
+    removePersonaSegment,
+    movePersonaSegment,
+    personaPresets,
+    setPersonaPresets,
+    addPersonaPreset,
+    updatePersonaPreset,
+    removePersonaPreset,
     // one-shot generation
     generateWebLLMReply,
   };

@@ -1361,24 +1361,11 @@ async function getMyKeyPair(){
 
 } 
 
-//  const currentUserPair = getMyKeyPair();
-//  const currentUserPair: Ref<KeyPair | null> = ref(null);
 
 export function useChatFlow() {
   const appInstance = getCurrentInstance();
   if (!appInstance) throw new Error('useChatFlow must be called within a Vue component setup');
   const storageServ = appInstance.appContext.config.globalProperties.$storageServ as StorageService;
-
-
-
-
-
-
-
-
-
-
-
 
   function switchTo(componentName: string) {
     if (currentComponent.value === componentName) return
@@ -4284,39 +4271,6 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
     listenChat(pubKey);
   }
 
-  async function openChatPad(pubKey: string): Promise<void> {
-      hasPadChat.value = '1';
-    await closeChat();
-    // await hasPadChat.value === '1';
-   hasPadChat.value = '2';
-    switchTo('Chat');
-    // router.push('/chatpage');
-    if (!currentUserPub.value) {
-      // showToast('Not logged in, cannot open chat', 'warning');
-      return;
-    }
-    user.auth(currentUserPair!)
-    currentChatPub.value = pubKey;
-    const chat = chatPreviewList.value.find(c => c.pub === pubKey);
-    if (chat) {
-      chat.hasNew = false;
-      await autoSaveStorageServ.saveChatPreview(chat);
-      // Backup chat previews to IndexedDB (web version only)
-      await saveChatPreviewsToDb(chatPreviewList.value);
-    }
-    if (chatListeners.value[pubKey]) {
-      chatListeners.value[pubKey]();
-      delete chatListeners.value[pubKey];
-    }
-    // Always initialize message array and load history messages
-    chatMessages.value[pubKey] = chatMessages.value[pubKey] || [];
-    await loadMoreChatHistory(pubKey); // Force load initial history messages
-    listenChat(pubKey);
-  }
-
-function closeBigWindow() {
-  hasPadChat.value = '1';
-}
 
   async function loadMoreChatHistory(pubKey: string, beforeId?: number): Promise<void> {
     if (!currentUserPub.value || isLoadingHistory.value) return;
@@ -5535,7 +5489,7 @@ async function listenMyRequests(myPub: string): Promise<void> {
   }
 
   return {
-    closeBigWindow,
+
     getMyKeyPair,
     Gun,
     exportDataToGun,
@@ -5594,7 +5548,7 @@ async function listenMyRequests(myPub: string): Promise<void> {
     chatPreviewList,
     visibleChatPreviewList,
     openChat,
-    openChatPad,
+
     closeChat,
     hideCurrentChat,
     showCurrentChat,

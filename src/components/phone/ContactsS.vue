@@ -3,6 +3,11 @@
     <!-- 顶部栏 -->
     <ion-header  :translucent="true"  collapse="fade">
       <ion-toolbar>
+
+   <ion-buttons slot="start">
+            <ion-menu-button></ion-menu-button>
+          </ion-buttons>
+
         <ion-title >Contact</ion-title>
  
         <ion-buttons slot="end">
@@ -139,7 +144,7 @@ import { pinyin } from 'pinyin-pro';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent, IonList, IonListHeader,
   IonItem, IonItemSliding, IonItemOptions, IonItemOption, IonLabel, IonIcon, IonAvatar,
-  IonSearchbar, IonText, IonRefresher, IonRefresherContent,
+  IonSearchbar, IonText, IonRefresher, IonRefresherContent,  IonMenuButton,
 } from '@ionic/vue';
 import { useI18n } from 'vue-i18n';
 import { 

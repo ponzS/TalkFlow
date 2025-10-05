@@ -58,6 +58,10 @@
             <ion-icon slot="start" :icon="homeOutline" class="cosmic-icon" style="color:chocolate"/>
             <ion-label class="cosmic-label">{{$t('github')}}</ion-label>
           </ion-item>
+          <!-- <ion-item  button @click="gotoModelPersona" class="cosmic-item">
+            <ion-icon slot="start" :icon="settingsOutline" class="cosmic-icon" style="color:green"/>
+            <ion-label class="cosmic-label">AI 角色设置</ion-label>
+          </ion-item> -->
           <!-- <ion-item  button @click="gotoDai" class="cosmic-item">
             <ion-icon slot="start" :icon="happyOutline" class="cosmic-icon" style="color:blue"/>
             <ion-label class="cosmic-label">D-AI / Linux&MacOS&Windows</ion-label>
@@ -68,6 +72,8 @@
           </ion-item> -->
         </ion-list>
       </div>
+
+    
 
       <!-- Support Section -->
       <div class="settings-section">
@@ -230,6 +236,8 @@ import {
   IonButtons,
   IonBackButton,
   IonToggle, // 新增 IonToggle
+  IonTextarea,
+  IonButton,
 } from '@ionic/vue';
 
 import { getTalkFlowCore } from '@/composables/TalkFlowCore'; 
@@ -255,8 +263,11 @@ import {
   shareSocialOutline,
   storefrontOutline, 
   serverOutline,
-  settingsOutline
+  settingsOutline,
+  addOutline
 } from 'ionicons/icons';
+
+import { useWebLLMChat } from '@/composables/useWebLLMChat';
 
 const router = useRouter();
 
@@ -318,6 +329,10 @@ const gotoDaiSet = () => {
   router.push('/AiSetting');
 };
 
+const gotoModelPersona = () => {
+  router.push('/ModelPersona');
+};
+
 // 修正：从 getTalkFlowCore 获取单例
 const { isRelaySharingEnabled, toggleRelaySharing, onLogout, deactivateAccount, clearAllChats, isLoggedIn } = getTalkFlowCore();
 
@@ -347,6 +362,31 @@ const handleSharingToggle = (event: CustomEvent) => {
   const enabled = event.detail.checked;
   toggleRelaySharing(enabled);
 };
+
+// WebLLM 角色与预设编辑绑定
+// const {
+//   systemPersona,
+//   setSystemPersona,
+//   personaPresets,
+//   addPersonaPreset,
+//   updatePersonaPreset,
+//   removePersonaPreset,
+// } = useWebLLMChat();
+
+// const onSystemPersonaInput = (ev: any) => {
+//   const val = ev?.detail?.value ?? ev?.target?.value ?? '';
+//   setSystemPersona(String(val || ''));
+// };
+// const onPresetInput = (idx: number, ev: any) => {
+//   const val = ev?.detail?.value ?? ev?.target?.value ?? '';
+//   updatePersonaPreset(idx, String(val || ''));
+// };
+// const applyPresetAt = (idx: number) => {
+//   const v = personaPresets.value[idx] || '';
+//   setSystemPersona(String(v || ''));
+// };
+// const addEmptyPreset = () => addPersonaPreset('');
+// const deletePresetAt = (idx: number) => removePersonaPreset(idx);
 </script>
 
 <style scoped>

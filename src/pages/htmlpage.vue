@@ -123,10 +123,10 @@
   </ion-page>
 </template>
 
-<script setup>
+<script setup >
 import { ref, onMounted, onUnmounted, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
-import { Keyboard, KeyboardResize } from '@capacitor/keyboard';
+import { useKeyboardState } from '@/composables/useKeyboardState';
 import {
   IonPage, IonHeader, IonToolbar, IonButtons, IonBackButton, IonTitle, IonContent,
   IonList, IonItem, IonLabel, IonTextarea, IonInput, IonButton, IonToast,
@@ -141,10 +141,9 @@ const orderPageUrl = ref('');
 const description = ref('');
 const password = ref('');
 const toastOpen = ref(false);
-const keyboardHeight = ref(0);
+const { keyboardHeight, inputFocused, initKeyboard } = useKeyboardState();
 const textareaRef = ref(null);
 const inputRef = ref(null);
-const inputFocused = ref(false);
 const showHelpModal = ref(false);
 
 const generateOrder = () => {
@@ -249,24 +248,12 @@ const scrollToBottom = () => {
 };
 
 onMounted(() => {
-  if (window.Capacitor) {
-    Keyboard.setResizeMode({ mode: KeyboardResize.None });
-
-    Keyboard.addListener('keyboardWillShow', (info) => {
-      keyboardHeight.value = info.keyboardHeight;
-      nextTick(() => {
-        if (inputFocused.value) {
-          scrollToBottom();
-        }
-      });
-    });
-
-    Keyboard.addListener('keyboardWillHide', () => {
-      keyboardHeight.value = 0;
-    });
-  } else {
+  // 初始化共享键盘状态（Capacitor）
+  initKeyboard();
+  // Web fallback：使用 visualViewport 同步共享 keyboardHeight
+  if (!window.Capacitor) {
     window.visualViewport?.addEventListener('resize', () => {
-      const vh = window.visualViewport.height;
+      const vh = (window.visualViewport && window.visualViewport.height) || window.innerHeight;
       const wh = window.innerHeight;
       keyboardHeight.value = wh - vh;
       nextTick(() => {
@@ -280,7 +267,7 @@ onMounted(() => {
 
 onUnmounted(() => {
   if (window.Capacitor) {
-    Keyboard.removeAllListeners();
+// 使用共享键盘状态，无需移除所有监听
   } else {
     window.visualViewport?.removeEventListener('resize', () => {});
   }

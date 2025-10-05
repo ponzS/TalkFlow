@@ -11,10 +11,7 @@
       open call window
     </div>
   </div> -->
-  <div style="display: none;">
-    <RelayGroup />
-  </div>
-
+ 
 
 
     <ion-split-pane  content-id="main"  v-show="isLoggedIn">
@@ -245,7 +242,7 @@ margin-bottom: -10px;
   }
 }
 
-body.scanner-active,
+/* body.scanner-active,
 ion-app.scanner-active {
   background: transparent !important;
   --background: transparent !important;
@@ -262,7 +259,7 @@ ion-content {
   background: transparent !important;
   --background: transparent !important;
   
-}
+} */
 
 html,
 body,
@@ -271,8 +268,8 @@ body,
   padding: 0;
   width: 100%;
   height: 100%;
-  background-color: transparent;
-  --background-color: transparent;
+  /* background-color: transparent;
+  --background-color: transparent; */
   overflow: hidden;
 }
 
