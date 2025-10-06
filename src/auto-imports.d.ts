@@ -99,6 +99,7 @@ declare global {
   const useAudioOutput: typeof import('./composables/useSetAudioMode')['useAudioOutput']
   const useBarkNotification: typeof import('./composables/useBarkNotification')['default']
   const useCall: typeof import('./composables/useGroupCall')['useCall']
+  const useCallOverlay: typeof import('./composables/useCallOverlay')['useCallOverlay']
   const useChatFlow: typeof import('./composables/TalkFlowCore')['useChatFlow']
   const useChatHistory: typeof import('./composables/useChatHistory')['useChatHistory']
   const useCssModule: typeof import('vue')['useCssModule']
@@ -143,6 +144,9 @@ declare global {
   // @ts-ignore
   export type { BuddyVerificationManager, AutoHealingManager, KeyPair, LocalChatMessage, NetworkChatMessage, MessageReceipt, Buddy, VerifiedBuddy, ReceivedRequest, MessageType, MessageStatus, ChatPreview } from './composables/TalkFlowCore'
   import('./composables/TalkFlowCore')
+  // @ts-ignore
+  export type { CallOverlayState } from './composables/useCallOverlay'
+  import('./composables/useCallOverlay')
   // @ts-ignore
   export type { ConversationRecord } from './composables/useChatHistory'
   import('./composables/useChatHistory')

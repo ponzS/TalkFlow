@@ -1,8 +1,6 @@
 import { ref } from 'vue';
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
 
-declare var cordova: any; 
-
 interface AudioState {
   mode: 'speaker' | 'earpiece';
 }
@@ -11,21 +9,11 @@ const AUDIO_STATE_FILE = 'audio_state.json';
 const DEFAULT_AUDIO_STATE: AudioState = { mode: 'speaker' };
 
 export function useAudioOutput() {
-  const audioMode = ref<'speaker' | 'earpiece'>('speaker');
+  const audioMode = ref<'speaker' | 'earpiece'>(DEFAULT_AUDIO_STATE.mode);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
-  // 辅助函数：将 Blob 转换为字符串
-  async function blobToString(blob: Blob): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = () => reject(new Error('Failed to read Blob'));
-      reader.readAsText(blob);
-    });
-  }
-
-  // 加载持久化的音频状态
+  // 读取/保存用户选择（使用 Capacitor FS，Web 也可用）
   async function loadAudioState() {
     try {
       const result = await Filesystem.readFile({
@@ -33,23 +21,14 @@ export function useAudioOutput() {
         directory: Directory.Data,
         encoding: Encoding.UTF8,
       });
-
-      let data: string;
-      if (typeof result.data === 'string') {
-        data = result.data;
-      } else {
-        data = await blobToString(result.data);
-      }
-
+      const data = typeof result.data === 'string' ? result.data : String(result.data);
       const state: AudioState = JSON.parse(data);
-      audioMode.value = state.mode;
-    } catch (err) {
-      console.warn('No saved audio state found, creating default:', err);
+      audioMode.value = state.mode || DEFAULT_AUDIO_STATE.mode;
+    } catch (_) {
       await saveAudioState();
     }
   }
 
-  // 保存音频状态到 JSON 文件
   async function saveAudioState() {
     try {
       await Filesystem.writeFile({
@@ -64,50 +43,74 @@ export function useAudioOutput() {
     }
   }
 
-  // 设置音频输出模式
+  function getRemoteMediaElements(): HTMLMediaElement[] {
+    const vids = Array.from(document.querySelectorAll('video[id^="remote-"]')) as HTMLVideoElement[];
+    const auds = Array.from(document.querySelectorAll('audio[id^="remote-"]')) as HTMLAudioElement[];
+    return ([] as HTMLMediaElement[]).concat(vids).concat(auds);
+  }
+
+  async function enumerateAudioOutputs(): Promise<MediaDeviceInfo[]> {
+    try {
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      return devices.filter((d) => d.kind === 'audiooutput');
+    } catch (e) {
+      console.warn('enumerateDevices failed:', e);
+      return [];
+    }
+  }
+
+  function supportsSetSinkId(el: HTMLMediaElement): el is HTMLMediaElement & { setSinkId: (id: string) => Promise<void> } {
+    return typeof (el as any).setSinkId === 'function';
+  }
+
+  function pickDeviceForMode(mode: 'speaker' | 'earpiece', outputs: MediaDeviceInfo[]): string | null {
+    if (!outputs.length) return 'default';
+    const byLabel = (label: string) => (d: MediaDeviceInfo) => (d.label || '').toLowerCase().includes(label);
+    if (mode === 'speaker') {
+      const speakerLike = outputs.find((d) => ['speaker', 'output', 'default', 'built-in'].some((k) => (d.label || '').toLowerCase().includes(k)));
+      return speakerLike?.deviceId || 'default';
+    } else {
+      const earpieceLike = outputs.find((d) => ['receiver', 'earpiece', 'handset', 'headset', 'headphone'].some((k) => (d.label || '').toLowerCase().includes(k)));
+      return earpieceLike?.deviceId || 'default';
+    }
+  }
+
+  async function applySinkToElements(deviceId: string) {
+    const elements = getRemoteMediaElements();
+    for (const el of elements) {
+      if (supportsSetSinkId(el)) {
+        try {
+          await (el as any).setSinkId(deviceId);
+        } catch (err) {
+          console.warn('setSinkId failed:', err);
+        }
+      }
+    }
+  }
+
+  // 使用 Web 原生 API 进行音频路由
   async function setAudioOutput(mode: 'speaker' | 'earpiece') {
     isLoading.value = true;
     error.value = null;
-
     try {
-      // 检查插件是否可用
-      if (!cordova || !cordova.plugins || !cordova.plugins.audiotoggle) {
-        throw new Error('AudioToggle plugin is not available. Please ensure the plugin is installed and synced.');
-      }
-
-      console.log('Attempting to set audio mode to:', mode);
-      await new Promise<void>((resolve, reject) => {
-        cordova.plugins.audiotoggle.setAudioMode(
-          mode,
-          () => {
-            console.log('Audio mode set successfully to:', mode);
-            resolve();
-          },
-          (err: any) => {
-            console.error('Plugin error:', err);
-            reject(new Error(`Failed to set audio mode to ${mode}: ${err}`));
-          }
-        );
-      });
-
       audioMode.value = mode;
+      const outputs = await enumerateAudioOutputs();
+      const deviceId = pickDeviceForMode(mode, outputs) || 'default';
+      await applySinkToElements(deviceId);
       await saveAudioState();
-      console.log(`Audio set to ${mode}`);
     } catch (err: any) {
       console.error('Error setting audio output:', err);
-      error.value = err.message;
+      error.value = err?.message || String(err);
     } finally {
       isLoading.value = false;
     }
   }
 
-  // 初始化时加载状态
-  // loadAudioState();
-
   return {
     audioMode,
     isLoading,
     error,
+    loadAudioState,
     setAudioOutput,
   };
 }

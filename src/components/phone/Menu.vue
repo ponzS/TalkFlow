@@ -33,17 +33,7 @@
           <ion-badge v-if="hasNewRequests && !requestsViewed" class="request-badge">●</ion-badge>
           </ion-item>
           
-              <ion-item
-            button
-            :detail="false"
-            router-direction="root"
-   @click="handleTabClick('Call')"
             
-          >
-   <!-- <ion-icon :icon="currentComponent === 'Call' ? call : callOutline"></ion-icon> -->
-          <ion-label>Call</ion-label>
-        
-          </ion-item>
           
              <ion-item
             button
@@ -109,13 +99,31 @@
 
           </ion-item>
 
-       
+         <ion-item
+            button
+            :detail="false"
+            router-direction="root"
+   @click="onOpenOverlay"
+            
+          >
+   <!-- <ion-icon :icon="currentComponent === 'Call' ? call : callOutline"></ion-icon> -->
+          <ion-label>Call</ion-label>
+        
+          </ion-item>
 
   
 
         </ion-menu-toggle>
       </ion-list>
-  
+
+      <!-- 通话窗口控制：仅提供“打开”入口，关闭由通话页左上角控制 -->
+      <!-- <ion-list lines="none">
+        <ion-list-header>Calls</ion-list-header>
+        <ion-item lines="full" button :detail="false" @click="onOpenOverlay">
+          <ion-label>打开通话窗口</ion-label>
+        </ion-item>
+      </ion-list> -->
+
     </ion-content>
 
 </template>
@@ -142,11 +150,10 @@ import {
 import * as ionIcons from "ionicons/icons";
 import {  shallowRef, onUnmounted, onBeforeUnmount,  nextTick,} from 'vue'
 import { useRouter } from 'vue-router'
-import Chat from './ChatS.vue'
-import Contacts from './ContactsS.vue'
-import AiChatSimple from './AiChatSimple.vue'
+
 
 import { useKeyboardState } from '@/composables/useKeyboardState'
+import { useCallOverlay } from '@/composables/useCallOverlay'
 import { 
   chatbubblesOutline, 
   chatbubbleOutline, 
@@ -192,14 +199,6 @@ import {
   
 } from 'ionicons/icons'
 import {
-  IonFooter,
-  IonSplitPane, 
-
-  IonModal, 
-
-  IonButton, 
-
-  IonPage,
   IonBadge,
   toastController,
   IonSegment, 
@@ -213,15 +212,16 @@ import { gunAvatar } from "gun-avatar";
 import { useTheme } from '@/composables/useTheme';
 import { getTalkFlowCore } from '@/composables/TalkFlowCore';
 import { useGroupChat } from '@/composables/useGroupChat';
-import ChatSpad from '../ipad/ChatSpad.vue'
 
-import MeS from './MeS.vue'
 
 import Moment from './Moment.vue'
+const overlay = useCallOverlay()
+function onOpenOverlay(){
+  overlay.setEnabled(true)
+}
 import { useI18n } from 'vue-i18n';
-import ChatModePage from '../ipad/ChatModePage.vue'
 import MaxFlow from './MaxFlow.vue'
-import RelayGroup from '../GunVue/RelayGroup.vue'
+
 
 
 const { isDark } = useTheme();

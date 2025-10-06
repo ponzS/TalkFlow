@@ -33,7 +33,11 @@ import SpinningLoader from '@/components/ui/SpinningLoader.vue';
 import VoiceBar from '@/components/VoiceBar.vue';
 import ImageMessage from '@/components/ui/ImageMessage.vue';
 import HlsVideoPlayer from '@/components/ui/HlsVideoPlayer.vue';
-
+import { useCallOverlay } from '@/composables/useCallOverlay'
+const overlay = useCallOverlay()
+function onOpenOverlay(){
+  overlay.setEnabled(true)
+}
 
 marked.setOptions({
   highlight: (code: string, lang: string) => {
@@ -956,7 +960,7 @@ const onVideoPause = (msgId: string) => {
             </div>
         </ion-title>
            <ion-buttons slot="end">
-               <ion-button @click="router.push('/GroupCallPage')">
+               <ion-button @click="onOpenOverlay">
             <ion-icon   :icon="callOutline"></ion-icon>
           </ion-button>
         </ion-buttons>

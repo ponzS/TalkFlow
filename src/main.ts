@@ -86,7 +86,7 @@ const platform = Capacitor.getPlatform();
 const app = createApp(App)
   .use(IonicVue,{
     rippleEffect: true,
-    mode: 'md',
+    mode: 'ios',
     maxPageCacheSize: 10
     
   })

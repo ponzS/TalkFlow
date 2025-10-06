@@ -24,6 +24,11 @@
             <ion-content :scroll-y="false">
           
  <ion-router-outlet  />
+
+   <!-- Global Call Overlay Component -->
+    <div style="z-index: 99999;">
+    <Call />
+</div>
             </ion-content>
           </div>
         </ion-split-pane>
@@ -51,6 +56,7 @@
       </div>
     </transition>
 
+  
   </ion-app>
 </template>
 
@@ -62,8 +68,8 @@ import { IonApp, IonRouterOutlet, IonModal, IonHeader, IonToolbar, IonTitle, Ion
 } from '@ionic/vue';
 import { getTalkFlowCore } from '@/composables/TalkFlowCore';
 import { useLanguage } from '@/composables/useLanguage';
-import RelayMode from './components/GunVue/RelayMode.vue';
-import RelayGroup from './components/GunVue/RelayGroup.vue';
+
+import Call from '@/components/phone/Call.vue'
 const { initLanguage } = useLanguage();
 const chatFlowStore = getTalkFlowCore();
 
@@ -117,8 +123,7 @@ await loadRelays();
 <style scoped>
 
 .empty-icon {
-  /* max-width: 100%;
-  max-height: 300px; */
+
   margin:0  auto;
   width: 200px;
   height: 200px;

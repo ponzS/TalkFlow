@@ -33,6 +33,12 @@ import javascript from 'highlight.js/lib/languages/javascript';
 import python from 'highlight.js/lib/languages/python';
 import java from 'highlight.js/lib/languages/java';
 import 'highlight.js/styles/github.css';
+import { useCallOverlay } from '@/composables/useCallOverlay'
+const overlay = useCallOverlay()
+function onOpenOverlay(){
+  overlay.setEnabled(true)
+}
+
 
 hljs.registerLanguage('javascript', javascript);
 hljs.registerLanguage('python', python);
@@ -1511,7 +1517,7 @@ const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-4
        </div>
         </ion-title>
         <ion-buttons slot="end">
-            <ion-button @click="router.push('/CallPage')">
+            <ion-button @click="onOpenOverlay">
             <ion-icon   :icon="callOutline"></ion-icon>
           </ion-button>
           <ion-button @click="openModal">

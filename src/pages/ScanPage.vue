@@ -1,6 +1,6 @@
 <template>
   <IonPage>
-  <ion-header :translucent="true" collapse="fade">
+  <ion-header :translucent="true">
       <ion-toolbar>
         <ion-buttons slot="start">
           <ion-back-button :text="$t('back')" @click="stopRealtimeScanAndGoBack"></ion-back-button>
@@ -16,19 +16,22 @@
     </ion-header>
 
     <ion-content :fullscreen="true" class="beijing">
-            <ion-header collapse="condense" >
+            <!-- <ion-header collapse="condense" >
           <ion-toolbar>
             <h1 style="margin: 10px;font-weight: 900;font-size: 39px;">
 Scanner
             </h1>
           </ion-toolbar>
-        </ion-header>
+        </ion-header> -->
       <!-- 全屏毛玻璃遮罩 -->
       <transition name="fade">
         <div v-if="showOverlay" class="glass-overlay"></div>
       </transition>
 
-      <!-- 相机预览覆盖层，始终显示 -->
+      <!-- 相机视频预览（Web 原生） -->
+      <video ref="video" class="camera-video" autoplay playsinline muted></video>
+
+      <!-- 扫描窗口覆盖层 -->
       <div class="scanner-overlay">
         <div :class="['scan-window', { 'searching': isSearching }]"></div>
       </div>
@@ -55,17 +58,18 @@ Scanner
         </div>
       </transition>
 
+      <!-- 隐藏文件输入（用于从图库选择图片进行识别，Web 原生） -->
+      <input ref="fileInput" type="file" accept="image/*" capture="environment" class="hidden-file-input" @change="onFileChange" />
+
    
     </ion-content>
   </IonPage>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue';
+import { ref, onMounted, onBeforeUnmount, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { IonPage, IonContent,IonHeader, IonToolbar,IonBackButton,IonTitle,IonButtons,IonButton } from '@ionic/vue'; 
-import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
-import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
 import { BrowserQRCodeReader } from '@zxing/browser';
 import { getTalkFlowCore } from '@/composables/TalkFlowCore';
 import { Browser } from '@capacitor/browser';
@@ -91,25 +95,52 @@ const showOverlay = ref(true);
 const modalContent = ref<string | null>(null);
 const modalType = ref<'error' | 'text' | 'http-confirm' | null>(null);
 import { useDevicesList, useUserMedia } from '@vueuse/core'
-import { reactive, shallowRef, useTemplateRef, watchEffect } from 'vue'
+import { reactive, shallowRef, useTemplateRef, watchEffect, computed } from 'vue'
 const currentCamera = shallowRef<string>()
 const { videoInputs: cameras } = useDevicesList({
   requestPermissions: true,
   onUpdated() {
-    if (!cameras.value.find(i => i.deviceId === currentCamera.value))
-      currentCamera.value = cameras.value[0]?.deviceId
+    const list = cameras.value
+    // 优先选择后置摄像头（通过设备标签匹配），否则回退到最后一个设备（通常为后置）
+    const rear = list.find(i => /back|rear|environment/i.test(i.label))
+    currentCamera.value = rear?.deviceId ?? list[list.length - 1]?.deviceId ?? list[0]?.deviceId
   },
 })
 
 const video = useTemplateRef<HTMLVideoElement>('video')
-const { stream, enabled } = useUserMedia({
-  constraints: reactive({ video: { deviceId: currentCamera } }),
-})
+// 根据是否已有明确的设备ID，动态选择 deviceId 或 facingMode: environment
+const constraints = computed(() => ({
+  video: currentCamera.value
+    ? { deviceId: { exact: currentCamera.value } }
+    : { facingMode: { ideal: 'environment' } },
+  audio: false,
+}))
+const { stream, enabled } = useUserMedia({ constraints })
 
 watchEffect(() => {
   if (video.value)
     video.value.srcObject = stream.value!
 })
+
+// Web 原生文件选择
+const fileInput = ref<HTMLInputElement | null>(null);
+function pickPhoto() {
+  fileInput.value?.click();
+}
+async function onFileChange(e: Event) {
+  const input = e.target as HTMLInputElement;
+  const file = input.files?.[0];
+  if (!file) return;
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+  await decodeQrFromDataUrl(dataUrl);
+  // 清空选择，避免同图重复不触发
+  input.value = '';
+}
 
 
 function copyText() {
@@ -136,15 +167,20 @@ const tldList = [
 ];
 
 async function checkBarcodePermission() {
-  const status = await BarcodeScanner.checkPermission({ force: true });
-  if (status.granted) return true;
-  if (status.denied) {
-    alert('The camera permission has been rejected.if you need,try agin please.');
+  try {
+    // 通过 useUserMedia 的 enabled 启动摄像头流来触发权限请求
+    enabled.value = true;
+    await nextTick();
+    await video.value?.play().catch(() => {});
+    return !!stream.value;
+  } catch (e) {
+    alert('Camera permission rejected.');
     return false;
   }
-  return false;
 }
 
+let rafId: number | null = null;
+let zxingControls: import('@zxing/browser').IScannerControls | null = null;
 async function startRealtimeScan() {
   resetState();
   const hasPermission = await checkBarcodePermission();
@@ -153,15 +189,43 @@ async function startRealtimeScan() {
   try {
     scanning.value = true;
     document.body.classList.add('scanner-active');
-    await BarcodeScanner.hideBackground();
-    const result = await BarcodeScanner.startScan();
-    if (result.hasContent) {
-      scannedData.value = result.content;
-      await handleScanResult(result.content);
+    // 优先使用 BarcodeDetector（部分现代浏览器支持）
+    const supportsBarcodeDetector = typeof (globalThis as any).BarcodeDetector !== 'undefined';
+    if (supportsBarcodeDetector && video.value) {
+      const BarcodeDetectorCtor = (globalThis as any).BarcodeDetector as new (options?: { formats?: string[] }) => any;
+      const detector = new BarcodeDetectorCtor({ formats: ['qr_code'] });
+      const loop = async () => {
+        if (!scanning.value || !video.value) return;
+        try {
+          const codes = await detector.detect(video.value);
+          if (codes && codes.length > 0) {
+            const content = codes[0].rawValue || codes[0].rawValue || '';
+            if (content) {
+              scannedData.value = content;
+              await handleScanResult(content);
+              await stopRealtimeScan();
+              return;
+            }
+          }
+        } catch {}
+        rafId = requestAnimationFrame(loop);
+      };
+      rafId = requestAnimationFrame(loop);
+    }
+    else if (video.value) {
+      // 回退到 ZXing 浏览器实现
+      const codeReader = new BrowserQRCodeReader();
+      zxingControls = await codeReader.decodeFromVideoDevice(currentCamera.value ?? undefined, video.value, async (result, err) => {
+        if (result) {
+          const content = result.getText();
+          scannedData.value = content;
+          await handleScanResult(content);
+          await stopRealtimeScan();
+        }
+      });
     }
   } catch (err: any) {
     scanning.value = false;
-    await BarcodeScanner.showBackground();
     document.body.classList.remove('scanner-active');
     // showModal('error', err?.message || 'error about scanner');
   }
@@ -175,30 +239,23 @@ async function stopRealtimeScanAndGoBack() {
 
 async function stopRealtimeScan() {
   scanning.value = false;
-  await BarcodeScanner.showBackground();
-  await BarcodeScanner.stopScan();
+  if (rafId !== null) {
+    cancelAnimationFrame(rafId);
+    rafId = null;
+  }
+  if (zxingControls) {
+    zxingControls.stop();
+    zxingControls = null;
+  }
+  enabled.value = false;
+  if (video.value) {
+    video.value.srcObject = null;
+  }
   document.body.classList.remove('scanner-active');
 }
 
-async function pickPhoto() {
-  resetState();
-
-  try {
-    const photo = await Camera.getPhoto({
-      quality: 90,
-      resultType: CameraResultType.DataUrl,
-      source: CameraSource.Prompt,
-      allowEditing: false,
-    });
-
-    if (photo?.dataUrl) {
-      photoSrc.value = photo.dataUrl;
-      await decodeQrFromDataUrl(photo.dataUrl);
-    }
-  } catch (err: any) {
-    // showModal('error', err?.message || 'error about photo');
-  }
-}
+// pickPhoto 改为触发隐藏的文件输入
+// 实际逻辑见上方 onFileChange()
 
 async function decodeQrFromDataUrl(dataUrl: string) {
   try {
@@ -449,8 +506,27 @@ onBeforeUnmount(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  /* background: rgba(0, 0, 0, 0.5); */
   z-index: 10;
+  pointer-events: none;
+}
+
+.camera-video {
+  /* position: fixed;
+  top: 0;
+  left: 0; */
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 5;
+  background: black;
+}
+
+.hidden-file-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
   pointer-events: none;
 }
 

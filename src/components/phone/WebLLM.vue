@@ -91,6 +91,11 @@
             <div :class="['bubble', msg.role, msg.streaming ? 'streaming' : '']">
               <div class="content" v-html="formatContent(msg.content)"></div>
             </div>
+            <div class="copy-btn-wrap">
+              <ion-button size="small" fill="clear" @click="copyMessage(msg)" :disabled="!msg || msg.streaming">
+                <ion-icon :icon="copyOutline"></ion-icon>
+              </ion-button>
+            </div>
           </ion-item>
         </ion-list>
       </div>
@@ -124,6 +129,22 @@
 
             <!-- 发送/停止：使用过渡与图标按钮 -->
             <div class="button-container">
+              <ion-button
+                fill="clear"
+                class="mic-toggle-button"
+                :title="isListening ? '停止语音识别' : '开始语音识别'"
+                @click="toggleListening"
+              >
+                <ion-icon :icon="isListening ? micOffOutline : micOutline"></ion-icon>
+              </ion-button>
+              <ion-button
+                fill="clear"
+                class="tts-toggle-button"
+                :title="ttsEnabled ? '关闭语音播报' : '开启语音播报'"
+                @click="ttsEnabled = !ttsEnabled"
+              >
+                <ion-icon :icon="ttsEnabled ? volumeMuteOutline : volumeHighOutline"></ion-icon>
+              </ion-button>
                 
               <transition name="button-fade" mode="out-in">
                 <div v-if="isStreaming" key="stop" class="action-wrap">
@@ -359,7 +380,7 @@ import { useI18n } from 'vue-i18n';
 import { useWebLLMChat } from '@/composables/useWebLLMChat';
 import { useGroupChat } from '@/composables/useGroupChat';
 import { getTalkFlowCore } from '@/composables/TalkFlowCore';
-import { sendOutline, stopOutline, imageOutline, closeOutline, settingsOutline, createOutline, addCircleOutline, chatboxEllipsesOutline, personOutline } from 'ionicons/icons';
+import { sendOutline, stopOutline, imageOutline, closeOutline, settingsOutline, createOutline, addCircleOutline, chatboxEllipsesOutline, personOutline, micOutline, micOffOutline, volumeHighOutline, volumeMuteOutline, copyOutline } from 'ionicons/icons';
 import { useKeyboardState } from '@/composables/useKeyboardState';
 import {
   useChatHistory,
@@ -421,7 +442,7 @@ const {
 
 // 好友列表（用于针对性自动回复选择）
 const talkFlow = getTalkFlowCore();
-const { buddyList, getAliasRealtime } = talkFlow;
+const { buddyList, getAliasRealtime, showToast } = talkFlow as any;
 // 群聊（用于针对性自动回复选择群组）
 const groupChat = useGroupChat();
 const {
@@ -441,6 +462,141 @@ const engineReady = ref(false);
 const isSettingsOpen = ref(false);
 const pullModelId = ref('');
 const userConsented = ref<boolean>(localStorage.getItem('webllm_user_consented') === 'true');
+// 语音聊天：ASR（语音识别）与 TTS（语音播报）
+const ttsEnabled = ref(false);
+const isListening = ref(false);
+const partialTranscript = ref('');
+const SpeechRecognitionCtor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+const asrSupported = ref(!!SpeechRecognitionCtor);
+let recognition: any = null;
+// 记录用户是否希望持续监听，以及是否为主动停止
+const userWantsListening = ref(false);
+const shouldStopASR = ref(false);
+
+function initASR() {
+  if (!SpeechRecognitionCtor) return false;
+  if (recognition) return true;
+  recognition = new SpeechRecognitionCtor();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+  try { recognition.lang = navigator.language || 'zh-CN'; } catch {}
+
+  recognition.onstart = () => {
+    isListening.value = true;
+  };
+  recognition.onresult = (event: any) => {
+    let finalText = '';
+    for (let i = event.resultIndex; i < event.results.length; i++) {
+      const res = event.results[i];
+      const transcript = res[0].transcript;
+      if (res.isFinal) finalText += transcript.trim() + ' ';
+      else partialTranscript.value = transcript;
+    }
+    finalText = finalText.trim();
+    if (finalText) {
+      sendTextFromASR(finalText);
+      partialTranscript.value = '';
+    }
+  };
+  recognition.onerror = (e: any) => {
+    console.warn('ASR error:', e);
+    // 权限或设备错误时，停止并不再自动重启
+    const err = (e && (e.error || e.name)) || '';
+    if (String(err).includes('not-allowed') || String(err).includes('service-not-allowed')) {
+      userWantsListening.value = false;
+      shouldStopASR.value = true;
+    }
+    if (String(err).includes('audio-capture')) {
+      userWantsListening.value = false;
+      shouldStopASR.value = true;
+    }
+  };
+  recognition.onend = () => {
+    isListening.value = false;
+    // 若不是用户主动停止，且用户希望持续监听，则短暂延迟后自动重启
+    if (!shouldStopASR.value && userWantsListening.value) {
+      setTimeout(() => {
+        try { recognition?.start(); } catch {}
+      }, 250);
+    } else {
+      // 主动停止或用户不再需要监听时，清理临时转写
+      partialTranscript.value = '';
+      // 重置一次性停止标志
+      shouldStopASR.value = false;
+    }
+  };
+  return true;
+}
+
+// 复制消息到剪贴板（参考 MeS.vue 的复制方法）
+function copyMessage(msg: any) {
+  try {
+    const raw = typeof msg?.content === 'string' ? msg.content : (msg?.content != null ? String(msg.content) : '');
+    navigator.clipboard.writeText(raw)
+      .then(() => {
+        if (typeof showToast === 'function') {
+          showToast('Copied', 'success');
+        }
+      })
+      .catch(() => {
+        if (typeof showToast === 'function') {
+          showToast('Copy error', 'error');
+        }
+      });
+  } catch {
+    if (typeof showToast === 'function') {
+      showToast('Copy error', 'error');
+    }
+  }
+}
+
+function startListening() {
+  if (!asrSupported.value) {
+    try { (window as any).showToast?.('当前环境不支持语音识别', 'warning'); } catch {}
+    return;
+  }
+  const ok = initASR();
+  if (!ok || !recognition) return;
+  try {
+    userWantsListening.value = true;
+    shouldStopASR.value = false;
+    recognition.start();
+  } catch (e) { console.warn('ASR start failed:', e); }
+}
+
+function stopListening() {
+  try {
+    userWantsListening.value = false;
+    shouldStopASR.value = true;
+    recognition?.stop();
+  } catch {}
+  // isListening 会在 onend 中置为 false
+}
+
+function toggleListening() { if (userWantsListening.value || isListening.value) stopListening(); else startListening(); }
+
+async function sendTextFromASR(text: string) { inputText.value = text; await send(); }
+
+function speak(text: string) {
+  if (!ttsEnabled.value) return;
+  try {
+    const utter = new SpeechSynthesisUtterance(text);
+    utter.lang = navigator.language || 'zh-CN';
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utter);
+  } catch (e) { console.warn('TTS speak error:', e); }
+}
+
+// 模型回复流结束后，播报最新助手消息
+watch(isStreaming, (cur, prev) => {
+  if (prev === true && cur === false) {
+    const list = messages.value || [];
+    for (let i = list.length - 1; i >= 0; i--) {
+      const m = list[i];
+      if (m?.role === 'assistant' && !m?.streaming) { speak(m.content || ''); break; }
+    }
+  }
+});
 
 // 内容滚动引用与工具方法
 const contentRef = ref<any>(null);
@@ -960,6 +1116,13 @@ function newConversation() {
     font-size: 12px;
     color: var(--ion-color-medium);
     margin-left:10px;
+}
+.copy-btn-wrap {
+  margin-top: 4px;
+}
+.copy-btn-wrap ion-icon {
+  font-size: 16px;
+  color: var(--ion-color-medium);
 }
 </style>
 const { t } = useI18n();
