@@ -11,6 +11,9 @@
         <ion-button  @click="pickPhoto">
           <ion-icon slot="start" :icon="imageOutline" />
         </ion-button>
+        <ion-button :disabled="!torchAvailable" @click="toggleTorch">
+          <ion-icon slot="start" :icon="flashlightOutline" />
+        </ion-button>
       </ion-buttons>
       </ion-toolbar>
     </ion-header>
@@ -59,7 +62,8 @@ Scanner
       </transition>
 
       <!-- 隐藏文件输入（用于从图库选择图片进行识别，Web 原生） -->
-      <input ref="fileInput" type="file" accept="image/*" capture="environment" class="hidden-file-input" @change="onFileChange" />
+      <!-- 从相册选择图片：移除 capture，避免强制调用摄像头 -->
+      <input ref="fileInput" type="file" accept="image/*" class="hidden-file-input" @change="onFileChange" />
 
    
     </ion-content>
@@ -73,7 +77,7 @@ import { IonPage, IonContent,IonHeader, IonToolbar,IonBackButton,IonTitle,IonBut
 import { BrowserQRCodeReader } from '@zxing/browser';
 import { getTalkFlowCore } from '@/composables/TalkFlowCore';
 import { Browser } from '@capacitor/browser';
-import { imageOutline } from 'ionicons/icons';
+import { imageOutline, flashlightOutline } from 'ionicons/icons';
 import { useGroupChat } from '@/composables/useGroupChat';
 const {
   setCurrentGroup,
@@ -90,6 +94,8 @@ const scannedData = ref<string | null>(null);
 const errorMsg = ref<string | null>(null);
 const photoSrc = ref<string | null>(null);
 const showOverlay = ref(true);
+const torchOn = ref(false);
+const torchAvailable = ref(false);
 
 // 模态窗口状态
 const modalContent = ref<string | null>(null);
@@ -117,14 +123,77 @@ const constraints = computed(() => ({
 }))
 const { stream, enabled } = useUserMedia({ constraints })
 
+// ZXing 控件句柄需在上方声明以便 watchEffect 判断
+let zxingControls: import('@zxing/browser').IScannerControls | null = null;
+
+// 仅在使用 useUserMedia 时绑定预览，避免覆盖 ZXing 自管理的视频流
 watchEffect(() => {
-  if (video.value)
-    video.value.srcObject = stream.value!
+  if (!video.value) return;
+  if (!enabled.value) return; // ZXing 分支会禁用 useUserMedia
+  if (stream.value) {
+    video.value.srcObject = stream.value;
+  }
 })
+
+// 等待视频就绪（有分辨率且可播放）
+async function waitForVideoReady(el: HTMLVideoElement) {
+  if (el.readyState >= 2 && el.videoWidth > 0 && el.videoHeight > 0) return;
+  await new Promise<void>((resolve) => {
+    const onReady = () => {
+      el.removeEventListener('loadedmetadata', onReady);
+      resolve();
+    };
+    el.addEventListener('loadedmetadata', onReady);
+  });
+}
+
+// 获取活跃的视频轨道（兼容 useUserMedia 与 ZXing）
+function getActiveVideoTrack(): MediaStreamTrack | null {
+  if (enabled.value && stream.value) {
+    return stream.value.getVideoTracks()[0] ?? null;
+  }
+  const src = video.value?.srcObject as MediaStream | null;
+  return src ? src.getVideoTracks()[0] ?? null : null;
+}
+
+// 检查设备是否支持手电筒
+async function updateTorchAvailability() {
+  const track = getActiveVideoTrack();
+  try {
+    const caps = track?.getCapabilities?.();
+    torchAvailable.value = !!(caps && 'torch' in caps && caps.torch !== undefined);
+  } catch {
+    torchAvailable.value = false;
+  }
+}
+
+// 设置手电筒状态
+async function setTorch(on: boolean) {
+  const track = getActiveVideoTrack();
+  if (!track) throw new Error('no active video track');
+  const caps: any = track.getCapabilities?.();
+  if (!caps || !('torch' in caps)) throw new Error('torch unsupported');
+  await track.applyConstraints({ advanced: [{ torch: on }] } as unknown as MediaTrackConstraints);
+  torchOn.value = on;
+}
+
+// 切换手电筒
+async function toggleTorch() {
+  try {
+    const next = !torchOn.value;
+    await setTorch(next);
+    toastController.create({ message: next ? 'Flashlight On' : 'Flashlight Off', duration: 800 }).then(t => t.present());
+  } catch (e) {
+    toastController.create({ message: 'Device does not support torch', duration: 1200, color: 'warning' }).then(t => t.present());
+    torchAvailable.value = false;
+    torchOn.value = false;
+  }
+}
 
 // Web 原生文件选择
 const fileInput = ref<HTMLInputElement | null>(null);
 function pickPhoto() {
+  // 直接触发隐藏的文件输入；移除了 capture 后将打开系统相册选择
   fileInput.value?.click();
 }
 async function onFileChange(e: Event) {
@@ -180,31 +249,44 @@ async function checkBarcodePermission() {
 }
 
 let rafId: number | null = null;
-let zxingControls: import('@zxing/browser').IScannerControls | null = null;
 async function startRealtimeScan() {
   resetState();
   const hasPermission = await checkBarcodePermission();
   if (!hasPermission) return;
 
   try {
+    // isSearching.value = true;
     scanning.value = true;
     document.body.classList.add('scanner-active');
     // 优先使用 BarcodeDetector（部分现代浏览器支持）
     const supportsBarcodeDetector = typeof (globalThis as any).BarcodeDetector !== 'undefined';
     if (supportsBarcodeDetector && video.value) {
+      await waitForVideoReady(video.value);
+      await updateTorchAvailability();
       const BarcodeDetectorCtor = (globalThis as any).BarcodeDetector as new (options?: { formats?: string[] }) => any;
       const detector = new BarcodeDetectorCtor({ formats: ['qr_code'] });
+      // 通过 Canvas 截帧以提升识别稳定性
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
       const loop = async () => {
         if (!scanning.value || !video.value) return;
         try {
-          const codes = await detector.detect(video.value);
-          if (codes && codes.length > 0) {
-            const content = codes[0].rawValue || codes[0].rawValue || '';
-            if (content) {
-              scannedData.value = content;
-              await handleScanResult(content);
-              await stopRealtimeScan();
-              return;
+          if (video.value.videoWidth && video.value.videoHeight && ctx) {
+            const targetW = Math.min(640, video.value.videoWidth);
+            const scale = targetW / video.value.videoWidth;
+            const targetH = Math.round(video.value.videoHeight * scale);
+            canvas.width = targetW;
+            canvas.height = targetH;
+            ctx.drawImage(video.value, 0, 0, targetW, targetH);
+            const codes = await detector.detect(canvas);
+            if (codes && codes.length > 0) {
+              const content = codes[0]?.rawValue || '';
+              if (content) {
+                scannedData.value = content;
+                await handleScanResult(content);
+                await stopRealtimeScan();
+                return;
+              }
             }
           }
         } catch {}
@@ -215,7 +297,15 @@ async function startRealtimeScan() {
     else if (video.value) {
       // 回退到 ZXing 浏览器实现
       const codeReader = new BrowserQRCodeReader();
-      zxingControls = await codeReader.decodeFromVideoDevice(currentCamera.value ?? undefined, video.value, async (result, err) => {
+      // 关闭 useUserMedia 的流，避免与 ZXing 自己的流冲突
+      enabled.value = false;
+      const zxingConstraints: MediaStreamConstraints = {
+        video: currentCamera.value
+          ? { deviceId: { exact: currentCamera.value } }
+          : { facingMode: { ideal: 'environment' }, width: { ideal: 1280 }, height: { ideal: 720 } },
+        audio: false,
+      };
+      zxingControls = await codeReader.decodeFromConstraints(zxingConstraints, video.value, async (result, err) => {
         if (result) {
           const content = result.getText();
           scannedData.value = content;
@@ -223,6 +313,7 @@ async function startRealtimeScan() {
           await stopRealtimeScan();
         }
       });
+      await updateTorchAvailability();
     }
   } catch (err: any) {
     scanning.value = false;
@@ -239,6 +330,7 @@ async function stopRealtimeScanAndGoBack() {
 
 async function stopRealtimeScan() {
   scanning.value = false;
+ // isSearching.value = false;
   if (rafId !== null) {
     cancelAnimationFrame(rafId);
     rafId = null;
@@ -247,6 +339,7 @@ async function stopRealtimeScan() {
     zxingControls.stop();
     zxingControls = null;
   }
+  try { await setTorch(false); } catch {}
   enabled.value = false;
   if (video.value) {
     video.value.srcObject = null;
@@ -446,6 +539,7 @@ function resetState() {
   errorMsg.value = null;
   photoSrc.value = null;
   closeModal();
+  torchOn.value = false;
 }
 
 onMounted(() => {
@@ -512,11 +606,11 @@ onBeforeUnmount(() => {
 }
 
 .camera-video {
-  /* position: fixed;
+  position: fixed;
   top: 0;
-  left: 0; */
-  width: 100%;
-  height: 100%;
+  left: 0;
+  width: 100dvw;
+  height: 100dvh;
   object-fit: cover;
   z-index: 5;
   background: black;

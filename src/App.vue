@@ -2,20 +2,14 @@
 
 
   <ion-app>
-  <!-- <div class="callWindow" v-show="isCallWindow">
-   <CallWindow/>
-  </div>
-  <div class="callbutton" v-if="isCallButton">
 
-    <div @click="isCallWindow = true">
-      open call window
-    </div>
-  </div> -->
- 
+ <div v-show="relayok">
+  <RelayGroup/>
+ </div>
 
 
     <ion-split-pane  content-id="main"  v-show="isLoggedIn">
-          <ion-menu  content-id="main">
+          <ion-menu type="push"  content-id="main">
          
                  <Menu> </Menu>
       
@@ -25,7 +19,7 @@
           
  <ion-router-outlet  />
 
-   <!-- Global Call Overlay Component -->
+ 
     <div style="z-index: 99999;">
     <Call />
 </div>
@@ -33,9 +27,6 @@
           </div>
         </ion-split-pane>
 
-
- <!-- <ion-router-outlet  v-if="isLoggedIn"/> -->
- 
 
 
     <ion-modal :is-open="!isLoggedIn" :can-dismiss="false" class="login-modal" :key="`modal-${isLoggedIn}`">
@@ -74,18 +65,17 @@ const { initLanguage } = useLanguage();
 const chatFlowStore = getTalkFlowCore();
 
 import { peersList, enabledPeers,loadRelays } from '@/composables/useGun';
+import RelayGroup from './components/GunVue/RelayGroup.vue';
 
 const { 
   restoreLoginState, 
   storageServ, 
   offlineNotice, 
-  // isLoading,
-  // currentUserPair,
-  isLoggedIn,
-  // isCallWindow,
-  // isCallButton
-} = chatFlowStore;
 
+  isLoggedIn,
+
+} = chatFlowStore;
+const relayok = ref(false);
 
 function setupNetworkListener() {
   let debounceTimer: NodeJS.Timeout;

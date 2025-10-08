@@ -111,8 +111,8 @@
                 <ion-label>
                   <p>
                     Website:
-                    <a href="https://ponzs.com" target="_blank" class="contact-link">
-                      ponzs.com
+                    <a href="https://talkflow.team" target="_blank" class="contact-link">
+                      talkflow.team
                     </a>
                   </p>
                 </ion-label>
@@ -124,6 +124,17 @@
                     X:
                     <a href="https://x.com/GuoaiZ11355" target="_blank" class="contact-link">
                       @GuoaiZ11355
+                    </a>
+                  </p>
+                </ion-label>
+              </ion-item>
+                <ion-item>
+                <ion-icon :icon="logoGithub" slot="start"></ion-icon>
+                <ion-label>
+                  <p>
+                    Github:
+                    <a href="https://github.com/ponzS/TalkFlow" target="_blank" class="contact-link">
+                      https://github.com/ponzS/TalkFlow
                     </a>
                   </p>
                 </ion-label>
@@ -147,7 +158,7 @@
   
   <script setup lang="ts">
   import { IonPage, IonContent, IonHeader, IonToolbar, IonTitle, IonList, IonItem, IonLabel, IonIcon, IonButtons, IonBackButton } from '@ionic/vue'
-  import { logoTwitter, mailOutline,globeOutline } from 'ionicons/icons'
+  import { logoTwitter, mailOutline,globeOutline, logoGithub } from 'ionicons/icons'
   import { useRouter } from 'vue-router'
   
   const router = useRouter()

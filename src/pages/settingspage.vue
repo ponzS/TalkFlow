@@ -363,30 +363,7 @@ const handleSharingToggle = (event: CustomEvent) => {
   toggleRelaySharing(enabled);
 };
 
-// WebLLM 角色与预设编辑绑定
-// const {
-//   systemPersona,
-//   setSystemPersona,
-//   personaPresets,
-//   addPersonaPreset,
-//   updatePersonaPreset,
-//   removePersonaPreset,
-// } = useWebLLMChat();
 
-// const onSystemPersonaInput = (ev: any) => {
-//   const val = ev?.detail?.value ?? ev?.target?.value ?? '';
-//   setSystemPersona(String(val || ''));
-// };
-// const onPresetInput = (idx: number, ev: any) => {
-//   const val = ev?.detail?.value ?? ev?.target?.value ?? '';
-//   updatePersonaPreset(idx, String(val || ''));
-// };
-// const applyPresetAt = (idx: number) => {
-//   const v = personaPresets.value[idx] || '';
-//   setSystemPersona(String(v || ''));
-// };
-// const addEmptyPreset = () => addPersonaPreset('');
-// const deletePresetAt = (idx: number) => removePersonaPreset(idx);
 </script>
 
 <style scoped>

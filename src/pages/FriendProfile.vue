@@ -8,7 +8,7 @@
       </ion-toolbar>
     </ion-header>
 
-    <ion-content :fullscreen="true" style="height: 100vh;width: 100vw;">
+    <ion-content :fullscreen="true" >
       <!-- 下拉刷新 -->
       <ion-refresher slot="fixed" @ionRefresh="handleRefresh($event)">
         <ion-refresher-content

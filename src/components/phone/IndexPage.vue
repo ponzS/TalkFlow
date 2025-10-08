@@ -1,6 +1,6 @@
 <template>
   <ion-page ref="page">
-  <ion-content :fullscreen="true" class="cosmic-content" :scroll-y="false">
+  <ion-content  :fullscreen="true"  :scroll-y="false">
     <div class="components-container ">
       <div v-show="currentComponent === 'Chat'" class="page-component" :class="{ 'active': currentComponent === 'Chat' }">
         <Chat />
@@ -11,16 +11,21 @@
 
       </div>
 
-      <!-- <div v-if="currentComponent === 'Call'" class="page-component" :class="{ 'active': currentComponent === 'Call' }">
+       <div v-if="currentComponent === 'Call'" class="page-component" :class="{ 'active': currentComponent === 'Call' }">
         
-        <Call />
+   <Moment/>
 
-      </div> -->
+      </div> 
 
-
-      <div v-show="currentComponent === 'Link'" class="page-component " :class="{ 'active': currentComponent === 'Link' }">
+<!-- style="height: 100% !important;" -->
+      <div  style="height: 100% !important;" v-show="currentComponent === 'Link'" class="page-component " :class="{ 'active': currentComponent === 'Link' }">
       
-         <MaxFlow ref="maxFlowRef"/>
+         <!-- <MaxFlow ref="maxFlowRef"/> -->
+<ion-page>
+  <ion-content :fullscreen="true"  :scroll-y="false">
+         <WebLLM/>
+         </ion-content>
+</ion-page>
       </div>
 
 
@@ -38,11 +43,11 @@
 
 
 
-  <ion-footer  :translucent="true" >
-    <ion-toolbar class="liquid-toolbar" :style="{ marginBottom: `-${keyboardHeight}px` }">
+  <ion-footer  class="footer-index"  :translucent="true" >
+    <ion-toolbar :style="{ marginBottom: `-${keyboardHeight}px` }">
 
 
-      <ion-tab-bar style="--background: transparent;" :style="{ transform: `translateY(-${keyboardHeight}px)` }">
+      <ion-tab-bar  style="--background: transparent;background: transparent;" :style="{ transform: `translateY(-${keyboardHeight}px)` }">
         <ion-tab-button 
           class="custom-tab-button"
           :class="{ 'tab-selected': currentComponent === 'Chat' }"
@@ -63,35 +68,36 @@
           <ion-badge v-if="hasNewRequests && !requestsViewed" class="request-badge">●</ion-badge>
         </ion-tab-button>
 
-        <!-- <ion-tab-button 
+        <ion-tab-button 
           class="custom-tab-button"
           :class="{ 'tab-selected': currentComponent === 'Call' }"
           @click="handleTabClick('Call')"
         >
-          <ion-icon :icon="currentComponent === 'Call' ? call : callOutline"></ion-icon>
-          <ion-label style="font-size: 12px;">Call</ion-label>
-        
-        </ion-tab-button> -->
+          <ion-icon :icon="currentComponent === 'Call' ? planet : planetOutline"></ion-icon>
+          <!-- <ion-label style="font-size: 12px;">Call</ion-label>
+         -->
+        </ion-tab-button>
 
         <ion-tab-button 
           class="custom-tab-button"
           :class="{ 'tab-selected': currentComponent === 'Link' }"
           @click="handleTabClick('Link')"
         >
-          <div class="tab-icon-container">
+          <!-- <div class="tab-icon-container">
             <transition name="icon-fade" mode="out-in">
               <ion-icon 
                 :key="maxFlowTabIcon.active" 
                 :icon="currentComponent === 'Link' ? maxFlowTabIcon.active : maxFlowTabIcon.inactive"
               ></ion-icon>
             </transition>
-          </div>
+          </div> -->
           <!-- <transition name="label-fade" mode="out-in">
             <ion-label 
               :key="maxFlowTabLabel" 
               style="font-size: 12px;"
             >{{ maxFlowTabLabel }}</ion-label>
           </transition> -->
+          <ion-icon :icon="currentComponent === 'Link' ? pulse : pulseOutline"></ion-icon>
         </ion-tab-button>
 
  
@@ -115,7 +121,7 @@
               class="tab-avatar"
             />
           </div>
-         
+
           <!-- <ion-label style="font-size: 12px;">{{ currentUserAlias || 'Profile' }}</ion-label> -->
         </ion-tab-button>
       </ion-tab-bar>
@@ -173,6 +179,9 @@ import {
   apps,
   call,
   callOutline,
+  settingsSharp,
+  sparkles,
+  pulseSharp,
 
   
 } from 'ionicons/icons'
@@ -211,6 +220,7 @@ import Moment from './Moment.vue'
 import { useI18n } from 'vue-i18n';
 
 import MaxFlow from './MaxFlow.vue'
+import WebLLM from './WebLLM.vue'
 
 
 const { isDark } = useTheme();
@@ -628,6 +638,13 @@ const momentsRef = ref<InstanceType<typeof Moment> | null>(null);
 </script>
 
 <style scoped>
+
+@media (min-width: 998px) {
+  .footer-index{
+    display: none;
+  }
+}
+
 .empty-icon {
   font-size: 100px;
   
@@ -666,22 +683,10 @@ right: 0;
   top: 10%;
   right: 10px;
 }
-.cosmic-content {
-  --background: transparent;
-  position: relative;
-  overflow: visible;
-}
-.liquid-toolbar {
-  /* background: var(--background-color-no); */
-  /* backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px); */
-  overflow: visible;
-  position: relative;
-  --background: transparent;
-  background: transparent;
-}
+
+
 .liquid-toolbar1 {
-  background: var(--background-color-no);
+  /* background: var(--background-color-no); */
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   overflow: visible;
@@ -701,7 +706,7 @@ right: 0;
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: 100dvh;
   transition: opacity 0.3s ease, transform 0.3s ease;
   opacity: 0;
   pointer-events: none;
@@ -922,23 +927,14 @@ right: 0;
     font-weight: 700;
   } */
 
-  ion-footer{
+  /* ion-footer{
   overflow: visible;
   }
   ion-toolbar{
     overflow: visible;
-  }
+  } */
   
-  /* 底部输入框容器样式 */
-  .bottom-input-container {
-    position: relative;
-    padding: 8px 16px 0 16px;
-    transition: all 0.3s ease;
-    margin-bottom: 10px;
-    /* 确保输入框在键盘上方 */
-    z-index: 1000;
-  }
-  
+
   .bottom-input-wrapper {
     display: flex;
     align-items: center;
@@ -1033,6 +1029,7 @@ right: 0;
 
   .custom-tab-button.tab-selected ion-label {
     color: var(--ion-color-primary);
+
   }
 
   /* 头像标签样式 */
@@ -1053,6 +1050,7 @@ right: 0;
     border-color: var(--ion-color-primary);
     opacity: 1;
     transform: scale(1.05);
+    
   }
 
   .tab-avatar {

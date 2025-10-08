@@ -5,7 +5,20 @@
       <ion-toolbar>
 
    <ion-buttons slot="start">
-            <ion-menu-button></ion-menu-button>
+            <!-- <ion-menu-button >
+              <div style="width: 30px; height: 30px; border-radius: 50%; overflow: hidden;margin: auto 10px;">
+                  <img
+              v-if="userAvatars[currentUserPub!]"
+              :src="userAvatars[currentUserPub!]"
+        
+            />
+            <img
+              v-else
+              :src="avatarurl"
+             
+            /></div>
+      
+            </ion-menu-button> -->
           </ion-buttons>
 
         <ion-title >Contact</ion-title>
@@ -172,6 +185,7 @@ const itemSlidingRefs = ref<Record<string, any>>({});
 const indexBarRef = ref<any>(null);
 const isIndexTouching = ref(false);
 const currentTouchLetter = ref('');
+const avatarurl = computed(() => gunAvatar({ pub: currentUserPub.value, round: false, dark: isDark.value, svg: true }as any));
 
 // 是否有新好友申请
 const hasNewRequests = computed(() => {
@@ -834,7 +848,7 @@ ion-avatar {
 /* Alphabetical Index Bar */
 .index-bar {
   position: fixed !important;
-  top: 50% !important;
+  top: 60% !important;
   right: 8px !important;
   transform: translateY(-50%) !important;
   width: 28px;

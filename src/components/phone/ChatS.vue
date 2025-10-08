@@ -56,6 +56,7 @@ const contentRef = ref<InstanceType<typeof IonContentType> | null>(null);
 const isItemOpen = ref(false);
 const itemSlidingRefs = ref<Record<string, any>>({});
 const pinnedChatsMap = ref<Record<string, boolean>>({});
+const avatarurl = computed(() => gunAvatar({ pub: currentUserPub.value, round: false, dark: isDark.value, svg: true }as any));
 
 // Segment state with persistence - 默认显示聊天列表
 const {
@@ -1060,6 +1061,21 @@ const handleTouchMove = () => {
 
       <ion-toolbar >
          <ion-buttons slot="start">
+           <!-- <ion-menu-button >
+              <div style="width: 30px; height: 30px; border-radius: 50%; overflow: hidden;margin-left:10px;">
+                  <img
+              v-if="userAvatars[currentUserPub!]"
+              :src="userAvatars[currentUserPub!]"
+        
+            />
+            <img
+              v-else
+              :src="avatarurl"
+             
+            /></div>
+      
+            </ion-menu-button> -->
+
           <ion-button  expand="block" fill="clear" @click="openRoomsModal">
             <!-- <ion-icon :icon="walletOutline" ></ion-icon> -->
              GroupCard

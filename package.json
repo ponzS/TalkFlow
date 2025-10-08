@@ -1,7 +1,7 @@
 {
   "name": "talkflow",
   "private": true,
-  "version": "1.7.2",
+  "version": "1.7.3",
   "type": "module",
   "scripts": {
     "dev": "npm run copy:sql:wasm && vite --host",
@@ -21,7 +21,8 @@
     "clean:vite:cache": "vite clean",
     "test:e2e": "cypress run",
     "test:unit": "vitest",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lzc": "lzc-cli project build"
   },
   "dependencies": {
     "@capacitor-community/barcode-scanner": "^4.0.1",

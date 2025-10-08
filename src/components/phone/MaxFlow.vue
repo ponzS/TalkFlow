@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <ion-header :translucent="true"   collapse="fade">
+    <!-- <ion-header :translucent="true"   collapse="fade">
       <ion-toolbar>
         <ion-segment v-model="selectedSegment" style="padding:2px 0;margin: 0 auto;">
           <ion-segment-button value="moment">
@@ -13,17 +13,7 @@
           <ion-segment-button value="relay">
             <ion-label>Relay</ion-label>
           </ion-segment-button>
-          <!-- <ion-segment-button value="tool">
-            <ion-label>TApp</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="setting">
-            <ion-label>Setting</ion-label>
-          </ion-segment-button> -->
-          
-          <!-- 
-            <ion-segment-button value="game">
-            <ion-label>Game</ion-label>
-          </ion-segment-button> -->
+ 
         </ion-segment>
       </ion-toolbar>
 
@@ -46,7 +36,7 @@
     </ion-toolbar>
 
 
-    </ion-header>
+    </ion-header> -->
 
     <ion-content :scroll-y="false">
       <!-- Moment View -->
@@ -59,7 +49,7 @@
       <!-- AiChat View -->
       <div v-show="selectedSegment === 'aichat'" class="view-container">
        
-        <!-- <AiChatSimplemax ref="aiChatRef"/> -->
+       
         <WebLLM/>
       </div>
 

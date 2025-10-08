@@ -1,4 +1,890 @@
+<template>
+  <ion-page>
+    <!-- Top Navigation Bar -->
+    <ion-header :translucent="true" collapse="fade">
+      <ion-toolbar >
+        <ion-buttons slot="start">
+ <ion-button fill="clear" @click="onOpenOverlay">
+          <ion-icon :icon="callOutline"></ion-icon>
+        </ion-button>
+        </ion-buttons>
+
+        <ion-title>{{ currentUserAlias || '' }}</ion-title>
+
+            <ion-buttons slot="end">
+     
+        <ion-button fill="clear" @click="showPanel('qrcode')">
+          <ion-icon :icon="qrCodeOutline"></ion-icon>
+        </ion-button>
+        <ion-button fill="clear" @click="goToScan">
+          <ion-icon :icon="scanSharp"></ion-icon>
+        </ion-button>
+      </ion-buttons>
+
+      </ion-toolbar>
+    </ion-header>
+
+    <!-- Main Content -->
+    <ion-content :fullscreen="true" class="settings-content">
+      <!-- Version Information Section -->
+   
+      <ion-toolbar class="avatar-index">
+        <ion-menu-button >
+   <div style="display: flex;justify-content: center;align-items: center;">
+        <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden;margin: auto 11px;cursor: pointer;">
+                  <img
+              v-if="userAvatars[currentUserPub!]"
+              :src="userAvatars[currentUserPub!]"
+
+            />
+            <img
+              v-else
+              :src="avatarurl"
+
+            /></div>
+            </div>
+            </ion-menu-button>
+</ion-toolbar>
+
+  
+      <ion-header collapse="condense" >
+          <ion-toolbar>
+             <ion-menu-button >
+         <p class="username"> {{ currentUserAlias || '' }}</p>
+     </ion-menu-button>   
+        <ion-menu-button >
+         <p class="userlink"> {{ currentUserAlias1 || '' }}</p>
+   </ion-menu-button>
+    </ion-toolbar>
+        </ion-header>
+
+<ion-toolbar>
+
+    </ion-toolbar> 
+
+      <!-- Account and Security Section -->
+      <div class="settings-section">
+        <!-- <h2 class="section-title">{{ $t('account') }}</h2> -->
+        <ion-list class="settings-list">
+          <ion-item  button @click="myself" class="cosmic-item">
+            <ion-icon slot="start" :icon="personOutline" class="cosmic-icon" style="color:#3880ff" />
+            <ion-label class="cosmic-label">{{ $t('setforme') }}</ion-label>
+          </ion-item>
+          <ion-item  button @click="router.push('/Relay')" class="cosmic-item">
+            <ion-icon slot="start" :icon="rocketOutline" class="cosmic-icon" style="color:darkslateblue" />
+            <ion-label class="cosmic-label">
+              <div style="display: flex;justify-content: space-between;align-items: center;">
+              <div>Relay </div>
+              <div>
+              <span class="breathing-dot" :class="connectedRelaysCount !== 0 ? 'green' : 'red'"></span>
+              <span class="RelayNumber">{{ connectedRelaysCount }}</span>
+          </div>
+            </div>
+            </ion-label>
+            </ion-item>
+          <ion-item  button @click="router.push('/Mesh')" class="cosmic-item">
+            <ion-icon slot="start" :icon="analyticsOutline" class="cosmic-icon" style="color:cadetblue" />
+            <ion-label class="cosmic-label">Mesh Network Canvas</ion-label>
+          </ion-item>
+        </ion-list>
+      </div>
+
+      <!-- Application Settings Section -->
+      <div class="settings-section">
+        <h2 class="section-title">{{ $t('application') }}</h2>
+        <ion-list class="settings-list">
+          <ion-item  button @click="notify" class="cosmic-item">
+            <ion-icon slot="start" :icon="notificationsOutline" class="cosmic-icon" style="color:darkcyan"/>
+            <ion-label class="cosmic-label">{{ $t('notify') }}</ion-label>
+          </ion-item>
+          <ion-item  button @click="languageSwitchers" class="cosmic-item">
+            <ion-icon slot="start" :icon="globeOutline" class="cosmic-icon" style="color:cornflowerblue;"/>
+            <ion-label class="cosmic-label">{{ $t('language') }}</ion-label>
+          </ion-item>
+        </ion-list>
+      </div>
+
+      <!-- Resources Section -->
+      <!-- <div class="settings-section">
+        <h2 class="section-title">{{ $t('resources') }}</h2>
+        <ion-list class="settings-list">
+          <ion-item  button @click="githubpage" class="cosmic-item">
+            <ion-icon slot="start" :icon="homeOutline" class="cosmic-icon" style="color:chocolate"/>
+            <ion-label class="cosmic-label">{{$t('github')}}</ion-label>
+          </ion-item>
+  
+        </ion-list>
+      </div> -->
+
+      <!-- Support Section -->
+      <!-- <div class="settings-section">
+        <h2 class="section-title">{{ $t('support') }}</h2>
+        <ion-list class="settings-list">
+          <ion-item  button @click="sponsorpage" class="cosmic-item">
+            <ion-icon slot="start" :icon="heartOutline" class="cosmic-icon" style="color:deeppink"/>
+            <ion-label class="cosmic-label">{{ $t('sponsor6') }}</ion-label>
+          </ion-item>
+        </ion-list>
+      </div> -->
+
+      <!-- Security and Data Section -->
+      <div class="settings-section">
+        <h2 class="section-title">{{ $t('security') }}</h2>
+        <ion-list class="settings-list">
+          <ion-item  button @click="KeyCheck" class="cosmic-item">
+            <ion-icon slot="start" :icon="keyOutline" class="cosmic-icon" style="color:cornflowerblue"/>
+            <ion-label class="cosmic-label">{{ $t('keysecuritydetection') }}</ion-label>
+          </ion-item>
+          <ion-item  button @click="datamove" class="cosmic-item">
+            <ion-icon slot="start" :icon="gitPullRequestOutline" class="cosmic-icon" style="color:gold"/>
+            <ion-label class="cosmic-label">{{ $t('datamigration') }}</ion-label>
+          </ion-item>
+        </ion-list>
+      </div>
+
+      <!-- Storage and Cache Section -->
+      <div class="settings-section">
+        <h2 class="section-title">{{ $t('storage') }}</h2>
+        <ion-list class="settings-list">
+          <ion-item  button @click="indexedDBpage" class="cosmic-item">
+            <ion-icon slot="start" :icon="serverOutline" class="cosmic-icon" style="color:cornflowerblue"/>
+            <ion-label class="cosmic-label">NetworkDatabase</ion-label>
+          </ion-item>
+          <ion-item  button @click="confirmClearChats" class="cosmic-item">
+            <ion-icon slot="start" :icon="trashBinOutline" class="cosmic-icon" style="color:deeppink"/>
+            <ion-label class="cosmic-label">{{ $t('clearthechatrecords') }}</ion-label>
+          </ion-item>
+        </ion-list>
+      </div>
+
+      <!-- Privacy and Safety Section -->
+      <div class="settings-section">
+        <h2 class="section-title">{{ $t('privacy') }}</h2>
+        <ion-list class="settings-list">
+          <ion-item  class="cosmic-item">
+            <ion-icon slot="start" :icon="shareSocialOutline" class="cosmic-icon" style="color:#3880ff"/>
+            <ion-label class="cosmic-label">{{ $t('shareRelays') }}</ion-label>
+            <ion-toggle
+              slot="end"
+              :checked="isRelaySharingEnabled"
+              @ionChange="handleSharingToggle"
+            ></ion-toggle>
+          </ion-item>
+          <ion-item  button @click="blackList" class="cosmic-item">
+            <ion-icon slot="start" :icon="banOutline" class="cosmic-icon" style="color:darkgray"/>
+            <ion-label class="cosmic-label">{{ $t('blacklist') }}</ion-label>
+          </ion-item>
+          <ion-item  button @click="ReportUser" class="cosmic-item">
+            <ion-icon slot="start" :icon="alertOutline" class="cosmic-icon" style="color:deeppink"/>
+            <ion-label class="cosmic-label">Report users</ion-label>
+          </ion-item>
+        </ion-list>
+      </div>
+
+      <!-- Account Actions Section -->
+      <div class="settings-section">
+        <h2 class="section-title">{{ $t('actions') }}</h2>
+        <ion-list class="settings-list">
+          <ion-item  button @click="confirmDeleteAccount" class="cosmic-item danger-item">
+            <ion-icon slot="start" :icon="personRemoveOutline" class="cosmic-icon" style="color:red"/>
+            <ion-label class="cosmic-label">{{ $t('destroythekey') }}</ion-label>
+          </ion-item>
+          <ion-item  button @click="logout" class="cosmic-item">
+            <ion-icon slot="start" :icon="logOutOutline" class="cosmic-icon" style="color:darkblue"/>
+            <ion-label class="cosmic-label">{{ $t('logout') }}</ion-label>
+          </ion-item>
+        </ion-list>
+      </div>
+
+           <div class="settings-section">
+        <h2 class="section-title">Contact US</h2>
+        <ion-list class="settings-list">
+            <a href="https://x.com/TalkFlowSOL">
+           <ion-item  button  class="cosmic-item">
+          
+            <!-- <ion-icon slot="start" :icon="globeOutline" class="cosmic-icon" style="color:cornflowerblue;"/> -->
+            <ion-label class="cosmic-label"  target="_blank">X&Twitter</ion-label>
+
+          </ion-item>
+                  </a>
+            <a href="https://talkflow.team">
+          <ion-item  button  class="cosmic-item">
+           
+            <!-- <ion-icon slot="start" :icon="notificationsOutline" class="cosmic-icon" style="color:darkcyan"/> -->
+            <ion-label class="cosmic-label">WebSite</ion-label>
+         
+          </ion-item>
+</a>
+
+             <a href="https://github.com/ponzS/TalkFlow">
+          <ion-item  button  class="cosmic-item">
+            <!-- <ion-icon slot="start" :icon="globeOutline" class="cosmic-icon" style="color:cornflowerblue;"/> -->
+        
+            <ion-label class="cosmic-label">Github</ion-label>
+      
+          </ion-item>
+   </a>
+        </ion-list>
+      </div>
+
+      <div class="version-section">
+        <div class="version-card">
+          <div class="version-info">
+            <h3 class="app-name">TalkFlow</h3>
+            <p class="version-number">v1.7.3</p>
+          </div>
+          <ion-icon :icon="cubeOutline" class="version-icon"></ion-icon>
+        </div>
+      </div>
+
+       
+
+      <div style="height:120px"></div>
+
+      <!-- Clear Chats Confirmation Alert -->
+      <ion-alert
+        :is-open="isClearChatsAlertOpen"
+        header="Confirm Clear Chat Records"
+        message="This action will delete all local and online chat records, and they cannot be recovered. Are you sure you want to proceed?"
+        :buttons="[
+          {
+            text: 'Cancel',
+            role: 'cancel',
+            handler: () => {
+              isClearChatsAlertOpen = false;
+            },
+          },
+          {
+            text: 'Confirm',
+            role: 'confirm',
+            handler: () => {
+              clearAllChats();
+              isClearChatsAlertOpen = false;
+            },
+          },
+        ]"
+        @didDismiss="isClearChatsAlertOpen = false"
+      ></ion-alert>
+
+      <!-- Delete Account Confirmation Alert -->
+      <ion-alert
+        :is-open="isDeleteAlertOpen"
+        header="Confirm Account Deletion"
+        message="This action will permanently delete your account and all associated data, including local data, friend connections, and network data. This action cannot be undone. Are you sure you want to proceed?"
+        :buttons="[
+          {
+            text: 'Cancel',
+            role: 'cancel',
+            handler: () => {
+              isDeleteAlertOpen = false;
+            },
+          },
+          {
+            text: 'Confirm',
+            role: 'confirm',
+            handler: () => {
+              deleteAccount();
+              isDeleteAlertOpen = false;
+            },
+          },
+        ]"
+        @didDismiss="isDeleteAlertOpen = false"
+      ></ion-alert>
+    </ion-content>
+
+
+
+
+
+
+
+
+
+
+      <ion-modal
+    :is-open="panelVisible"
+    css-class="profile-modal"
+    :breakpoints="[0, 1]"
+    :initial-breakpoint="0.8"
+    @didDismiss="hidePanel"
+  >
+
+  <ion-header :translucent="true"   collapse="fade">
+    <ion-toolbar>
+      <ion-title>Sacn the code to add friends</ion-title>
+   <ion-buttons slot="end">
+            <ion-button fill="clear" @click="hidePanel">
+              <ion-icon :icon="closeOutline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+    </ion-toolbar>
+    
+  </ion-header>
+    <ion-content class="modal-content">
+ 
+    <ion-header collapse="condense" >
+          <ion-toolbar>
+            <h1 style="margin: 0px 10px;font-weight: 900;font-size: 19px;">
+        Sacn the code to add friends
+            </h1>
+          </ion-toolbar>
+        </ion-header>
+
+      <div class="panel-content">
+        <div v-if="panelContent === 'qrcode'">
+          <div class="qr-display">
+           
+            <QrShow :data="'pubkey:' + currentUserPub" />
+          </div>
+
+          <div class="content-with-copy pubkey-display">
+            <p>PubKey: {{ currentUserPub }}</p>
+            <ion-icon
+              :icon="copyOutline"
+              class="copy-icon"
+              @click="copyPub(currentUserPub)"
+            ></ion-icon>
+          </div>
+          
+          <div v-if="showKeyPair" class="keypair-content-wrapper">
+            <div v-if="!encryptedPair" class="keypair-loading">
+              <ion-spinner name="dots"></ion-spinner>
+              <p>Loading key pair...</p>
+            </div>
+            <template v-else>
+              <div class="keypair-data">
+                <div class="content-with-copy">
+                  <pre class="keypair-content">{{ encryptedPair }}</pre>
+                  <ion-icon
+                    :icon="copyOutline"
+                    class="copy-icon"
+                    @click="copyEncryptedKeyPair"
+                  ></ion-icon>
+                </div>
+              </div>
+              <div class="keypair-warning-box">
+                <ion-icon :icon="warningOutline"></ion-icon>
+                <p>This is your encrypted key pair. Keep it safe!</p>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </ion-content>
+  </ion-modal>
+
+  </ion-page>
+</template>
+
+<script setup lang="ts">
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+
+import {
+  IonPage,
+  IonHeader,
+  IonToolbar,
+  IonTitle,
+  IonContent,
+  IonList,
+  IonItem,
+  IonLabel,
+  IonIcon,
+  IonAlert,
+  IonButtons,
+  IonBackButton,
+  IonToggle, 
+  IonTextarea,
+  IonButton,
+  IonModal,
+  IonMenuButton
+} from '@ionic/vue';
+
+import { getTalkFlowCore } from '@/composables/TalkFlowCore'; 
+import {
+  personOutline,
+  globeOutline,
+  lockClosedOutline,
+  saveOutline,
+  banOutline,
+  personRemoveOutline,
+  logOutOutline,
+  keyOutline,
+  gitPullRequestOutline,
+  trashBinOutline,
+  notificationsOutline,
+  alertOutline,
+  heartOutline,
+  homeOutline,
+  cafeOutline,
+  browsersOutline,
+  cubeOutline,
+  happyOutline,
+  shareSocialOutline,
+  storefrontOutline, 
+  serverOutline,
+  settingsOutline,
+  addOutline,
+  callOutline,
+  analyticsOutline,
+  rocketOutline,
+
+} from 'ionicons/icons';
+
+
+const router = useRouter();
+import { useCallOverlay } from '@/composables/useCallOverlay'
+const overlay = useCallOverlay()
+function onOpenOverlay(){
+  overlay.setEnabled(true)
+}
+
+
+const languageSwitchers = () => {
+  router.push('/i18nset');
+};
+
+const notify = () => {
+  router.push('/NotificationSettings');
+};
+
+const blackList = () => {
+  router.push('/blackList');
+};
+
+const ReportUser = () => {
+  router.push('/ReportPage');
+};
+
+const githubpage = () => {
+  router.push('/githubpage');
+};
+
+const sponsorpage = () => {
+  router.push('/Sponsorship');
+};
+
+const KeyCheck = () => {
+  router.push('/keycheck');
+};
+
+const myself = () => {
+  router.push('/myself');
+};
+
+const datamove = () => {
+  router.push('/MigrationChoice');
+};
+
+const gotoversionpage = () => {
+  router.push('/versiontalkpage');
+};
+
+const indexedDBpage = () => {
+  router.push('/indexedDBpage');
+};
+
+const gotoCache = () => {
+  router.push('/storagepage');
+};
+const gotoDai = () => {
+  router.push('/daipage');
+};
+const gotoDaiSet = () => {
+  router.push('/AiSetting');
+};
+
+const gotoModelPersona = () => {
+  router.push('/ModelPersona');
+};
+
+// 修正：从 getTalkFlowCore 获取单例
+const { isRelaySharingEnabled, toggleRelaySharing, onLogout, deactivateAccount, clearAllChats, isLoggedIn } = getTalkFlowCore();
+
+const deleteAccount = () => {
+  deactivateAccount();
+};
+
+const isDeleteAlertOpen = ref(false);
+const confirmDeleteAccount = () => {
+  isDeleteAlertOpen.value = true;
+
+};
+
+const isClearChatsAlertOpen = ref(false);
+const confirmClearChats = () => {
+  isClearChatsAlertOpen.value = true;
+ 
+};
+
+const logout = () => {
+  router.replace('/');
+  onLogout();
+
+};
+
+const handleSharingToggle = (event: CustomEvent) => {
+  const enabled = event.detail.checked;
+  toggleRelaySharing(enabled);
+};
+import { cn } from "@/lib/utils";
+import { useSpring } from "vue-use-spring";
+import { shallowRef, onMounted, onUnmounted, watch, computed } from 'vue';
+import { useTheme } from '@/composables/useTheme';
+import { useI18n } from 'vue-i18n';
+import NetworkCanvas from './NetworkCanvas.vue';
+// useNetworkStatus现在在NetworkCanvas组件中使用
+
+
+import { Haptics, ImpactStyle } from '@capacitor/haptics';
+import { chatbubblesOutline, chatbubbleOutline, peopleOutline,  planetOutline, atOutline, sparklesOutline, chatbubbleEllipsesOutline, compassOutline, walletOutline, reorderFourOutline, reorderThreeOutline, appsOutline, } from 'ionicons/icons';
+
+import { gunAvatar } from "gun-avatar";
+
+import { closeCircleSharp, copyOutline,  qrCodeOutline, keySharp,  eyeOutline, eyeOffOutline, refreshCircleOutline, warningOutline, lockOpenOutline, checkmarkCircleOutline, alertCircleOutline, scanSharp, menuOutline, expandOutline, arrowBackOutline, refreshOutline, helpCircleOutline, cloudDownloadOutline,closeOutline  } from 'ionicons/icons';
+import {  autoSaveStorageServ } from '@/composables/TalkFlowCore';
+
+
+
+const { isDark } = useTheme();
+const chatFlowStore = getTalkFlowCore();
+
+const { t } = useI18n();
+// @ts-ignore
+const {
+  copyPub, currentUserPub, currentUserAlias, currentUserAlias1, userAvatars, storageServ, gun, isDragging, startY, translateY, cardsTranslateY, velocity, lastTouchTime, lastTouchY, panelVisible: _panelVisible, panelContent: _panelContent, encryptData, decryptData, showToast, currentComponent, previousComponent, switchTo,
+  fullscreenModalVisible,
+  buddyList, 
+} = chatFlowStore;
+
+const avatarurl = computed(() => gunAvatar({ pub: currentUserPub.value, round: false, dark: isDark.value, svg: true } as any));
+
+// 统计当前 gun 正在连接的 relay 数量
+const relayConnectedPeers = ref<string[]>([]);
+let relayCountTimer: number | undefined;
+
+function refreshConnectedRelays() {
+  try {
+    const opt_peers = (gun as any).back('opt.peers') as Record<string, any>;
+    const list = Object.entries(opt_peers)
+      .filter(([, peer]) => {
+        return (
+          peer &&
+          peer.wire &&
+          peer.wire.readyState === 1 &&
+          peer.wire.OPEN === 1 &&
+          peer.wire.constructor?.name === 'WebSocket'
+        );
+      })
+      .map(([url]) => url);
+    relayConnectedPeers.value = list;
+  } catch {
+    relayConnectedPeers.value = [];
+  }
+}
+
+const connectedRelaysCount = computed(() => relayConnectedPeers.value.length);
+
+onMounted(() => {
+  refreshConnectedRelays();
+  relayCountTimer = window.setInterval(refreshConnectedRelays, 1500);
+});
+
+onUnmounted(() => {
+  if (relayCountTimer) window.clearInterval(relayCountTimer);
+});
+
+// NetworkCanvas组件引用
+const networkCanvasComponent = ref<InstanceType<typeof NetworkCanvas> | null>(null);
+
+// 网格模式状态
+const isPersonalView = ref(false); // 默认为个人网格模式
+
+// 切换网格模式
+const toggleGridMode = (event: CustomEvent) => {
+  isPersonalView.value = event.detail.checked;
+  // 通知NetworkCanvas组件切换模式
+  if (networkCanvasComponent.value) {
+    networkCanvasComponent.value.setViewMode(isPersonalView.value);
+  }
+};
+
+// 接收NetworkCanvas发射的viewModeChanged事件
+const onViewModeChanged = (newMode: boolean) => {
+  isPersonalView.value = newMode;
+};
+
+
+// Other existing variables and functions remain unchanged
+type PanelContentType = 'pubkey' | 'qrcode' | 'keypair' | 'resetpassword' | null;
+const localPanelContent = ref<PanelContentType>(null);
+const localPanelVisible = ref(false);
+
+const panelVisible = computed({
+  get: () => localPanelVisible.value,
+  set: (value) => { localPanelVisible.value = value; _panelVisible.value = value; }
+});
+
+const panelContent = computed({
+  get: () => localPanelContent.value,
+  set: (value) => {
+    localPanelContent.value = value;
+    if (value === 'pubkey' || value === 'qrcode' || value === null) {
+      _panelContent.value = value as 'pubkey' | 'qrcode' | null;
+    }
+  }
+});
+
+function goToScan() { router.push('/ScanPage'); }
+
+function gotomyset() { router.push('/myself'); }
+
+
+const midPoint = 0;
+
+const positionState = ref('middle');
+const encryptedPair = ref('');
+const showKeyPair = ref(false);
+const avatarStyle = ref({});
+const decryptPassphrase = ref('');
+const decryptMessage = ref('');
+const showDecryptedKeyPair = ref(false);
+const decryptedPair = ref('');
+
+
+// Canvas刷新功能现在由NetworkCanvas组件处理
+const refreshCanvas = () => {
+  if (networkCanvasComponent.value) {
+    networkCanvasComponent.value.refreshCanvas();
+  }
+};
+
+// 图例切换功能
+const toggleLegend = () => {
+  if (networkCanvasComponent.value) {
+    networkCanvasComponent.value.toggleLegend();
+  }
+};
+
+// 陌生节点模态窗口功能
+const openStrangerRelayModal = () => {
+  if (networkCanvasComponent.value) {
+    networkCanvasComponent.value.openStrangerRelayModal();
+  }
+};
+
+
+function copyEncryptedKeyPair() {
+  if (encryptedPair.value) {
+    navigator.clipboard.writeText(encryptedPair.value)
+      .then(() => showToast(t('keyPairCopiedToClipboard'), 'success'))
+      .catch(err => showToast(t('copyFailed'), 'error'));
+  }
+}
+
+
+
+function showPanel(content: PanelContentType) {
+  panelContent.value = content;
+  panelVisible.value = true;
+}
+
+function hidePanel() {
+  panelVisible.value = false;
+  panelContent.value = null;
+  showDecryptedKeyPair.value = false;
+  decryptedPair.value = '';
+  decryptPassphrase.value = '';
+  decryptMessage.value = '';
+}
+
+onMounted(async () => {
+  positionState.value = 'middle';
+  translateY.value = midPoint;
+  cardsTranslateY.value = 0;
+  if (currentUserPub.value) {
+    const userData = await autoSaveStorageServ.getUser(currentUserPub.value);
+    if (userData) {
+      currentUserAlias.value = userData.alias || '';
+      userAvatars.value[currentUserPub.value] = userData.avatar || '';
+      encryptedPair.value = userData.encryptedKeyPair || '';
+    }
+    gun.get('users').get(currentUserPub.value).once((data: any) => {
+      if (data?.alias) currentUserAlias.value = data.alias;
+      if (data?.signature) currentUserAlias1.value = data.signature;
+      if (data?.avatar) userAvatars.value[currentUserPub.value!] = data.avatar;
+    });
+  }
+});
+
+
+
+</script>
+
 <style scoped>
+  @media (min-width: 998px) {
+  .avatar-index{
+    display: none;
+  }
+}
+/* Settings Content Layout */
+.settings-content {
+  --padding-top: 16px;
+  --padding-bottom: 16px;
+  /* --padding-start: 16px;
+  --padding-end: 16px; */
+}
+
+/* Version Information Section */
+.version-section {
+  margin: 24px;
+
+}
+
+.version-card {
+  background: rgba(42, 125, 112, 0.1);
+  backdrop-filter: blur(15px);
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(42, 125, 112, 0.2);
+  box-shadow: 0 4px 20px rgba(42, 125, 112, 0.1);
+  transition: all 0.3s ease;
+}
+
+.version-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 25px rgba(42, 125, 112, 0.15);
+}
+
+.version-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.app-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ion-text-color);
+  margin: 0;
+  text-shadow: 0 0 4px rgba(42, 125, 112, 0.3);
+}
+
+.version-number {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(42, 125, 112, 0.8);
+  margin: 0;
+  opacity: 0.9;
+}
+
+.version-icon {
+  font-size: 28px;
+  color: rgba(42, 125, 112, 0.7);
+  transition: all 0.3s ease;
+}
+
+/* Relay 连接数呼吸灯样式 */
+.breathing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin: 0 6px 0 4px;
+  
+}
+.breathing-dot.green {
+  background-color: #2dd36f; /* Ionic 成功绿色 */
+  animation: breathe-green 1.8s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(45, 211, 111, 0.6);
+}
+.breathing-dot.red {
+  background-color: #eb445a; /* Ionic 危险红色 */
+  animation: breathe-red 1.8s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(235, 68, 90, 0.6);
+}
+@keyframes breathe-green {
+  0% {
+    box-shadow: 0 0 0 0 rgba(45, 211, 111, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(45, 211, 111, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(45, 211, 111, 0);
+  }
+}
+@keyframes breathe-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(235, 68, 90, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(235, 68, 90, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(235, 68, 90, 0);
+  }
+}
+.RelayNumber{
+  color: #838383;
+  font-size: 13px;
+}
+.version-card:hover .version-icon {
+  transform: rotate(10deg) scale(1.1);
+  color: rgb(42, 125, 112);
+}
+
+/* Settings Section */
+.settings-section {
+  margin-bottom: 32px;
+}
+
+.section-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ion-text-color);
+  margin: 0 0 12px 8px;
+  opacity: 0.8;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+
+
+
+
+/* 图标基础样式，使用伪元素实现光晕 */
+.cosmic-icon {
+  font-size: 24px;
+  color: rgb(42, 125, 112);
+  transition: all 0.3s ease;
+  position: relative;
+  z-index: 1;
+  margin-right: 16px;
+}
+
+
+
+/* 文字样式 */
+
+
+.danger-item .cosmic-icon {
+  color: #dc3545;
+}
+
+.danger-item .cosmic-icon::before {
+  background: radial-gradient(circle, rgba(220, 53, 69, 0.4) 0%, rgba(220, 53, 69, 0) 70%);
+}
+
+/* Toolbar 样式 */
+.liquid-toolbar {
+  --border-color: transparent;
+  --background: transparent;
+  overflow: visible;
+}
 
 .profile-modal {
   border-radius: 16px 16px 0 0;
@@ -471,14 +1357,25 @@ padding: 10px;
   align-items: flex-start;
   margin-left: 10px;
 }
-
+ion-toolbar{
+  --background: transparent;
+}
 .username {
   font-weight: bold;
   font-family: Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
-  font-size: 1.1rem; /* smaller */
+  font-size: 3rem; 
   margin: 0;
   color: var(--ion-text-color);
   text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+  text-align: center;
+}
+.userlink {
+  font-weight: bold;
+  font-size: 1rem; 
+  margin: 0;
+  color: #82828295;
+  text-shadow: 1px 1px 3px rgba(0,0,0,0.5);
+  text-align: center;
 }
 
 .signature-text {
@@ -515,11 +1412,11 @@ ion-header {
 }
 
 
-
+/* 
 ion-icon {
   font-size: 24px;
   color: var(--ion-text-color);
-}
+} */
 
 /* 3D网络Canvas样式 */
 .network-canvas {
@@ -681,326 +1578,5 @@ html.light .friend-label, html.light .user-label, html.light .relay-label {
   height: 100%;
   z-index: 1;
 }
+
 </style>
-
-<template>
-  <ion-page>
-  <div class="canvas-container" >
-    <!-- 3D网络拓扑图组件 -->
-        <NetworkCanvas 
-          ref="networkCanvasComponent" 
-          @view-mode-changed="onViewModeChanged"
-        />
-  </div>
-  <!-- 顶部栏 -->
-  <ion-header :translucent="true"  collapse="fade">
-    <ion-toolbar >
-      <!-- 左侧按钮组 -->
-      <ion-buttons slot="start">
-            <ion-button  fill="clear" @click="openStrangerRelayModal">
-          <ion-icon :icon="cloudDownloadOutline"></ion-icon>
-        </ion-button>
-        <ion-button fill="clear" @click="toggleLegend">
-          <ion-icon :icon="helpCircleOutline"></ion-icon>
-        </ion-button>
-     
-             <ion-button fill="clear" @click="router.push('/settingspage')">
-          <ion-icon :icon="settingsOutline"></ion-icon>
-        </ion-button>
-      </ion-buttons>
-      
-      <!-- 右侧按钮组 -->
-      <ion-buttons slot="end">
-     
-        <ion-button fill="clear" @click="showPanel('qrcode')">
-          <ion-icon :icon="qrCodeOutline"></ion-icon>
-        </ion-button>
-        <ion-button fill="clear" @click="goToScan">
-          <ion-icon :icon="scanSharp"></ion-icon>
-        </ion-button>
-      </ion-buttons>
-    </ion-toolbar>
-
-    <ion-toolbar style="--background: transparent; gap:8px;" >
-      <!-- 左侧按钮组 -->
-      <ion-buttons slot="start">
-                <div class="avatar-wrapper" @click="gotomyset">
-          <img
-            v-if="userAvatars[currentUserPub!]"
-            :src="userAvatars[currentUserPub!]"
-            alt=""
-            class="avatar"
-            :style="avatarStyle"
-          />
-          <img
-            v-else
-            :src="avatarurl"
-            class="avatar"
-            
-          /> 
-        </div>
-        
-        <div class="user-text-info">
-          <h1 class="username">{{ currentUserAlias || '' }}</h1>
-        </div>
-    
-      </ion-buttons>
-      
-      <!-- 右侧按钮组 -->
-      <ion-buttons slot="end">
-           <!-- 网格模式切换开关 - 只在showCover为false时显示 -->
-        <div v-if="!networkCanvasComponent?.showCover" class="grid-mode-toggle" style="margin: 0 15px;">
-          <ion-toggle 
-            :checked="isPersonalView" 
-            @ionChange="toggleGridMode"
-            color="primary"
-          ></ion-toggle>
-          <!-- <span class="toggle-label">{{ isPersonalView ? '全部' : '个人' }}</span> -->
-        </div>
-      </ion-buttons>
-    </ion-toolbar>
-  </ion-header>
-
-  
-  <!-- 内容区域 -->
-  <ion-content :fullscreen="true" :scroll-y="false" class="profile-content">
-
-  </ion-content>
-
-  <ion-modal
-    :is-open="panelVisible"
-    css-class="profile-modal"
-    :breakpoints="[0, 1]"
-    :initial-breakpoint="0.8"
-    @didDismiss="hidePanel"
-  >
-
-  <ion-header :translucent="true"   collapse="fade">
-    <ion-toolbar>
-      <ion-title>Sacn the code to add friends</ion-title>
-   <ion-buttons slot="end">
-            <ion-button fill="clear" @click="hidePanel">
-              <ion-icon :icon="closeOutline"></ion-icon>
-            </ion-button>
-          </ion-buttons>
-    </ion-toolbar>
-    
-  </ion-header>
-    <ion-content class="modal-content">
- 
-    <ion-header collapse="condense" >
-          <ion-toolbar>
-            <h1 style="margin: 0px 10px;font-weight: 900;font-size: 19px;">
-        Sacn the code to add friends
-            </h1>
-          </ion-toolbar>
-        </ion-header>
-
-      <div class="panel-content">
-        <div v-if="panelContent === 'qrcode'">
-          <div class="qr-display">
-           
-            <QrShow :data="'pubkey:' + currentUserPub" />
-          </div>
-
-          <div class="content-with-copy pubkey-display">
-            <p>PubKey: {{ currentUserPub }}</p>
-            <ion-icon
-              :icon="copyOutline"
-              class="copy-icon"
-              @click="copyPub(currentUserPub)"
-            ></ion-icon>
-          </div>
-          
-          <div v-if="showKeyPair" class="keypair-content-wrapper">
-            <div v-if="!encryptedPair" class="keypair-loading">
-              <ion-spinner name="dots"></ion-spinner>
-              <p>Loading key pair...</p>
-            </div>
-            <template v-else>
-              <div class="keypair-data">
-                <div class="content-with-copy">
-                  <pre class="keypair-content">{{ encryptedPair }}</pre>
-                  <ion-icon
-                    :icon="copyOutline"
-                    class="copy-icon"
-                    @click="copyEncryptedKeyPair"
-                  ></ion-icon>
-                </div>
-              </div>
-              <div class="keypair-warning-box">
-                <ion-icon :icon="warningOutline"></ion-icon>
-                <p>This is your encrypted key pair. Keep it safe!</p>
-              </div>
-            </template>
-          </div>
-        </div>
-      </div>
-    </ion-content>
-  </ion-modal>
-
-    
-</ion-page>
-</template>
-
-<script lang="ts" setup>
-import { cn } from "@/lib/utils";
-import { useSpring } from "vue-use-spring";
-import { ref, shallowRef, onMounted, onUnmounted, watch, computed } from 'vue';
-import { useTheme } from '@/composables/useTheme';
-import { useI18n } from 'vue-i18n';
-import NetworkCanvas from './NetworkCanvas.vue';
-// useNetworkStatus现在在NetworkCanvas组件中使用
-
-
-import { Haptics, ImpactStyle } from '@capacitor/haptics';
-import { chatbubblesOutline, chatbubbleOutline, peopleOutline, personOutline, planetOutline, settingsOutline, rocketOutline, browsersOutline, atOutline, sparklesOutline, chatbubbleEllipsesOutline, compassOutline, walletOutline, reorderFourOutline, reorderThreeOutline, appsOutline, serverOutline, happyOutline } from 'ionicons/icons';
-import { IonFooter, IonToolbar, IonContent, IonIcon, IonHeader, IonMenu, IonSplitPane, IonTitle,menuController,IonPage} from '@ionic/vue';
-import { gunAvatar } from "gun-avatar";
-import ChatSpad from '../ipad/ChatSpad.vue';
-import RelayMode from '../GUNtest/RelayMode.vue';
-import { useRouter } from 'vue-router';
-import { IonModal, IonItem, IonLabel, IonInput, IonButton, IonSpinner, IonButtons, IonToggle } from '@ionic/vue';
-import { closeCircleSharp, copyOutline, keyOutline, qrCodeOutline, keySharp, lockClosedOutline, eyeOutline, eyeOffOutline, refreshCircleOutline, warningOutline, lockOpenOutline, checkmarkCircleOutline, alertCircleOutline, scanSharp, menuOutline, expandOutline, arrowBackOutline, refreshOutline, helpCircleOutline, cloudDownloadOutline,closeOutline  } from 'ionicons/icons';
-import { getTalkFlowCore, autoSaveStorageServ } from '@/composables/TalkFlowCore';
-
-const iscanvas = ref(false);
-
-const { isDark } = useTheme();
-const chatFlowStore = getTalkFlowCore();
-const router = useRouter();
-const { t } = useI18n();
-// @ts-ignore
-const {
-  copyPub, currentUserPub, currentUserAlias, currentUserAlias1, userAvatars, storageServ, gun, isDragging, startY, translateY, cardsTranslateY, velocity, lastTouchTime, lastTouchY, panelVisible: _panelVisible, panelContent: _panelContent, encryptData, decryptData, showToast, currentComponent, previousComponent, switchTo,
-  fullscreenModalVisible,
-  buddyList, 
-} = chatFlowStore;
-
-const avatarurl = computed(() => gunAvatar({ pub: currentUserPub.value, round: false, dark: isDark.value, svg: true } as any));
-
-// NetworkCanvas组件引用
-const networkCanvasComponent = ref<InstanceType<typeof NetworkCanvas> | null>(null);
-
-// 网格模式状态
-const isPersonalView = ref(false); // 默认为个人网格模式
-
-// 切换网格模式
-const toggleGridMode = (event: CustomEvent) => {
-  isPersonalView.value = event.detail.checked;
-  // 通知NetworkCanvas组件切换模式
-  if (networkCanvasComponent.value) {
-    networkCanvasComponent.value.setViewMode(isPersonalView.value);
-  }
-};
-
-// 接收NetworkCanvas发射的viewModeChanged事件
-const onViewModeChanged = (newMode: boolean) => {
-  isPersonalView.value = newMode;
-};
-
-
-// Other existing variables and functions remain unchanged
-type PanelContentType = 'pubkey' | 'qrcode' | 'keypair' | 'resetpassword' | null;
-const localPanelContent = ref<PanelContentType>(null);
-const localPanelVisible = ref(false);
-
-const panelVisible = computed({
-  get: () => localPanelVisible.value,
-  set: (value) => { localPanelVisible.value = value; _panelVisible.value = value; }
-});
-
-const panelContent = computed({
-  get: () => localPanelContent.value,
-  set: (value) => {
-    localPanelContent.value = value;
-    if (value === 'pubkey' || value === 'qrcode' || value === null) {
-      _panelContent.value = value as 'pubkey' | 'qrcode' | null;
-    }
-  }
-});
-
-function goToScan() { router.push('/ScanPage'); }
-
-function gotomyset() { router.push('/myself'); }
-
-
-const midPoint = 0;
-
-const positionState = ref('middle');
-const encryptedPair = ref('');
-const showKeyPair = ref(false);
-const avatarStyle = ref({});
-const decryptPassphrase = ref('');
-const decryptMessage = ref('');
-const showDecryptedKeyPair = ref(false);
-const decryptedPair = ref('');
-
-
-// Canvas刷新功能现在由NetworkCanvas组件处理
-const refreshCanvas = () => {
-  if (networkCanvasComponent.value) {
-    networkCanvasComponent.value.refreshCanvas();
-  }
-};
-
-// 图例切换功能
-const toggleLegend = () => {
-  if (networkCanvasComponent.value) {
-    networkCanvasComponent.value.toggleLegend();
-  }
-};
-
-// 陌生节点模态窗口功能
-const openStrangerRelayModal = () => {
-  if (networkCanvasComponent.value) {
-    networkCanvasComponent.value.openStrangerRelayModal();
-  }
-};
-
-
-function copyEncryptedKeyPair() {
-  if (encryptedPair.value) {
-    navigator.clipboard.writeText(encryptedPair.value)
-      .then(() => showToast(t('keyPairCopiedToClipboard'), 'success'))
-      .catch(err => showToast(t('copyFailed'), 'error'));
-  }
-}
-
-
-
-function showPanel(content: PanelContentType) {
-  panelContent.value = content;
-  panelVisible.value = true;
-}
-
-function hidePanel() {
-  panelVisible.value = false;
-  panelContent.value = null;
-  showDecryptedKeyPair.value = false;
-  decryptedPair.value = '';
-  decryptPassphrase.value = '';
-  decryptMessage.value = '';
-}
-
-onMounted(async () => {
-  positionState.value = 'middle';
-  translateY.value = midPoint;
-  cardsTranslateY.value = 0;
-  if (currentUserPub.value) {
-    const userData = await autoSaveStorageServ.getUser(currentUserPub.value);
-    if (userData) {
-      currentUserAlias.value = userData.alias || '';
-      userAvatars.value[currentUserPub.value] = userData.avatar || '';
-      encryptedPair.value = userData.encryptedKeyPair || '';
-    }
-    gun.get('users').get(currentUserPub.value).once((data: any) => {
-      if (data?.alias) currentUserAlias.value = data.alias;
-      if (data?.signature) currentUserAlias1.value = data.signature;
-      if (data?.avatar) userAvatars.value[currentUserPub.value!] = data.avatar;
-    });
-  }
-});
-
-
-</script>

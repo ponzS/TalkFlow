@@ -84,7 +84,6 @@ declare module 'vue' {
     RouterLink: typeof import('vue-router')['RouterLink']
     RouterView: typeof import('vue-router')['RouterView']
     Scan: typeof import('./src/components/phone/Scan.vue')['default']
-    Settings: typeof import('./src/components/phone/Settings.vue')['default']
     ShaderToy: typeof import('./src/components/ui/shader-toy/ShaderToy.vue')['default']
     SpinningLoader: typeof import('./src/components/ui/SpinningLoader.vue')['default']
     TalkFlow: typeof import('./src/components/ui/TalkFlow.vue')['default']

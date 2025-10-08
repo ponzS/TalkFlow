@@ -1,6 +1,6 @@
 <template>
   <ion-page>
-    <!-- <ion-header> -->
+    <ion-header>
       <ion-toolbar>
         <ion-buttons slot="start">
         <p class="model-id">{{ modelId }}</p>
@@ -22,7 +22,7 @@
         </ion-button>
         </ion-buttons>
       </ion-toolbar>
-    <!-- </ion-header> -->
+    </ion-header>
 
     <ion-content ref="contentRef" :fullscreen="true" :scroll-y="true" :style="{ '--content-bottom': keyboardHeight + 'px' }">
       <!-- 历史消息模态窗口 -->

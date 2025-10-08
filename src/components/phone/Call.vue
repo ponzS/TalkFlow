@@ -712,25 +712,67 @@ const callDurationText = computed(() => {
 })
 
 // 摄像头翻转（在可用视频设备间切换）
+const flipFacing = ref<'user' | 'environment'>('user')
 function flipCamera() {
-  try {
-    const vids = call.devices.videoIn || []
-    if (!vids.length) return
-    const idx = vids.findIndex(d => d.deviceId === call.selectedVideoIn)
-    const next = vids[(idx + 1) % vids.length]
-    call.selectedVideoIn = next.deviceId
-    call.getLocalStream().then(() => {
-      const newTrack = call.localStream?.getVideoTracks?.()[0]
+  (async () => {
+    try {
+      const vids = call.devices.videoIn || []
+      let newTrack: MediaStreamTrack | null = null
+
+      if (vids.length > 1) {
+        // 多摄像头：在设备间轮换
+        const idx = vids.findIndex(d => d.deviceId === call.selectedVideoIn)
+        const next = vids[(idx + 1) % vids.length]
+        call.selectedVideoIn = next.deviceId
+        const s = await navigator.mediaDevices.getUserMedia({ video: { deviceId: { exact: next.deviceId } as any }, audio: false } as any)
+        newTrack = s.getVideoTracks()[0] || null
+      } else {
+        // 单摄像头（移动端常见）：使用 facingMode 在前/后置间切换
+        flipFacing.value = flipFacing.value === 'user' ? 'environment' : 'user'
+        const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: flipFacing.value } as any }, audio: false } as any)
+        newTrack = s.getVideoTracks()[0] || null
+      }
+
       if (!newTrack) return
-      Object.values(call.peers).forEach(pc => {
-        pc.getSenders().forEach(s => {
-          if (s.track && s.track.kind === 'video') {
-            try { (s as RTCRtpSender).replaceTrack(newTrack) } catch(_) { }
-          }
-        })
-      })
-    })
-  } catch(e) { /* ignore */ }
+
+      // 确保存在本地流
+      if (!call.localStream) {
+        call.localStream = new MediaStream()
+      }
+
+      // 替换本地视频轨道
+      try {
+        const oldVideos = call.localStream.getVideoTracks()
+        for (const t of oldVideos) { try { t.stop() } catch(_) {} ; try { call.localStream.removeTrack(t) } catch(_) {} }
+        call.localStream.addTrack(newTrack)
+      } catch(_) {}
+
+      // 重新绑定本地 video 元素
+      try {
+        const el = document.getElementById('localVideo') as HTMLVideoElement | null
+        if (el) { el.srcObject = call.localStream; try { (el as any).play?.() } catch(_) {} }
+      } catch(_) {}
+
+      // 替换所有 Peer 的视频 sender 轨道（优先使用 transceiver）
+      const peers = call.peers || {}
+      for (const id of Object.keys(peers)) {
+        const pc = peers[id]
+        const txs = (pc.getTransceivers?.() || []).filter(t => (t as any)?.receiver?.track?.kind === 'video')
+        let used = false
+        for (const tx of txs) {
+          try { (tx as any).direction = 'sendrecv' } catch(_) {}
+          try { await (tx as RTCRtpTransceiver).sender.replaceTrack(newTrack) ; used = true } catch(_) {}
+        }
+        if (!used) {
+          pc.getSenders().forEach(s => {
+            if (s.track && s.track.kind === 'video') {
+              try { (s as RTCRtpSender).replaceTrack(newTrack) } catch(_) {}
+            }
+          })
+        }
+      }
+    } catch(e) { /* ignore */ }
+  })()
 }
 
 // 漂浮窗拖拽

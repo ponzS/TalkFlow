@@ -1,16 +1,22 @@
 <template>
   <IonPage>
-    <!-- <IonHeader>
+    <IonHeader>
       <IonToolbar>
-        <IonTitle>Relay 管理</IonTitle>
+
+         <ion-buttons slot="start">
+        <ion-back-button :text="$t('back')" ></ion-back-button>
+        </ion-buttons>
+        <IonTitle>Relay Manager</IonTitle>
         <ion-buttons slot="end">
-          <IonButton size="small" @click="runAllTests" :disabled="connectedPeers.length === 0">全部测速</IonButton>
+          <IonButton size="small" @click="runAllTests" :disabled="connectedPeers.length === 0">Test All</IonButton>
         </ion-buttons>
       </IonToolbar>
-    </IonHeader> -->
+    </IonHeader>
     <IonContent :fullscreen="true">
       <div class="section">
-        <h2>Add Relay</h2>
+        <h2>Add Relay  <span style="cursor: pointer;"><a href="https://github.com/DeFUCC/gun-vue/tree/main/relay/skin/gun-vue-call-relay" target="_blank"><ion-icon :icon="helpCircleOutline"></ion-icon></a> </span></h2>
+
+       
         <IonItem>
           <IonInput v-model="newRelayUrl" placeholder="Input relay URL"></IonInput>
           <IonButton slot="end" @click="onAddRelay" :disabled="!canAdd">Add</IonButton>
@@ -66,12 +72,14 @@ import {
   IonButton,
   IonIcon,
   IonInput,
+  IonButtons,
+  IonBackButton
 } from '@ionic/vue'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { gun, peersList, enabledPeers } from '@/composables/useGun'
 import { addRelay, removeRelay, setRelayEnabled, createIsolatedGun } from '@/composables/useGun'
 import { v4 as uuidv4 } from 'uuid'
-import { trashOutline } from 'ionicons/icons'
+import { helpCircleOutline, helpCircleSharp, trashOutline } from 'ionicons/icons'
 
 const newRelayUrl = ref('')
 const canAdd = computed(() => {

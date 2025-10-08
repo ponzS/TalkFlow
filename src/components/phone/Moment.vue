@@ -1,15 +1,14 @@
 <template>
   <!-- 顶部工具栏 -->
-  <!-- <ion-header :translucent="true" >
-   
-  </ion-header> -->
-   <!-- <ion-toolbar class="large-screen-content">
+  <ion-header :translucent="true" >
+     <ion-toolbar>
       <ion-buttons slot="start">
         <ion-button @click="goToMyNode" fill="clear">
           <ion-icon :icon="personCircleOutline"></ion-icon>
         </ion-button>
       </ion-buttons>
       
+      <ion-title>Friend Feed</ion-title>
 
       <ion-buttons slot="end">
       
@@ -17,7 +16,9 @@
           <ion-icon :icon="addOutline"></ion-icon>
         </ion-button>
       </ion-buttons>
-    </ion-toolbar> -->
+    </ion-toolbar>
+  </ion-header>
+ 
 
   <ion-content :fullscreen="true">
 
@@ -30,13 +31,13 @@
     <NotificationBadge />
     
 
-       <ion-header collapse="condense" >
+       <!-- <ion-header collapse="condense" >
           <ion-toolbar>
             <h1 style="margin: 10px;font-weight: 900;font-size: 39px;">
            Friend Feed
             </h1>
           </ion-toolbar>
-        </ion-header>
+        </ion-header> -->
     <div class="moments-container" v-if="moments.length > 0" >
       <div v-for="moment in moments" :key="moment.momentId" class="moment-card">
         <div class="moment-header">
@@ -1128,13 +1129,7 @@ defineExpose({
   --max-width: 96%;
   --max-height: 70%;
 }
-@media (max-width: 768px) {
-  .large-screen-content {
-    display: none;
-  }
-  
 
-}
 .input-container {
   position: relative;
   margin-bottom: 16px;

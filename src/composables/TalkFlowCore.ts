@@ -1595,7 +1595,7 @@ export function useChatFlow() {
     
     // 如果有完整的实时数据（昵称和头像都有效），直接使用
     if (hasValidAlias && hasValidAvatar) {
-      console.log(`[fetchUserInfoForRefresh] 使用完整的实时监听数据: alias="${realtimeAlias}", avatar="有"`);
+     // console.log(`[fetchUserInfoForRefresh] 使用完整的实时监听数据: alias="${realtimeAlias}", avatar="有"`);
       return {
         alias: realtimeAlias,
         avatar: realtimeAvatar
@@ -1625,13 +1625,13 @@ export function useChatFlow() {
         userAvatars.value[pub] = finalAvatar;
       }
       
-      console.log(`[fetchUserInfoForRefresh] 成功从Gun获取用户数据:`, userData);
+     // console.log(`[fetchUserInfoForRefresh] 成功从Gun获取用户数据:`, userData);
       return {
         alias: finalAlias,
         avatar: finalAvatar
       };
     } catch (error) {
-      console.log(`[fetchUserInfoForRefresh] 从Gun获取失败，使用可用的实时数据:`, error);
+     // console.log(`[fetchUserInfoForRefresh] 从Gun获取失败，使用可用的实时数据:`, error);
       
       // 如果有部分有效的实时数据，使用它们
       if (hasValidAlias || hasValidAvatar) {
@@ -1660,18 +1660,18 @@ export function useChatFlow() {
       const buddy = buddies.find(b => b.pub === pub);
       
       if (buddy) {
-        console.log(`[fetchUserInfoForRefresh] 使用SQLite数据库数据`);
+      //  console.log(`[fetchUserInfoForRefresh] 使用SQLite数据库数据`);
         return {
           alias: buddy?.alias || '',
           avatar: buddy?.avatar || ''
         };
       }
     } catch (error) {
-      console.error('[fetchUserInfoForRefresh] SQLite获取失败:', error);
+     // console.error('[fetchUserInfoForRefresh] SQLite获取失败:', error);
     }
     
     // 如果都失败了，返回空值
-    console.log(`[fetchUserInfoForRefresh] 所有数据源都失败，返回空值`);
+  //  console.log(`[fetchUserInfoForRefresh] 所有数据源都失败，返回空值`);
     return { alias: '', avatar: '' };
   }
 
@@ -1812,7 +1812,7 @@ const encryptedCredentials = TempLoginKey;
           await saveUserAvatarToDb(userData.avatar);
         }
         // await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?, ?)', ['userCredentials', pair]);
-        router.replace('/index');
+        router.replace('/');
 
         gun.get('users').get(pair.pub).put({ epub: pair.epub, alias: currentUserAlias.value });
         gun.get('users').get(pair.pub).once((data: any) => {
@@ -1832,7 +1832,7 @@ const encryptedCredentials = TempLoginKey;
         setupListeners(pair.pub);
 
        encryptedKeyInput.value = '';
-        router.replace('/index');
+        router.replace('/');
         resolve();
       }
     });
@@ -1937,7 +1937,7 @@ await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?
 
        
           encryptedKeyInput.value = '';
-          router.replace('/index');
+          router.replace('/');
           resolve();
         }
       });
