@@ -1,4 +1,3 @@
-<!-- src/views/Language.vue -->
 <!-- eslint-disable vue/multi-word-component-names -->
 <template>
   <ion-page>

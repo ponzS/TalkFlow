@@ -186,164 +186,178 @@
       </ion-header>
       <ion-content>
         <div class="settings-wrap">
-          <ion-list>
-            <ion-item lines="full">
-              <ion-label>{{ t('webllm.settings.runtimeMode') }}</ion-label>
-            </ion-item>
-            <ion-item lines="none">
-              <ion-segment :value="runtimePreference" @ionChange="onRuntimeChange">
-                <ion-segment-button value="auto">
-                  <ion-label>Auto</ion-label>
-                </ion-segment-button>
-                <ion-segment-button value="gpu">
-                  <ion-label>GPU</ion-label>
-                </ion-segment-button>
-                <ion-segment-button value="cpu">
-                  <ion-label>CPU</ion-label>
-                </ion-segment-button>
-              </ion-segment>
-            </ion-item>
-            <ion-item>
-              <ion-label>{{ t('webllm.settings.webgpuAvailable') }}</ion-label>
-              <div>{{ hasWebGPU ? t('webllm.common.available') : t('webllm.common.unavailable') }}</div>
-            </ion-item>
-          </ion-list>
+          <ion-accordion-group :value="topAccordionValue" @ionChange="onTopAccordionChange">
+            <ion-accordion value="runtime">
+              <ion-item slot="header" @click.stop="toggleTopAcc('runtime')"><ion-label>{{ t('webllm.settings.runtimeMode') }}</ion-label></ion-item>
+              <div slot="content">
+                <ion-list>
+                  <ion-item lines="none">
+                    <ion-segment :value="runtimePreference" @ionChange="onRuntimeChange">
+                      <ion-segment-button value="auto"><ion-label>Auto</ion-label></ion-segment-button>
+                      <ion-segment-button value="gpu"><ion-label>GPU</ion-label></ion-segment-button>
+                      <ion-segment-button value="cpu"><ion-label>CPU</ion-label></ion-segment-button>
+                    </ion-segment>
+                  </ion-item>
+                  <ion-item>
+                    <ion-label>{{ t('webllm.settings.webgpuAvailable') }}</ion-label>
+                    <div>{{ hasWebGPU ? t('webllm.common.available') : t('webllm.common.unavailable') }}</div>
+                  </ion-item>
+                </ion-list>
+              </div>
+            </ion-accordion>
 
-          <ion-list>
-            <ion-item lines="full">
-              <ion-label>{{ t('webllm.settings.installedModels') }}</ion-label>
-            </ion-item>
-            <ion-item v-if="installedModels.length === 0" lines="none">
-              <ion-label>{{ t('webllm.settings.noInstalledModels') }}</ion-label>
-            </ion-item>
-            <ion-item v-for="mid in installedModels" :key="mid" lines="none">
-              <ion-label>
-                {{ mid }}
-                <ion-badge v-if="mid === modelId" color="success" style="margin-left:8px;padding:0 5px;">{{ t('webllm.settings.inUse') }}</ion-badge>
-              </ion-label>
-              <ion-buttons slot="end">
-                <ion-button @click="useInstalled(mid)">{{ t('webllm.settings.use') }}</ion-button>
-                <ion-button color="danger" @click="deleteInstalled(mid)">{{ t('webllm.settings.delete') }}</ion-button>
-              </ion-buttons>
-            </ion-item>
-          </ion-list>
+            <ion-accordion value="installed">
+              <ion-item slot="header" @click.stop="toggleTopAcc('installed')"><ion-label>{{ t('webllm.settings.installedModels') }}</ion-label></ion-item>
+              <div slot="content" @click.stop @mousedown.stop @touchstart.stop>
+                <ion-list>
+                  <ion-item v-if="installedModels.length === 0" lines="none">
+                    <ion-label>{{ t('webllm.settings.noInstalledModels') }}</ion-label>
+                  </ion-item>
+                  <ion-item v-for="mid in installedModels" :key="mid" lines="none">
+                    <ion-label>
+                      {{ mid }}
+                      <ion-badge v-if="mid === modelId" color="success" style="margin-left:8px;padding:0 5px;">{{ t('webllm.settings.inUse') }}</ion-badge>
+                    </ion-label>
+                    <ion-buttons slot="end">
+                      <ion-button @click.stop="useInstalled(mid)">{{ t('webllm.settings.use') }}</ion-button>
+                      <ion-button color="danger" @click.stop="deleteInstalled(mid)">{{ t('webllm.settings.delete') }}</ion-button>
+                    </ion-buttons>
+                  </ion-item>
+                </ion-list>
+              </div>
+            </ion-accordion>
 
-          <ion-list>
-            <ion-item lines="full">
-              <ion-label>{{ t('webllm.settings.builtInModels') }}</ion-label>
-            </ion-item>
-            <ion-item v-for="m in builtInModels" :key="m.id" lines="none">
-              <ion-label>
-                <div style="font-weight:600">{{ m.name }}</div>
-                <div style="font-size:12px;color:var(--ion-color-medium)">{{ m.id }} · {{ m.sizeMB }} · {{ m.notes }}</div>
-              </ion-label>
-              <ion-buttons slot="end">
-                <ion-button @click="applyBuiltIn(m.id)" :disabled="isInitializing">{{ t('webllm.settings.use') }}</ion-button>
-                <ion-badge v-if="m.id === modelId" color="success" style="margin-left:2px;padding: 3px;">{{ t('webllm.settings.inUse') }}</ion-badge>
-              </ion-buttons>
-            </ion-item>
-            <!-- 自定义远程模型拉取输入框：置于本地导入项上方 -->
-            <ion-item lines="none">
-              <ion-label>{{ t('webllm.settings.pullRemoteModel') }}</ion-label>
-              <ion-input v-model="pullModelId" :placeholder="t('webllm.settings.remoteModelPlaceholder')" />
-              <ion-buttons slot="end">
-                <ion-button @click="pullModel" :disabled="isInitializing">{{ t('webllm.settings.pullAndUse') }}</ion-button>
-              </ion-buttons>
-            </ion-item>
-            <ion-item lines="none">
-              <ion-label>{{ t('webllm.settings.importLocal') }}</ion-label>
-              <input type="file" @change="onLocalImport" accept=".bin,.mlc,.json" />
-            </ion-item>
-          </ion-list>
+            <ion-accordion value="builtins">
+              <ion-item slot="header" @click.stop="toggleTopAcc('builtins')"><ion-label>{{ t('webllm.settings.builtInModels') }}</ion-label></ion-item>
+              <div slot="content" @click.stop @mousedown.stop @touchstart.stop>
+                <ion-list @click.stop>
+                  <ion-accordion-group :value="accordionValue" :multiple="false">
+                    <ion-accordion v-for="group in groupedModels" :key="group.id" :value="group.id">
+                      <ion-item slot="header" @click.stop="toggleInnerAcc(group.id)">
+                        <ion-label>{{ group.name }} <span style="color:var(--ion-color-medium)">({{ group.models.length }})</span></ion-label>
+                      </ion-item>
+                      <ion-list slot="content" @click.stop>
+                        <ion-item v-for="m in group.models" :key="m.id" lines="none" v-if="accordionValue === group.id">
+                          <ion-label>
+                            <div style="font-weight:600">{{ m.name }}</div>
+                            <div style="font-size:12px;color:var(--ion-color-medium)">{{ m.id }} · {{ m.sizeMB }} · {{ m.notes }}</div>
+                          </ion-label>
+                    <ion-buttons slot="end">
+                      <ion-button @click.stop="applyBuiltIn(m.id)" :disabled="isInitializing">{{ t('webllm.settings.use') }}</ion-button>
+                      <ion-badge v-if="m.id === modelId" color="success" style="margin-left:2px;padding: 3px;">{{ t('webllm.settings.inUse') }}</ion-badge>
+                    </ion-buttons>
+                  </ion-item>
+                      </ion-list>
+                    </ion-accordion>
+                  </ion-accordion-group>
+                  <ion-item lines="none">
+                    <ion-label>{{ t('webllm.settings.pullRemoteModel') }}</ion-label>
+                    <ion-input v-model="pullModelId" :placeholder="t('webllm.settings.remoteModelPlaceholder')" />
+                    <ion-buttons slot="end">
+                      <ion-button @click.stop="pullModel" :disabled="isInitializing">{{ t('webllm.settings.pullAndUse') }}</ion-button>
+                    </ion-buttons>
+                  </ion-item>
+                  <ion-item lines="none">
+                    <ion-label>{{ t('webllm.settings.importLocal') }}</ion-label>
+                    <input type="file" @change="onLocalImport" accept=".bin,.mlc,.json" />
+                  </ion-item>
+                </ion-list>
+              </div>
+            </ion-accordion>
 
-          <ion-list>
-            <ion-item lines="full">
-              <ion-label>{{ t('webllm.settings.generationParams') }}</ion-label>
-            </ion-item>
-            <ion-item>
-              <ion-label>Temperature</ion-label>
-              <ion-input type="number" step="0.1" min="0" max="2" v-model="temperatureStr" />
-            </ion-item>
-            <ion-item>
-              <ion-label>Top P</ion-label>
-              <ion-input type="number" step="0.05" min="0" max="1" v-model="topPStr" />
-            </ion-item>
-            <ion-item>
-              <ion-label>Max Tokens</ion-label>
-              <ion-input type="number" step="32" min="64" max="4096" v-model="maxTokensStr" />
-            </ion-item>
-            <ion-item>
-              <ion-label>Presence Penalty</ion-label>
-              <ion-input type="number" step="0.1" min="-2" max="2" v-model="presencePenaltyStr" />
-            </ion-item>
-            <ion-item>
-              <ion-label>Frequency Penalty</ion-label>
-              <ion-input type="number" step="0.1" min="-2" max="2" v-model="frequencyPenaltyStr" />
-            </ion-item>
-            <ion-item>
-              <ion-label>Context Window</ion-label>
-              <ion-input type="number" step="64" min="512" max="131072" v-model="contextWindowSizeStr" />
-            </ion-item>
-            <ion-item>
-              <ion-label>{{ t('webllm.settings.enableThinking') }}</ion-label>
-              <ion-toggle :checked="enableThinking" @ionChange="onThinkingToggle" />
-            </ion-item>
-            <ion-item>
-              <ion-label>{{ t('webllm.settings.logLevel') }}</ion-label>
-              <ion-segment :value="logLevel" @ionChange="onLogLevelChange">
-                <ion-segment-button value="TRACE"><ion-label>TRACE</ion-label></ion-segment-button>
-                <ion-segment-button value="DEBUG"><ion-label>DEBUG</ion-label></ion-segment-button>
-                <ion-segment-button value="INFO"><ion-label>INFO</ion-label></ion-segment-button>
-                <ion-segment-button value="WARN"><ion-label>WARN</ion-label></ion-segment-button>
-                <ion-segment-button value="ERROR"><ion-label>ERROR</ion-label></ion-segment-button>
-                <ion-segment-button value="SILENT"><ion-label>SILENT</ion-label></ion-segment-button>
-              </ion-segment>
-            </ion-item>
-          </ion-list>
+            <ion-accordion value="gen">
+              <ion-item slot="header" @click.stop="toggleTopAcc('gen')"><ion-label>{{ t('webllm.settings.generationParams') }}</ion-label></ion-item>
+              <div slot="content" @click.stop @mousedown.stop @touchstart.stop>
+                <ion-list>
+                  <ion-item>
+                    <ion-label>Temperature</ion-label>
+                    <ion-input type="number" step="0.1" min="0" max="2" v-model="temperatureStr" />
+                  </ion-item>
+                  <ion-item>
+                    <ion-label>Top P</ion-label>
+                    <ion-input type="number" step="0.05" min="0" max="1" v-model="topPStr" />
+                  </ion-item>
+                  <ion-item>
+                    <ion-label>Max Tokens</ion-label>
+                    <ion-input type="number" step="32" min="64" max="4096" v-model="maxTokensStr" />
+                  </ion-item>
+                  <ion-item>
+                    <ion-label>Presence Penalty</ion-label>
+                    <ion-input type="number" step="0.1" min="-2" max="2" v-model="presencePenaltyStr" />
+                  </ion-item>
+                  <ion-item>
+                    <ion-label>Frequency Penalty</ion-label>
+                    <ion-input type="number" step="0.1" min="-2" max="2" v-model="frequencyPenaltyStr" />
+                  </ion-item>
+                  <ion-item>
+                    <ion-label>Context Window</ion-label>
+                    <ion-input type="number" step="64" min="512" max="131072" v-model="contextWindowSizeStr" />
+                  </ion-item>
+                  <ion-item>
+                    <ion-label>{{ t('webllm.settings.enableThinking') }}</ion-label>
+                    <ion-toggle :checked="enableThinking" @ionChange="onThinkingToggle" @click.stop />
+                  </ion-item>
+                  <ion-item>
+                    <ion-label>{{ t('webllm.settings.logLevel') }}</ion-label>
+                    <ion-segment :value="logLevel" @ionChange="onLogLevelChange" @click.stop>
+                      <ion-segment-button value="TRACE"><ion-label>TRACE</ion-label></ion-segment-button>
+                      <ion-segment-button value="DEBUG"><ion-label>DEBUG</ion-label></ion-segment-button>
+                      <ion-segment-button value="INFO"><ion-label>INFO</ion-label></ion-segment-button>
+                      <ion-segment-button value="WARN"><ion-label>WARN</ion-label></ion-segment-button>
+                      <ion-segment-button value="ERROR"><ion-label>ERROR</ion-label></ion-segment-button>
+                      <ion-segment-button value="SILENT"><ion-label>SILENT</ion-label></ion-segment-button>
+                    </ion-segment>
+                  </ion-item>
+                </ion-list>
+              </div>
+            </ion-accordion>
 
-          <!-- 自动回复设置 -->
-          <ion-list>
-            <ion-item lines="full">
-              <ion-label>{{ t('webllm.autoreply.title') }}</ion-label>
-            </ion-item>
-            <ion-item>
-              <ion-label>{{ t('webllm.autoreply.replyAll') }}</ion-label>
-              <ion-toggle :checked="autoReplyAllEnabled" @ionChange="onAutoReplyAllToggle" />
-            </ion-item>
-            <ion-item>
-              <ion-label>{{ t('webllm.autoreply.targeted') }}</ion-label>
-              <ion-toggle :checked="targetedReplyEnabled" @ionChange="onTargetedReplyToggle" />
-            </ion-item>
-            <ion-item v-if="targetedReplyEnabled" lines="none">
-              <ion-label>{{ t('webllm.autoreply.selectBuddies') }}</ion-label>
-            </ion-item>
-            <ion-item v-if="targetedReplyEnabled" v-for="friend in buddyList" :key="friend.pub" lines="none">
-              <ion-label>{{ getAliasRealtime(friend.pub) || friend.pub.slice(0, 8) + '…' }}</ion-label>
-              <ion-checkbox :checked="targetedBuddyPubs.includes(friend.pub)" @ionChange="(ev) => onToggleBuddy(friend.pub, ev)" />
-            </ion-item>
-          </ion-list>
+            <ion-accordion value="auto">
+              <ion-item slot="header" @click.stop="toggleTopAcc('auto')"><ion-label>{{ t('webllm.autoreply.title') }}</ion-label></ion-item>
+              <div slot="content" @click.stop @mousedown.stop @touchstart.stop>
+                <ion-list>
+                  <ion-item>
+                    <ion-label>{{ t('webllm.autoreply.replyAll') }}</ion-label>
+                    <ion-toggle :checked="autoReplyAllEnabled" @ionChange="onAutoReplyAllToggle" @click.stop />
+                  </ion-item>
+                  <ion-item>
+                    <ion-label>{{ t('webllm.autoreply.targeted') }}</ion-label>
+                    <ion-toggle :checked="targetedReplyEnabled" @ionChange="onTargetedReplyToggle" @click.stop />
+                  </ion-item>
+                  <ion-item v-if="targetedReplyEnabled" lines="none">
+                    <ion-label>{{ t('webllm.autoreply.selectBuddies') }}</ion-label>
+                  </ion-item>
+                  <ion-item v-if="targetedReplyEnabled" v-for="friend in buddyList" :key="friend.pub" lines="none">
+                    <ion-label>{{ getAliasRealtime(friend.pub) || friend.pub.slice(0, 8) + '…' }}</ion-label>
+                    <ion-checkbox :checked="targetedBuddyPubs.includes(friend.pub)" @ionChange="(ev) => onToggleBuddy(friend.pub, ev)" @click.stop />
+                  </ion-item>
+                </ion-list>
+              </div>
+            </ion-accordion>
 
-          <!-- 群聊自动回复设置 -->
-          <ion-list>
-            <ion-item lines="full">
-              <ion-label>Group Auto-Reply</ion-label>
-            </ion-item>
-            <ion-item>
-              <ion-label>Reply All Groups</ion-label>
-              <ion-toggle :checked="groupAutoReplyAllEnabled" @ionChange="onGroupAutoReplyAllToggle" />
-            </ion-item>
-            <ion-item>
-              <ion-label>Targeted Groups</ion-label>
-              <ion-toggle :checked="groupTargetedReplyEnabled" @ionChange="onGroupTargetedReplyToggle" />
-            </ion-item>
-            <ion-item v-if="groupTargetedReplyEnabled" lines="none">
-              <ion-label>Select groups to auto-reply</ion-label>
-            </ion-item>
-            <ion-item v-if="groupTargetedReplyEnabled" v-for="g in allGroups" :key="g.pub" lines="none">
-              <ion-label>{{ g.name || g.pub.slice(0, 8) + '…' }}</ion-label>
-              <ion-checkbox :checked="targetedGroupPubs.includes(g.pub)" @ionChange="(ev) => onToggleGroup(g.pub, ev)" />
-            </ion-item>
-          </ion-list>
+            <ion-accordion value="group-auto">
+              <ion-item slot="header" @click.stop="toggleTopAcc('group-auto')"><ion-label>Group Auto-Reply</ion-label></ion-item>
+              <div slot="content" @click.stop @mousedown.stop @touchstart.stop>
+                <ion-list>
+                  <ion-item>
+                    <ion-label>Reply All Groups</ion-label>
+                    <ion-toggle :checked="groupAutoReplyAllEnabled" @ionChange="onGroupAutoReplyAllToggle" @click.stop />
+                  </ion-item>
+                  <ion-item>
+                    <ion-label>Targeted Groups</ion-label>
+                    <ion-toggle :checked="groupTargetedReplyEnabled" @ionChange="onGroupTargetedReplyToggle" @click.stop />
+                  </ion-item>
+                  <ion-item v-if="groupTargetedReplyEnabled" lines="none">
+                    <ion-label>Select groups to auto-reply</ion-label>
+                  </ion-item>
+                  <ion-item v-if="groupTargetedReplyEnabled" v-for="g in allGroups" :key="g.pub" lines="none">
+                    <ion-label>{{ g.name || g.pub.slice(0, 8) + '…' }}</ion-label>
+                    <ion-checkbox :checked="targetedGroupPubs.includes(g.pub)" @ionChange="(ev) => onToggleGroup(g.pub, ev)" @click.stop />
+                  </ion-item>
+                </ion-list>
+              </div>
+            </ion-accordion>
+          </ion-accordion-group>
         </div>
       </ion-content>
     </ion-modal>
@@ -374,6 +388,8 @@ import {
   IonBadge,
   IonCheckbox,
   IonIcon,
+  IonAccordionGroup,
+  IonAccordion,
 } from '@ionic/vue';
 import { ref, computed, nextTick, onMounted, onUnmounted, watch } from 'vue';
 import { useI18n } from 'vue-i18n';
@@ -462,6 +478,56 @@ const engineReady = ref(false);
 const isSettingsOpen = ref(false);
 const pullModelId = ref('');
 const userConsented = ref<boolean>(localStorage.getItem('webllm_user_consented') === 'true');
+// 内置模型分组与手风琴展开状态
+const topAccordionValue = ref<string | null>('runtime');
+function onTopAccordionChange(ev: CustomEvent) {
+  const value = (ev as any).detail?.value as string | null;
+  topAccordionValue.value = value ?? null;
+}
+function toggleTopAcc(id: string) {
+  topAccordionValue.value = topAccordionValue.value === id ? null : id;
+}
+const accordionValue = ref<string | null>(null);
+function onAccordionChange(ev: CustomEvent) {
+  const value = (ev as any).detail?.value as string | null;
+  accordionValue.value = value ?? null;
+}
+function toggleInnerAcc(id: string) {
+  accordionValue.value = accordionValue.value === id ? null : id;
+}
+
+function getModelBrand(m: any): string {
+  const s = `${m?.name ?? ''} ${m?.id ?? ''}`.toLowerCase();
+  const map: Array<[string, string]> = [
+    ['llama', 'Llama'],
+    ['qwen', 'Qwen'],
+    ['mistral', 'Mistral'],
+    ['mixtral', 'Mistral'],
+    ['gemma', 'Gemma'],
+    ['phi', 'Phi'],
+    ['deepseek', 'DeepSeek'],
+    ['smollm', 'SmolLM'],
+    ['aya', 'Aya'],
+    ['cohere', 'Cohere'],
+    ['granite', 'Granite'],
+    ['ernie', 'ERNIE'],
+    ['yi', 'Yi'],
+    ['internlm', 'InternLM'],
+  ];
+  const found = map.find(([k]) => s.includes(k));
+  return found ? found[1] : 'Other';
+}
+
+const groupedModels = computed(() => {
+  const raw = (builtInModels as any)?.value ?? (builtInModels as any) ?? [];
+  const dict: Record<string, { id: string; name: string; models: any[] }> = {};
+  for (const m of raw) {
+    const brand = getModelBrand(m);
+    if (!dict[brand]) dict[brand] = { id: brand, name: brand, models: [] };
+    dict[brand].models.push(m);
+  }
+  return Object.values(dict).sort((a, b) => a.name.localeCompare(b.name));
+});
 // 语音聊天：ASR（语音识别）与 TTS（语音播报）
 const ttsEnabled = ref(false);
 const isListening = ref(false);

@@ -90,13 +90,8 @@ function setupNetworkListener() {
 
 }
 
- 
-
 
 onMounted(async () => {
- 
-
- 
 
   // await loadRelays();
   await storageServ.initializeDatabase();
@@ -118,10 +113,10 @@ await loadRelays();
   width: 200px;
   height: 200px;
 
-  /* color: var(--ion-text-color); */
+
 }
 
-/* 加载遮罩层样式（毛玻璃效果） */
+
 .loading-overlay {
   position: fixed;
   top: 0;
@@ -164,7 +159,6 @@ await loadRelays();
   transition: all 0.3s ease;
 }
 
-/* Fade 过渡动画 */
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.5s;
@@ -178,21 +172,19 @@ await loadRelays();
   opacity: 1;
 }
 
-/* 滚动条样式 */
+
 ::-webkit-scrollbar {
-  width: 0px; /* 滚动条宽度 */
-  background-color: transparent; /* 透明背景 */
+  width: 0px;
+  background-color: transparent;
 }
 
-/* 滚动条滑块 */
 ::-webkit-scrollbar-thumb {
-  background-color: transparent; /* 半透明的滑块颜色 */
-  border-radius: 4px; /* 圆角 */
+  background-color: transparent; 
+  border-radius: 4px; 
 }
 
-/* 滚动条轨道 */
 ::-webkit-scrollbar-track {
-  background-color: transparent; /* 透明轨道 */
+  background-color: transparent; 
 }
 
 .talkflow-title-text {
@@ -288,7 +280,7 @@ body {
   
 }
 
-/* 登录模态窗口样式 */
+
 .login-modal {
   --width: 100%;
   --height: 100%;

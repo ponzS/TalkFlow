@@ -1,9 +1,9 @@
 <template>
   <ion-page>
-    <!-- <ion-header :translucent="true" collapse="fade">
+    <ion-header :translucent="true" collapse="fade">
       <ion-toolbar class="liquid-toolbar">
         <ion-buttons slot="start">
-          <ion-back-button text="Discover" color="dark"></ion-back-button>
+      <ion-back-button :text="$t('back')" ></ion-back-button>
         </ion-buttons>
         <ion-title>{{ $t('EncryptContent') }}</ion-title>
 
@@ -13,7 +13,7 @@
           </ion-button>
         </ion-buttons>
       </ion-toolbar>
-    </ion-header> -->
+    </ion-header>
 
     <ion-content :fullscreen="true" class="liquid-content" :scroll-y="true" :style="{ '--content-bottom': keyboardHeight + 'px' }">
       <div class="content-container">

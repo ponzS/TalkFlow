@@ -786,11 +786,12 @@ const groupNameInput = ref('');
 // Rooms半屏幕模态窗口状态
 const isRoomsModalOpen = ref(false);
 
-
+import { reconnectGunPeers } from '@/composables/useGun'
 // 下拉刷新函数
 const refreshChats = async (event: CustomEvent) => {
   try {
     // 重新加载聊天列表和群组数据
+    reconnectGunPeers();
     restartAllListeners();
     await loadGroups();
     
@@ -1098,7 +1099,7 @@ const handleTouchMove = () => {
 
     <!-- Popover 菜单 -->
     <ion-popover ref="popoverRef" trigger="menu-trigger" trigger-action="click">
-      <ion-content>
+      <ion-content :scroll-y="false">
         <ion-list>
           <ion-item button @click="openCreateGroupModal"  class="popover-item">
      <!-- <ion-icon :icon="peopleOutline" slot="start" class="popover-icon"></ion-icon> -->
@@ -1383,12 +1384,14 @@ const handleTouchMove = () => {
     <!-- 发起群聊模态窗口 -->
     <ion-modal
 
-    :is-open="isCreateGroupModalOpen" @didDismiss="closeCreateGroupModal" 
-    
+    :is-open="isCreateGroupModalOpen" 
+    @didDismiss="closeCreateGroupModal" 
       :breakpoints="[0, 1]"
-      :initial-breakpoint="1"
-
-    
+  
+    :presenting-element="presentingElement"
+    :swipe-to-close="true"
+    :can-dismiss="true"
+     
     >
       <ion-header :translucent="true"   collapse="fade">
         <ion-toolbar>
@@ -1550,7 +1553,7 @@ const handleTouchMove = () => {
             :ref="(el: any) => { if (el) itemSlidingRefs[chat.pub] = el; }"
           >
             <ion-item @click="openChat(chat.pub, chat.type)" @contextmenu.prevent="handleChatLongPress(chat, $event)" @touchstart="handleTouchStart(chat, $event)" @touchmove="handleTouchMove" @touchend="handleTouchEnd" :class="{ 'long-pressed': longPressedChatPub === chat.pub }">
-              <ion-avatar slot="start" :style="{ border: chat.type === 'group' ? '2px solid #666' : '2px solid black', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.649)', position: 'relative' }">
+              <ion-avatar slot="start" :style="{ border: chat.type === 'group' ? '2px solid #666' : '2px solid black',  position: 'relative' }">
                 <img style="width: 100%;height: 100%;object-fit: cover;" v-if="chat.type === 'private' && userAvatars[chat.pub]" :src="userAvatars[chat.pub]" />
                 <img style="width: 100%;height: 100%;object-fit: cover;" v-else :src="getGunAvatar(chat.pub)" alt="Avatar" />
                 <span v-if="chat.hasNew" class="new-message-dot"></span>
@@ -1617,7 +1620,7 @@ const handleTouchMove = () => {
             :ref="(el: any) => { if (el) itemSlidingRefs[chat.pub] = el; }"
           >
             <ion-item @click="openChat(chat.pub, chat.type)" @contextmenu.prevent="handleChatLongPress(chat, $event)" @touchstart="handleTouchStart(chat, $event)" @touchmove="handleTouchMove" @touchend="handleTouchEnd" :class="{ 'long-pressed': longPressedChatPub === chat.pub }">
-              <ion-avatar slot="start" :style="{ border: chat.type === 'group' ? '2px solid #666' : '2px solid black', boxShadow: '0 2px 4px rgba(0, 0, 0, 0.649)', position: 'relative' }">
+              <ion-avatar slot="start" :style="{ border: chat.type === 'group' ? '2px solid #666' : '2px solid black',  position: 'relative' }">
                 <img style="width: 100%;height: 100%;object-fit: cover;" v-if="chat.type === 'private' && userAvatars[chat.pub]" :src="userAvatars[chat.pub]" />
                 <img style="width: 100%;height: 100%;object-fit: cover;" v-else :src="getGunAvatar(chat.pub)" alt="Avatar" />
                 <span v-if="chat.hasNew" class="new-message-dot"></span>

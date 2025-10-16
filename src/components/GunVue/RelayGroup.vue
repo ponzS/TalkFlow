@@ -8,7 +8,8 @@
         </ion-buttons>
         <IonTitle>Relay Manager</IonTitle>
         <ion-buttons slot="end">
-          <IonButton size="small" @click="runAllTests" :disabled="connectedPeers.length === 0">Test All</IonButton>
+                    <IonButton size="small" @click="reconnectGunPeers">Reconnect</IonButton>
+          <!-- <IonButton size="small" @click="runAllTests" :disabled="connectedPeers.length === 0">Test All</IonButton> -->
         </ion-buttons>
       </IonToolbar>
     </IonHeader>
@@ -76,7 +77,7 @@ import {
   IonBackButton
 } from '@ionic/vue'
 import { ref, computed, onMounted, onUnmounted } from 'vue'
-import { gun, peersList, enabledPeers } from '@/composables/useGun'
+import { gun, peersList, enabledPeers,reconnectGunPeers } from '@/composables/useGun'
 import { addRelay, removeRelay, setRelayEnabled, createIsolatedGun } from '@/composables/useGun'
 import { v4 as uuidv4 } from 'uuid'
 import { helpCircleOutline, helpCircleSharp, trashOutline } from 'ionicons/icons'

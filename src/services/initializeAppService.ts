@@ -1,6 +1,5 @@
 import {ISQLiteService } from '../services/sqliteService'; 
 import {IStorageService,} from '../services/storageService'; 
-import { AiChatPersistenceService } from './aiChatPersistenceService';
 
 
 export interface IInitializeAppService {
@@ -11,15 +10,14 @@ export class InitializeAppService implements IInitializeAppService  {
     appInit = false;
     sqliteServ!: ISQLiteService;
     storageServ!: IStorageService;
-    aiChatPersistenceServ!: AiChatPersistenceService;
+  
    
     platform!: string;
   static platform: string;
 
-    constructor(sqliteService: ISQLiteService, storageService: IStorageService, aiChatPersistenceService: AiChatPersistenceService) {
+    constructor(sqliteService: ISQLiteService, storageService: IStorageService) {
         this.sqliteServ = sqliteService;
         this.storageServ = storageService;
-        this.aiChatPersistenceServ = aiChatPersistenceService;
         this.platform = this.sqliteServ.getPlatform();
     }
     async initializeApp(): Promise<boolean> {
@@ -63,10 +61,7 @@ export class InitializeAppService implements IInitializeAppService  {
               console.warn('⚠️ [InitializeApp] Failed to cleanup invalid epubs:', error);
             }
             
-            // console.log('🔧 [InitializeApp] Initializing AI chat persistence service...');
-            await this.aiChatPersistenceServ.initialize();
-            // console.log('✅ [InitializeApp] AI chat persistence service initialized');
-            
+    
       
             if (this.platform === 'web') {
               // console.log('🔧 [InitializeApp] Saving to Web store...');

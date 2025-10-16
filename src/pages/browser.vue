@@ -1,15 +1,15 @@
 <template>
     <ion-page>
 
-      <!-- <ion-header collapse="fade" class="ion-no-border">
+   <ion-header collapse="fade" class="ion-no-border">
       <ion-toolbar>
         <ion-buttons slot="start">
-          <ion-back-button text="Discover" @click="router.go(-1)" color="dark"></ion-back-button>
+ <ion-back-button :text="$t('back')" ></ion-back-button>
         </ion-buttons>
        
      
       </ion-toolbar>
-    </ion-header> -->
+    </ion-header>
       <ion-content :fullscreen="true" class="browser-content">
         <!-- <div class="back-button1">
           <div class="back-button" @click="goBack">
@@ -104,7 +104,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { IonPage, IonContent, IonIcon, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton } from '@ionic/vue';
+import { IonPage, IonContent, IonIcon, IonModal, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton,IonBackButton } from '@ionic/vue';
 import { arrowForwardOutline, closeOutline } from 'ionicons/icons';
 import { Browser } from '@capacitor/browser';
 

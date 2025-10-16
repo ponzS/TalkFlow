@@ -29,7 +29,7 @@
       </div>
 
 
-      <div v-if="currentComponent === 'Profile'" class="page-component" :class="{ 'active': currentComponent === 'Profile' }">
+      <div v-show="currentComponent === 'Profile'" class="page-component" :class="{ 'active': currentComponent === 'Profile' }">
         <MeS/>
       </div>
     </div>
@@ -44,7 +44,7 @@
 
 
   <ion-footer  class="footer-index"  :translucent="true" >
-    <ion-toolbar :style="{ marginBottom: `-${keyboardHeight}px` }">
+    <ion-toolbar class="footer-index" :style="{ marginBottom: `-${keyboardHeight}px` }">
 
 
       <ion-tab-bar  style="--background: transparent;background: transparent;" :style="{ transform: `translateY(-${keyboardHeight}px)` }">
@@ -638,10 +638,20 @@ const momentsRef = ref<InstanceType<typeof Moment> | null>(null);
 </script>
 
 <style scoped>
+/* ion-footer {
+ --background: transparent;
+    background: transparent;
+} */
+/* ion-toolbar {
+  --background: transparent;
+    background: transparent;
+} */
 
 @media (min-width: 998px) {
   .footer-index{
     display: none;
+     /* --background: transparent;
+    background: transparent; */
   }
 }
 

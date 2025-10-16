@@ -88,10 +88,10 @@
                              :ref="(el: any) => { if (el) itemSlidingRefs[friend.pub] = el; }">
               <ion-item @click="openChat(friend.pub)" class="friend-item">
                 <div class="avatar-container" slot="start">
-                  <ion-avatar v-if="userAvatars[friend.pub]" style="border: 2px solid black; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.649);">
+                  <ion-avatar v-if="userAvatars[friend.pub]" style="border: 2px solid black; ">
                     <img style="width: 100%;height: 100%;object-fit: cover;" :src="userAvatars[friend.pub]" />
                   </ion-avatar>
-                  <ion-avatar v-else style="border: 2px solid black; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.649);">
+                  <ion-avatar v-else style="border: 2px solid black; ">
                     <img style="width: 100%;height: 100%;object-fit: cover;" :src="getGunAvatar(friend.pub)" />
                   </ion-avatar>
                   

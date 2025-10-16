@@ -12,8 +12,6 @@ declare module 'lodash';
 
 declare module 'crypto-js';
 
-declare module 'gun-flint';
-
 declare module 'vue-virtual-scroller';
 
 declare module '@gun-vue/composables';

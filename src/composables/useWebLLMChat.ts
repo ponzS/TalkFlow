@@ -1,4 +1,3 @@
-// 使用全局自动导入的 Vue API（ref、computed、nextTick 等），避免直接依赖 'vue' 模块解析
 import { CreateMLCEngine } from '@mlc-ai/web-llm';
 import { Preferences } from '@capacitor/preferences';
 

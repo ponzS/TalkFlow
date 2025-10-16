@@ -1,6 +1,5 @@
 <template>
-  <ion-page>
-    <!-- Top Navigation Bar -->
+  <ion-page ref="page">
     <ion-header :translucent="true" collapse="fade">
       <ion-toolbar >
         <ion-buttons slot="start">
@@ -14,7 +13,7 @@
             <ion-buttons slot="end">
      
         <ion-button fill="clear" @click="showPanel('qrcode')">
-          <ion-icon :icon="qrCodeOutline"></ion-icon>
+          <ion-icon :icon="qrCodeSharp"></ion-icon>
         </ion-button>
         <ion-button fill="clear" @click="goToScan">
           <ion-icon :icon="scanSharp"></ion-icon>
@@ -26,9 +25,9 @@
 
     <!-- Main Content -->
     <ion-content :fullscreen="true" class="settings-content">
-      <!-- Version Information Section -->
+     
    
-      <ion-toolbar class="avatar-index">
+      <ion-toolbar class="avatar-index" >
         <ion-menu-button >
    <div style="display: flex;justify-content: center;align-items: center;">
         <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden;margin: auto 11px;cursor: pointer;">
@@ -58,9 +57,7 @@
     </ion-toolbar>
         </ion-header>
 
-<ion-toolbar>
 
-    </ion-toolbar> 
 
       <!-- Account and Security Section -->
       <div class="settings-section">
@@ -86,9 +83,11 @@
             <ion-icon slot="start" :icon="analyticsOutline" class="cosmic-icon" style="color:cadetblue" />
             <ion-label class="cosmic-label">Mesh Network Canvas</ion-label>
           </ion-item>
+      
         </ion-list>
       </div>
 
+ 
       <!-- Application Settings Section -->
       <div class="settings-section">
         <h2 class="section-title">{{ $t('application') }}</h2>
@@ -142,6 +141,25 @@
         </ion-list>
       </div>
 
+
+             
+      <div class="settings-section">
+        <h2 class="section-title">Tool</h2>
+        <ion-list class="settings-list">
+           <ion-item  button @click="router.push('/htmlpage')" class="cosmic-item">
+            <ion-icon slot="start" :icon="codeSlashOutline" class="cosmic-icon" style="color:#3880ff" />
+            <ion-label class="cosmic-label">Base64 for HTML</ion-label>
+          </ion-item>
+           <ion-item  button @click="router.push('/browser')" class="cosmic-item">
+            <ion-icon slot="start" :icon="browsersOutline" class="cosmic-icon" style="color:darkblue" />
+            <ion-label class="cosmic-label">Browser</ion-label>
+          </ion-item>
+            <ion-item  button @click="router.push('/qrpage')" class="cosmic-item">
+            <ion-icon slot="start" :icon="qrCodeOutline" class="cosmic-icon" style="color:steelblue" />
+            <ion-label class="cosmic-label">QR Tool</ion-label>
+          </ion-item>
+        </ion-list>
+      </div>
       <!-- Storage and Cache Section -->
       <div class="settings-section">
         <h2 class="section-title">{{ $t('storage') }}</h2>
@@ -231,7 +249,7 @@
         <div class="version-card">
           <div class="version-info">
             <h3 class="app-name">TalkFlow</h3>
-            <p class="version-number">v1.7.3</p>
+            <p class="version-number">v1.7.5</p>
           </div>
           <ion-icon :icon="cubeOutline" class="version-icon"></ion-icon>
         </div>
@@ -293,22 +311,17 @@
     </ion-content>
 
 
-
-
-
-
-
-
-
-
       <ion-modal
     :is-open="panelVisible"
     css-class="profile-modal"
     :breakpoints="[0, 1]"
-    :initial-breakpoint="0.8"
+   
+    :presenting-element="presentingElement"
+    :swipe-to-close="true"
+    :can-dismiss="true"
     @didDismiss="hidePanel"
   >
-
+<!--  :initial-breakpoint="0.8" -->
   <ion-header :translucent="true"   collapse="fade">
     <ion-toolbar>
       <ion-title>Sacn the code to add friends</ion-title>
@@ -324,11 +337,39 @@
  
     <ion-header collapse="condense" >
           <ion-toolbar>
-            <h1 style="margin: 0px 10px;font-weight: 900;font-size: 19px;">
+            <h1 style="font-weight: 900;font-size: 19px;text-align: center;">
         Sacn the code to add friends
             </h1>
           </ion-toolbar>
+
         </ion-header>
+          <ion-toolbar class="avatar-index">
+    
+   <div style="display: flex;justify-content: center;">
+        <div style="width: 50px; height: 50px; border-radius: 50%; overflow: hidden;margin: auto 1px;cursor: pointer;
+        margin-right: 20px;
+        ">
+                  <img
+              v-if="userAvatars[currentUserPub!]"
+              :src="userAvatars[currentUserPub!]"
+
+            />
+            <img
+              v-else
+              :src="avatarurl"
+
+            /></div>
+
+      <div>
+         <p class="username" style="font-size: 30px !important;text-align: left;"> {{ currentUserAlias || '' }}</p>
+
+         <p class="userlink"> {{ currentUserAlias1 || '' }}</p>
+</div>
+            </div>
+      
+
+  
+    </ion-toolbar>
 
       <div class="panel-content">
         <div v-if="panelContent === 'qrcode'">
@@ -428,6 +469,8 @@ import {
   callOutline,
   analyticsOutline,
   rocketOutline,
+  codeSlashOutline,
+  qrCodeSharp,
 
 } from 'ionicons/icons';
 
@@ -558,6 +601,13 @@ const {
 } = chatFlowStore;
 
 const avatarurl = computed(() => gunAvatar({ pub: currentUserPub.value, round: false, dark: isDark.value, svg: true } as any));
+
+// 为模态窗口提供与 ChatS.vue 相同的呈现元素效果
+const page = ref<any>(null);
+const presentingElement = ref<HTMLElement | undefined>(undefined);
+onMounted(() => {
+  presentingElement.value = (page as any)?.value?.$el || (page as any)?.value || undefined;
+});
 
 // 统计当前 gun 正在连接的 relay 数量
 const relayConnectedPeers = ref<string[]>([]);
@@ -733,7 +783,13 @@ onMounted(async () => {
   --padding-bottom: 16px;
   /* --padding-start: 16px;
   --padding-end: 16px; */
+  /* height: 100dvh; */
 }
+/* ion-toolbar{
+  --background: transparent;
+    background: transparent;
+} */
+
 
 /* Version Information Section */
 .version-section {
@@ -879,12 +935,7 @@ onMounted(async () => {
   background: radial-gradient(circle, rgba(220, 53, 69, 0.4) 0%, rgba(220, 53, 69, 0) 70%);
 }
 
-/* Toolbar 样式 */
-.liquid-toolbar {
-  --border-color: transparent;
-  --background: transparent;
-  overflow: visible;
-}
+
 
 .profile-modal {
   border-radius: 16px 16px 0 0;
@@ -1000,7 +1051,6 @@ padding: 10px;
 
 .message-box ion-icon { font-size: 24px; margin-right: 8px; }
 
-/* 全屏模态窗口样式 */
 .fullscreen-modal {
   --height: 100%;
   --width: 100%;
@@ -1086,19 +1136,18 @@ padding: 10px;
   position: relative;
 }
 
-/* 确保各个页面组件在模态窗口中正确显示 */
-.fullscreen-container ion-page {
+
+/* .fullscreen-container ion-page {
   display: block !important;
   position: relative !important;
-}
+} */
 
-.fullscreen-container ion-content {
+/* .fullscreen-container ion-content {
   --background: transparent !important;
   height: 100% !important;
   position: relative;
-}
+} */
 
-/* 强制显示DiscoverS组件中的选项列表 */
 .fullscreen-container .card-grid {
   display: flex !important;
   flex-direction: column !important;
@@ -1144,7 +1193,6 @@ padding: 10px;
   transform: scale(0.98) !important;
 }
 
-/* 确保图标和标签在模态窗口中正确显示 */
 .fullscreen-container .cosmic-icon {
   grid-row: 1 !important;
   grid-column: 1 !important;
@@ -1189,9 +1237,6 @@ padding: 10px;
   transform: scale(0.95);
 }
 
-/* 其他复杂动画已简化 */
-
-/* 模态窗口整体动画 */
 .fullscreen-modal {
   animation: modalSlideUp 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
@@ -1400,10 +1445,6 @@ ion-toolbar{
   gap: 8px;
 }
 
-/* 分层动画关键帧已移除 */
-ion-header {
-  z-index: 1000;
-}
 
 .top-toolbar ion-buttons {
   display: flex;

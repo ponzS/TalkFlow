@@ -1,4 +1,3 @@
-import legacy from '@vitejs/plugin-legacy'
 import vue from '@vitejs/plugin-vue'
 import path from 'path'
 import { defineConfig } from 'vite'
@@ -21,7 +20,6 @@ export default defineConfig({
 
   plugins: [
     vue(),
-    legacy(),
     Components(),
      tailwindcss(),
   //viteSingleFile(),
@@ -35,7 +33,6 @@ export default defineConfig({
       ],
       dts: 'src/auto-imports.d.ts',
 
-    
     }),
     Pages(),
     VitePWA({
@@ -106,7 +103,7 @@ export default defineConfig({
               cacheName: 'external-assets',
               expiration: {
                 maxEntries: 5000,
-                maxAgeSeconds: 365 * 24 * 60 * 60 // 365 days
+                maxAgeSeconds: 365 * 24 * 60 * 60 
               }
             }
           }
@@ -125,6 +122,15 @@ export default defineConfig({
   define: {
     global: "window",
   },
+  // rolldown
+  //  build: {
+  //   rollupOptions: {
+  //     output: {
+  //       advancedChunks: {
+  //         groups: [{ name: 'vendor', test: /\/react(?:-dom)?/ }]
+  //       }
+  //     }
+  //   }
   build: {
     rollupOptions: {
         output:{

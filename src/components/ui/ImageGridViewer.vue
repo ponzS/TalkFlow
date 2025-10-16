@@ -36,7 +36,7 @@
     @did-dismiss="closeViewer"
     class="image-viewer-modal"
     :breakpoints="[0, 1]"
-    :initial-breakpoint="1"
+
   >
     <div class="image-viewer">
 

@@ -62,17 +62,14 @@ if (typeof window !== 'undefined') {
   (window as any).gun = gun;
 }
 
-// 兼容旧用法：导出 gun1（与 gun 相同）
-// export let gun1: any = gun;
 
-// 当启用的 relay 变化时，重建 gun 实例以生效
 watch(enabledPeers, (peers) => {
   const uniqPeers = [...new Set((peers || []).filter(Boolean))];
   gun = Gun({ peers: uniqPeers, localStorage: false });
   if (typeof window !== 'undefined') {
     (window as any).gun = gun;
   }
-  // gun1 = gun;
+
 });
 
 // —— 公开的操作：新增 / 删除 / 启用切换 ——
@@ -107,7 +104,7 @@ export function loadRelays(): string[] {
 export function CreateNewGun() {
   const peers = [...new Set(enabledPeers.value.filter(Boolean))]
   gun = Gun({ peers, localStorage: false })
-  // gun1 = gun
+ 
   if (typeof window !== 'undefined') {
     (window as any).gun = gun
   }
@@ -116,7 +113,7 @@ export function CreateNewGun() {
 export function recreateGunWithPeers(newPeers: string[]) {
   const peers = [...new Set((newPeers || []).filter(Boolean))]
   gun = Gun({ peers, localStorage: false })
-  // gun1 = gun
+
   if (typeof window !== 'undefined') {
     (window as any).gun = gun
   }
@@ -125,6 +122,25 @@ export function recreateGunWithPeers(newPeers: string[]) {
 export function createIsolatedGun(peers: string[]) {
   const uniq = [...new Set((peers || []).filter(Boolean))]
   return Gun({ peers: uniq, localStorage: false })
+}
+
+// 重新连接到当前启用的 peers，并触发一次心跳写入以强制建立连接
+export function reconnectGunPeers() {
+  const peers = [...new Set((enabledPeers.value || []).filter(Boolean))]
+  // 使用官方建议的方式重新添加 peers
+  try {
+    gun.opt({ peers })
+  } catch (e) {
+    // 如果现有实例不可用，回退到重新创建实例
+    gun = Gun({ peers, localStorage: false })
+  }
+  // 可选：写入一个很小的心跳，强制建立连接并接收可能缺失的 on() 事件
+  try {
+    gun.get('key').get('heartbeat').put('heartbeat')
+  } catch {}
+  if (typeof window !== 'undefined') {
+    (window as any).gun = gun
+  }
 }
 
 

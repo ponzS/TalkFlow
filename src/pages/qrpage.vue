@@ -1,6 +1,14 @@
 <template>
   <ion-page>
-
+  <ion-header :translucent="true" collapse="fade">
+      <ion-toolbar class="liquid-toolbar">
+        <ion-buttons slot="start">
+      <ion-back-button :text="$t('back')" ></ion-back-button>
+        </ion-buttons>
+    
+      
+      </ion-toolbar>
+    </ion-header>
     
 
     <ion-content :fullscreen="true" class="qr-content" :style="{ '--keyboard-height': keyboardHeight + 'px' }">
@@ -72,7 +80,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 
 import { useQR } from "@gun-vue/composables";
-import { IonPage, IonContent, IonIcon } from '@ionic/vue';
+import { IonPage, IonContent, IonIcon, IonBackButton,IonHeader,IonToolbar,IonButtons } from '@ionic/vue';
 import { closeCircleOutline, clipboardOutline } from 'ionicons/icons';
 import { useKeyboardState } from '@/composables/useKeyboardState';
 

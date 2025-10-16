@@ -7,7 +7,7 @@ const config: CapacitorConfig = {
   webDir: 'dist',
 
   server: {
-   // url: 'http://localhost:5173',
+  //url: 'http://localhost:5173',
    // cleartext: true,
     //  iosScheme: 'https',
       //  androidScheme: 'https',

@@ -28,13 +28,13 @@
       </div>
     </div>
 
-    <!-- Image viewer modal -->
+    <!-- Image viewer modal   :initial-breakpoint="1"-->
     <ion-modal 
       :is-open="isViewerOpen" 
       @did-dismiss="closeImageViewer"
       class="image-viewer-modal"
       :breakpoints="[0, 1]"
-    :initial-breakpoint="1"
+  
     
     >
       <div class="image-viewer">

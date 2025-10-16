@@ -74,6 +74,7 @@ declare global {
   const provide: typeof import('vue')['provide']
   const reactive: typeof import('vue')['reactive']
   const readonly: typeof import('vue')['readonly']
+  const reconnectGunPeers: typeof import('./composables/useGun')['reconnectGunPeers']
   const recreateGunWithPeers: typeof import('./composables/useGun')['recreateGunWithPeers']
   const ref: typeof import('vue')['ref']
   const removeRelay: typeof import('./composables/useGun')['removeRelay']
@@ -138,9 +139,6 @@ declare global {
   // @ts-ignore
   export type { Component, Slot, Slots, ComponentPublicInstance, ComputedRef, DirectiveBinding, ExtractDefaultPropTypes, ExtractPropTypes, ExtractPublicPropTypes, InjectionKey, PropType, Ref, MaybeRef, MaybeRefOrGetter, VNode, WritableComputedRef } from 'vue'
   import('vue')
-  // @ts-ignore
-  export type { IGunSQLiteAdapter } from './composables/GunStorageAdapter'
-  import('./composables/GunStorageAdapter')
   // @ts-ignore
   export type { BuddyVerificationManager, AutoHealingManager, KeyPair, LocalChatMessage, NetworkChatMessage, MessageReceipt, Buddy, VerifiedBuddy, ReceivedRequest, MessageType, MessageStatus, ChatPreview } from './composables/TalkFlowCore'
   import('./composables/TalkFlowCore')

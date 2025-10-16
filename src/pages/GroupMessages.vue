@@ -768,6 +768,16 @@ onMounted(async () => {
         });
       }
     });
+
+    // 键盘高度变化时，重置虚拟滚动并保持底部可见
+    watch(keyboardHeight, (h) => {
+      nextTick(() => {
+        scrollerRef.value?.reset?.();
+        if (inputFocused.value && scrollerEl.value) {
+          scrollerEl.value.scrollTo({ top: scrollerEl.value.scrollHeight, behavior: 'auto' });
+        }
+      });
+    });
   } catch (error) {
     console.error('Keyboard setup error:', error);
   }
@@ -940,7 +950,7 @@ const onVideoPause = (msgId: string) => {
 
 <template>
   <ion-page>
-    <ion-header :translucent="true"  collapse="fade" >
+    <ion-header :translucent="true"  collapse="fade" class="ion-no-border">
       <ion-toolbar>
         <ion-buttons slot="start">
              <ion-back-button :text="$t('back')" ></ion-back-button>
@@ -1104,7 +1114,7 @@ const onVideoPause = (msgId: string) => {
                               </div>
                             </template>
                         </div>
-                        <template v-if="item.sender_pub === currentUserPub && isLastInSequence(index)">
+                        <!-- <template v-if="item.sender_pub === currentUserPub && isLastInSequence(index)">
                              <img 
                                v-if="userAvatars[item.sender_pub]" 
                                class="message-avatar" 
@@ -1117,16 +1127,14 @@ const onVideoPause = (msgId: string) => {
                                :src="getGunAvatar(item.sender_pub)" 
                                alt=""
                              />
-                        </template>
+                        </template> -->
                     </div>
                     <div 
                       
                         :class="['timestamp-container', item.sender_pub === currentUserPub ? 'my-timestamp' : 'other-timestamp']"
                     >
                     <template   v-if="isLastInSequence(index)" >
-                        <span v-if="item.sender_pub !== currentUserPub" class="sender-nickname">{{ item.sender_alias }}</span>
-                        <span v-if="item.sender_pub !== currentUserPub" class="dot-sep">•</span>
-                        <span class="timestamp">{{ formatLastTime(item.timestamp) }}</span>
+
                         <SpinningLoader 
                             v-if="item.status === 'pending' && item.isSending && item.sender_pub === currentUserPub" 
                             size="small" 
@@ -1139,6 +1147,9 @@ const onVideoPause = (msgId: string) => {
                         >
                             <ion-icon :icon="checkmarkOutline" class="checkmark-icon"></ion-icon>
                         </div>
+                                                <span v-if="item.sender_pub !== currentUserPub" class="sender-nickname">{{ item.sender_alias }}</span>
+                        <span v-if="item.sender_pub !== currentUserPub" class="dot-sep">•</span>
+                        <span class="timestamp">{{ formatLastTime(item.timestamp) }}</span>
                       </template>
                     </div>
                 </div>
@@ -1247,7 +1258,7 @@ const onVideoPause = (msgId: string) => {
       </div>
     </transition>
 
-    <ion-footer :translucent="true" collapse="fade">
+    <ion-footer :translucent="true" collapse="fade" class="ion-no-border">
       <ion-toolbar class="input-toolbar" :style="{ transform: `translateY(-${keyboardHeight}px)` }">
         <!-- 消息模板卡片 -->
         <div class="mode-selection1">
@@ -1359,10 +1370,10 @@ const onVideoPause = (msgId: string) => {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  border: 2px solid var(--ion-background-color);
+  border: 1px solid var(--ion-background-color);
   margin-left: -10px;
   position: relative;
-   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.649);
+   /* box-shadow: 0 2px 4px rgba(0, 0, 0, 0.649); */
 }
 .header-avatar:first-child {
   margin-left: 0;
@@ -1391,9 +1402,9 @@ const onVideoPause = (msgId: string) => {
 }
 .chat-name {
     font-size: 16px;
-    font-weight: 900;
+    /* font-weight: 900; */
     margin-top: 5px;
-    font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;
+    /* font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif; */
 }
 .full-height-content {
     height: 100vh;
@@ -1435,7 +1446,7 @@ const onVideoPause = (msgId: string) => {
 }
 .message-avatar {
   width: 35px; height: 35px; border-radius:50%; object-fit: cover;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.649);  border: 2px solid var(--ion-background-color);
+ 
 }
 .message-bubble {
     padding: 0px;
@@ -1485,6 +1496,7 @@ const onVideoPause = (msgId: string) => {
     font-size: 12px;
     color: #666666;
     margin: 4px 2px;
+    
   
 }
 .my-timestamp {
@@ -1504,12 +1516,13 @@ const onVideoPause = (msgId: string) => {
   /* border: 2px solid var(--ion-text-color); */
   color: var(--ion-text-color);
   border-radius: 24px;
-  padding: 6px 1px;
-  margin: 3px 0; /* Consolidated from previous definition */
-  height: 46px; /* Consolidated from previous definition */
+  padding: 1px;
+  /* margin: 2px 0;  */
+  height: 46px;
   transition: all 0.2s ease-in-out;
   width: 100%;
-  
+     backdrop-filter: blur(10px);
+
 }
 
 .input-container {
@@ -1540,6 +1553,7 @@ textarea {
   padding: 10px ;
  
   border-radius: 24px;
+  
 }
 .load-more-container {
   display: flex;
@@ -1579,26 +1593,22 @@ ion-header ion-icon {
 
 /* Consolidate input-toolbar related styles here to ensure no duplicates */
 .input-toolbar {
-  /* background:transparent; 
-  --background:transparent;  */
+  background:transparent; 
+  --background:transparent; 
   display: flex; /* Ensure flexbox for horizontal layout */
   align-items: flex-end; 
-  padding: 0px 6px;
-  padding-top: 9px;
+  padding: 0px 2px;
 
-  /* border-top: 2px solid var(--ion-text-color); */
-  /* --background: var(--background-color-no);
-    background: var(--background-color-no); */
-    backdrop-filter: blur(10px);
+    /* backdrop-filter: blur(10px); */
 }
 
 .input-toolbar .reply-preview {
-  flex-grow: 1; /* Allow reply preview to take available space */
+  flex-grow: 1; 
 }
 
 .input-toolbar .input-capsule {
   flex-grow: 1; 
-  margin: 3px 0; /* Keep margin here for consistency */
+  margin: 2px 0; 
 }
 
 .input-toolbar .send-button {
@@ -1617,8 +1627,7 @@ ion-header ion-icon {
   height: 35px;
   min-width: 35px;
   min-height: 35px;
-  /* margin-right: -5px; */
- 
+
   margin:2px;
   
 }
@@ -1633,7 +1642,7 @@ ion-header ion-icon {
   height: 35px;
   min-width: 35px;
   min-height: 35px;
-  /* margin-right: -5px; */
+
  
   margin:2px;
   
@@ -1710,7 +1719,6 @@ ion-header ion-icon {
   font-size: 13px;
 }
 
-/* =================== 新增：emoji选择器样式 =================== */
 .emoji-picker-overlay {
   position: fixed;
   left: 0;
@@ -1813,7 +1821,7 @@ ion-header ion-icon {
   overflow: visible;
   margin-top: 10px;
   margin-bottom: -10px;
-  margin-left: 10px;
+  /* margin-left: 10px; */
  
 }
 

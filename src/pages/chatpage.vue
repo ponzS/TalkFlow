@@ -674,6 +674,7 @@ function resetHeight() {
 
 function onFocus() {
   inputFocused.value = true;
+  
 }
 
 function onBlur(event: FocusEvent) {
@@ -910,6 +911,16 @@ onMounted(async () => {
         if (capsuleRef.value) capsuleRef.value.style.transform = 'none';
       });
     }
+  });
+
+  // 键盘高度变化时，重置虚拟滚动并保持底部可见
+  watch(keyboardHeight, (h) => {
+    nextTick(() => {
+      scrollerRef.value?.reset?.();
+      if (inputFocused.value && scrollerEl.value) {
+        scrollerEl.value.scrollTo({ top: scrollerEl.value.scrollHeight, behavior: 'auto' });
+      }
+    });
   });
 
   document.addEventListener('click', handleGlobalClick);
@@ -1489,7 +1500,7 @@ const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-4
 <template>
 
   <ion-page>
-    <ion-header :translucent="true"  collapse="fade"  >
+    <ion-header :translucent="true"  collapse="fade" class="ion-no-border" >
       <ion-toolbar >
         <ion-buttons slot="start">
       
@@ -1809,7 +1820,7 @@ const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-4
 
 
                 </div>
-                <template v-if="item.from !== currentUserPub">
+                <!-- <template v-if="item.from !== currentUserPub">
                   <img 
                     v-if="userAvatars[item.from] && isLastInSequence(index)" 
                     class="message-avatar" 
@@ -1824,7 +1835,7 @@ const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-4
                     alt="" 
                  @click="goToFriendProfile"
                   />
-                </template>
+                </template> -->
                 <div :class="['message-bubble', 
                             item.type === 'voice' ? 'voice-bubble' : '',
                             item.status === 'failed' ? 'failed-message' : '',
@@ -2047,7 +2058,7 @@ const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-4
                     <p v-if="voiceBar.transcriptions.value[item.msgId!]" class="transcription">{{ voiceBar.transcriptions.value[item.msgId!] }}</p>
                   </template>
                 </div>
-                <template v-if="item.from === currentUserPub">
+                <!-- <template v-if="item.from === currentUserPub">
                   <img 
                     v-if="userAvatars[item.from] && isLastInSequence(index)" 
                     class="message-avatar" 
@@ -2059,25 +2070,27 @@ const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-4
                     :src="getGunAvatar(item.from)" 
                     alt="" 
                   />
-                </template>
+                </template> -->
               </div>
               <div 
                 v-if="isLastInSequence(index)" 
                 :class="['timestamp-container', item.from === currentUserPub ? 'my-timestamp' : 'other-timestamp']"
               >
-                {{ formatLastTime(item.timestamp) }}
+              
                 <SpinningLoader 
                   v-if="item.status === 'pending' && item.isSending && item.from === currentUserPub" 
                   size="small" 
                   theme="primary"
-                  class="pending-status"
+                  class="pending-status" 
                 />
                 <div 
                   v-else-if="item.status === 'sent' && item.justSent && item.from === currentUserPub"
                   class="sent-confirmation"
                 >
                   <ion-icon :icon="checkmarkOutline" class="checkmark-icon"></ion-icon>
+              
                 </div>
+                  {{ formatLastTime(item.timestamp) }}
               </div>
             </div>
           </DynamicScrollerItem>
@@ -2105,7 +2118,7 @@ const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-4
       
     </ion-content>
 
-    <ion-footer   :translucent="true"  collapse="fade">
+    <ion-footer   :translucent="true"  collapse="fade" class="ion-no-border">
             
 
       <ion-toolbar class="input-toolbar" :style="{ transform: `translateY(-${keyboardHeight}px)` }">
@@ -2612,7 +2625,10 @@ const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-4
 .my-message .markdown-content :deep(.hljs-number), .my-message .markdown-content :deep(.hljs-regexp), .my-message .markdown-content :deep(.hljs-literal) { color: #0cc; }
 .my-message .markdown-content :deep(.hljs-title), .my-message .markdown-content :deep(.hljs-section), .my-message .markdown-content :deep(.hljs-function) { color: #f66; }
 
-.chat-name { font-size: 15px;font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif; }
+.chat-name { 
+  font-size: 15px;
+  /* font-family:Impact, Haettenschweiler, 'Arial Narrow Bold', sans-serif;  */
+}
 .avatar-container { display: flex; justify-content: center; align-items: start; }
 .header-title {
   display: flex;
@@ -2623,7 +2639,7 @@ const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-4
 }
 .header-avatar {
   width: 33px; height: 33px; border-radius: 50%; object-fit: cover;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.843); border: 2px solid var(--ion-background-color);
+ border: 1px solid var(--ion-background-color);
 }
 
 .gradient-mask {
@@ -2671,8 +2687,8 @@ const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-4
   min-width: 39px;
   overflow: visible;
 }
-.think-own { right:-10px; top: 13px; left: auto; transform: none; }
-.think-other { left: -10px; top: 13px; right: auto; transform: none; }
+.think-own {  top: 13px; left: auto; transform: none; }
+.think-other { top: 13px; right: auto; transform: none; }
 
 .think-reply-user {
   /* color: #ffffff; */
@@ -2702,10 +2718,10 @@ ion-content { --content-bottom: 0px; transition: all 0.2s ease; }
   position: relative; bottom: 0; width: 100%; overflow:visible;
   /* --background: linear-gradient(to top, var(--ion-background-color) 70%, rgba(0, 0, 0, 0) 100%);
   */
-  /* --background: var(--background-color-no);
-    background: var(--background-color-no);
-    */
-    backdrop-filter: blur(10px);
+  --background: transparent;
+    background: transparent;
+   
+    /* backdrop-filter: blur(10px); */
 }
 
 .message-container { height: 100vh;}
@@ -2856,9 +2872,9 @@ backdrop-filter: blur(10px);
 .my-message .media-element { border-radius: 13px 13px 5px 13px !important; }
 
 
-.timestamp-container { font-size: 8px; color: #bbb; display: flex; align-items: center; }
-.my-timestamp { justify-content: flex-end; margin-right:50px; }
-.other-timestamp { justify-content: flex-start; margin-left:50px; }
+.timestamp-container { font-size: 13px; color: #bbb; display: flex; align-items: center; }
+.my-timestamp { justify-content: flex-end; margin-right:15px; }
+.other-timestamp { justify-content: flex-start; margin-left:15px; }
 .pending-status { color: #00ffbb; font-style: italic;margin: 0 2px; }
 
 .sent-confirmation {
@@ -2892,14 +2908,18 @@ backdrop-filter: blur(10px);
    background: rgba(133, 133, 133, 0.123); 
    border-radius: 30px;
   width: 96%; margin: 3px auto; height: 46px; transition: all 0.2s ease;
-
+border: 1px solid rgba(0, 0, 0, 0);
   padding: 3px;
+  backdrop-filter: blur(10px);
+
 }
 .input-container { 
   flex: 1; display: flex; 
   align-items:center;
   justify-content: center;
   width: 100%;
+
+   /* border: 2px solid rgba(0, 0, 0, 0); */
 }
 .text-input {  
   flex: 1;  width: 100%; display: flex; 

@@ -3,7 +3,7 @@ import App from './App.vue'
 import router from './router';
 import { createI18n } from 'vue-i18n'
 import { IonicVue } from '@ionic/vue';
-import 'webrtc-adapter';
+// import 'webrtc-adapter';
 
 import en from './locales/en.json'
 import zh from './locales/zh.json'
@@ -45,7 +45,7 @@ import './theme/variables.css';
 import { Capacitor } from '@capacitor/core';
 import { JeepSqlite } from 'jeep-sqlite/dist/components/jeep-sqlite';
 import { defineCustomElements as pwaElements} from '@ionic/pwa-elements/loader';
-import { sqliteServ, dbVerServ, storageServ, aiChatPersistenceServ, globalMessageQueue } from './services/globalServices';
+import { sqliteServ, dbVerServ, storageServ} from './services/globalServices';
 
 import InitializeAppService from './services/initializeAppService';
 import 'vue-virtual-scroller/dist/vue-virtual-scroller.css';
@@ -103,11 +103,9 @@ app.config.globalProperties.$platform = platform;
 app.config.globalProperties.$sqliteServ = sqliteServ;
 app.config.globalProperties.$dbVersionServ = dbVerServ;
 app.config.globalProperties.$storageServ = storageServ;
-app.config.globalProperties.$aiChatPersistenceServ = aiChatPersistenceServ;
-app.config.globalProperties.$globalMessageQueue = globalMessageQueue;
 
 //Define and instantiate the InitializeAppService
-const initAppServ = new InitializeAppService(sqliteServ, storageServ, aiChatPersistenceServ);
+const initAppServ = new InitializeAppService(sqliteServ, storageServ);
  
 const mountApp = () => {
   initAppServ.initializeApp()

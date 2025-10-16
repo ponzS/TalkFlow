@@ -79,8 +79,6 @@ import { IonFooter, IonToolbar, IonContent, IonIcon, IonHeader,
 
 } from '@ionic/vue';
 import { gunAvatar } from "gun-avatar";
-import ChatSpad from '../ipad/ChatSpad.vue';
-import RelayMode from '../GUNtest/RelayMode.vue';
 import { useRouter } from 'vue-router';
 import { IonModal, IonItem, IonLabel, IonInput, IonButton, IonSpinner, IonButtons, IonToggle } from '@ionic/vue';
 import { closeCircleSharp, copyOutline, keyOutline, qrCodeOutline, keySharp, lockClosedOutline, eyeOutline, eyeOffOutline, refreshCircleOutline, warningOutline, lockOpenOutline, checkmarkCircleOutline, alertCircleOutline, scanSharp, menuOutline, expandOutline, arrowBackOutline, refreshOutline, helpCircleOutline, cloudDownloadOutline,closeOutline  } from 'ionicons/icons';

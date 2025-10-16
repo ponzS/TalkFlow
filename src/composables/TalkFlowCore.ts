@@ -1266,18 +1266,8 @@ const decryptMessages = ref(true);
 
 
 const hasPadChat = ref('1');
-// Persistent message sending queue instance
-// Initialize persistent queue - using global singleton
-const initializePersistentQueue = async () => {
-  const { globalMessageQueue } = await import('@/services/globalServices');
-  return globalMessageQueue;
-};
-// let gun = null
-
-// Traditional queue retained as fallback (deprecated, maintaining compatibility)
-const sendQueue: { msg: NetworkChatMessage; resolve: () => void; reject: (err: Error) => void }[] = [];
-const MAX_CONCURRENT = 3;
-let activeSends = 0;
+// 移除持久化全局队列依赖，直接通过 Gun 网络发送消息
+// 保留其他状态与数据结构不变
 
 const isDragging = ref(false);
 const showCards = ref(true);
@@ -3039,7 +3029,7 @@ await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?
         epub: userInfo.epub
       };
 
-      // 🆕 8. 优化epub处理（直接使用申请中的epub或异步获取）
+    
       let epubStatus = 'verified';
       if (userInfo.epub) {
         // 直接保存申请中的epub到本地
@@ -3114,23 +3104,10 @@ await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?
           currentChatPub.value = fromPub;
           const welcomeMessage = `Hi ${userInfo.alias}, I'm ${currentUserAlias.value}`;
           sendChat('text', welcomeMessage).catch((error) => {
-            // console.error('🔍 发送欢迎消息失败:', {
-            //   error: error,
-            //   errorMessage: error?.message || 'No error message',
-            //   errorType: typeof error,
-            //   errorString: String(error),
-            //   fromPub: fromPub?.slice(0, 8),
-            //   welcomeMessage
-            // });
+         
           });
         } catch (error) {
-          // console.error('🔍 发送欢迎消息外层错误:', {
-          //   error: error,
-          //   errorMessage: error?.message || 'No error message',
-          //   errorType: typeof error,
-          //   errorString: String(error),
-          //   fromPub: fromPub?.slice(0, 8)
-          // });
+      
         }
 
         // epub状态同步（仅在需要时执行）
@@ -3147,19 +3124,7 @@ await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?
       }, 100);
       
     } catch (error: any) {
-      // Failed to accept friend request
-      
-      // 调试日志：详细记录错误信息
-      // console.error('🔍 acceptBuddyRequest 错误详情:', {
-      //   error: error,
-      //   errorMessage: error?.message || 'No error message',
-      //   errorType: typeof error,
-      //   errorString: String(error),
-      //   errorStack: error?.stack,
-      //   fromPub: fromPub?.slice(0, 8),
-      //   currentUserPub: currentUserPub.value?.slice(0, 8)
-      // });
-      
+  
       const errorMessage = error?.message?.includes('timeout')
         ? 'Network timeout, please try again later'
         : `Failed to accept friend request: ${error?.message || 'Unknown error'}`;
@@ -3943,31 +3908,7 @@ await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?
   }
   
  
-  
-  async function processQueue() {
-    while (activeSends < MAX_CONCURRENT && sendQueue.length > 0) {
-      const { msg, resolve, reject } = sendQueue.shift()!;
-      activeSends++;
-      try {
-        await new Promise<void>((res, rej) => {
-          gun.get('chats').get(msg.chatID).get('messages').get(msg.msgId)
-            .put(msg, (ack: any) => ack.err ? rej(new Error(ack.err)) : res());
-        });
-        resolve();
-      } catch (err) {
-        reject(err as Error);
-      } finally {
-        activeSends--;
-      }
-    }
-    if (sendQueue.length > 0) setTimeout(processQueue, 0);
-  }
-  async function queueSendChat(networkMsg: NetworkChatMessage): Promise<void> {
-    return new Promise((resolve, reject) => {
-      sendQueue.push({ msg: networkMsg, resolve, reject });
-      processQueue();
-    });
-  }
+  // 移除本地回退队列逻辑，简化为直接 Gun 发送
 // Offline recovery mechanism
 window.addEventListener('online', async () => {
   if (!currentUserPub.value) return;
@@ -4088,120 +4029,55 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
     // Immediately update preview to show sending status
     await updateChatPreview(targetPub, localMsg, Date.now(), true);
 
-    // Use persistent queue to send message (infinite retry until success)
+    // 直接通过 Gun 网络发送消息，触发自动同步机制
+    // 若离线或无可用节点，则维持 pending 状态，等待恢复与重试
+    if (!navigator.onLine || !(await ensurePeerAvailable())) {
+      localMsg.status = 'pending';
+      localMsg.isSending = true;
+      await storageServ.updateMessage(chatId, msgId, localMsg);
+      chatMessages.value[targetPub] = chatMessages.value[targetPub].map(m => m.msgId === msgId ? { ...localMsg } : m);
+      chatMessages.value = { ...chatMessages.value };
+      await updateChatPreview(targetPub, localMsg, Date.now(), true);
+      return;
+    }
+
     try {
-      // Initialize persistent queue
-      const queue = await initializePersistentQueue();
-      
-      // Create queued message
-      const queuedMessage = {
-        id: msgId,
-        networkMsg,
-        chatId,
-        retryCount: 0,
-        nextRetryTime: Date.now(),
-        createdAt: now,
-        lastAttempt: 0
-      };
-      
-      // Register status callback to monitor sending status changes
-      queue.registerStatusCallback(msgId, async (status: 'sending' | 'sent' | 'failed') => {
-        try {
-          if (status === 'sent') {
-            // Message sent successfully
-            localMsg.sent = true;
-            localMsg.status = 'sent';
-            localMsg.isSending = false;
-            localMsg.justSent = true; // Set just sent flag
-            sentMessages.value.add(msgId);
-            await autoSaveStorageServ.updateMessage(chatId, msgId, localMsg);
-            chatMessages.value[targetPub] = chatMessages.value[targetPub].map(m => m.msgId === msgId ? { ...localMsg } : m);
-            chatMessages.value = { ...chatMessages.value };
-            
-            // Immediately trigger haptic feedback (send success)
-            await triggerLightHaptic();
-            
-            // Immediately update message preview (send success, show checkmark)
-            await updateChatPreview(targetPub, localMsg, Date.now(), false, true);
-            
-            // 🔄 Sync buddy verification status after successful send (epub fetch success)
-            syncEpubStatusForBuddy(targetPub).then(() => {
-            //  forceUpdateBuddyList();
-            }).catch(error => {
-              // Failed to sync verification status after send success
-            });
-            
-            // Clear justSent flag after 1.5 seconds
-            setTimeout(async () => {
-              localMsg.justSent = false;
-              await storageServ.updateMessage(chatId, msgId, localMsg);
-              chatMessages.value[targetPub] = chatMessages.value[targetPub].map(m => m.msgId === msgId ? { ...localMsg } : m);
-              chatMessages.value = { ...chatMessages.value };
-            }, 1500);
-            
-            // Message confirmed sent
-          } else if (status === 'sending') {
-            // Message is being sent (including retries)
-            localMsg.status = 'pending';
-            localMsg.isSending = true;
-            await storageServ.updateMessage(chatId, msgId, localMsg);
-            chatMessages.value[targetPub] = chatMessages.value[targetPub].map(m => m.msgId === msgId ? { ...localMsg } : m);
-            chatMessages.value = { ...chatMessages.value };
-            
-            // Sending status should also update message preview (with loading indicator)
-            await updateChatPreview(targetPub, localMsg, Date.now(), true);
-          }
-        } catch (error) {
-          // Error in status callback
-        }
+      await new Promise<void>((resolve, reject) => {
+        gun.get('chats').get(chatId).get('messages').get(msgId)
+          .put(networkMsg, (ack: any) => (ack && ack.err) ? reject(new Error(ack.err)) : resolve());
       });
-      
-      // Add to persistent queue
-      await queue.enqueue(queuedMessage);
-      
-      // Message added to global persistent queue
-      
-    } catch (error) {
-      // Failed to use persistent queue, falling back to old method
-      
-      // Fallback to old queue method
-      if (!navigator.onLine || !(await ensurePeerAvailable())) {
-        localMsg.status = 'pending';
-        await storageServ.updateMessage(chatId, msgId, localMsg);
-        return;
-      }
-      
-      // Simplified sending logic (no retry limit)
-      try {
-        await queueSendChat(networkMsg);
-        localMsg.sent = true;
-        localMsg.status = 'sent';
-        localMsg.isSending = false;
-        localMsg.justSent = true; // Set just sent flag
-        sentMessages.value.add(msgId);
+
+      // 发送成功：更新本地状态与预览
+      localMsg.sent = true;
+      localMsg.status = 'sent';
+      localMsg.isSending = false;
+      localMsg.justSent = true;
+      sentMessages.value.add(msgId);
+      await storageServ.updateMessage(chatId, msgId, localMsg);
+      chatMessages.value[targetPub] = chatMessages.value[targetPub].map(m => m.msgId === msgId ? { ...localMsg } : m);
+      chatMessages.value = { ...chatMessages.value };
+
+      await triggerLightHaptic();
+      await updateChatPreview(targetPub, localMsg, Date.now(), false, true);
+
+      // 同步好友验证状态（如 epub）
+      syncEpubStatusForBuddy(targetPub).catch(() => {});
+
+      // 清除 justSent 标记以结束动画
+      setTimeout(async () => {
+        localMsg.justSent = false;
         await storageServ.updateMessage(chatId, msgId, localMsg);
         chatMessages.value[targetPub] = chatMessages.value[targetPub].map(m => m.msgId === msgId ? { ...localMsg } : m);
         chatMessages.value = { ...chatMessages.value };
-        
-        // Fallback mode should also trigger haptic feedback and update preview (show checkmark)
-        await triggerLightHaptic();
-        await updateChatPreview(targetPub, localMsg, Date.now(), false, true);
-        
-        // Clear justSent flag after 1.5 seconds
-        setTimeout(async () => {
-          localMsg.justSent = false;
-          await storageServ.updateMessage(chatId, msgId, localMsg);
-          chatMessages.value[targetPub] = chatMessages.value[targetPub].map(m => m.msgId === msgId ? { ...localMsg } : m);
-          chatMessages.value = { ...chatMessages.value };
-        }, 1500);
-      } catch (err) {
-        // Keep pending status, wait for network recovery
-        localMsg.status = 'pending';
-        localMsg.isSending = true;
-        await storageServ.updateMessage(chatId, msgId, localMsg);
-        chatMessages.value[targetPub] = chatMessages.value[targetPub].map(m => m.msgId === msgId ? { ...localMsg } : m);
-        chatMessages.value = { ...chatMessages.value };
-      }
+      }, 1500);
+    } catch (err) {
+      // 失败：维持 pending 状态，等待网络恢复机制触发重试
+      localMsg.status = 'pending';
+      localMsg.isSending = true;
+      await storageServ.updateMessage(chatId, msgId, localMsg);
+      chatMessages.value[targetPub] = chatMessages.value[targetPub].map(m => m.msgId === msgId ? { ...localMsg } : m);
+      chatMessages.value = { ...chatMessages.value };
+      await updateChatPreview(targetPub, localMsg, Date.now(), true);
     }
 
     // Haptic feedback and preview updates are now handled in status callback, no need to repeat here
@@ -5489,7 +5365,6 @@ async function listenMyRequests(myPub: string): Promise<void> {
   }
 
   return {
-
     getMyKeyPair,
     Gun,
     exportDataToGun,
@@ -5751,7 +5626,6 @@ async function listenMyRequests(myPub: string): Promise<void> {
       }
     },
 
-    // 🚀 New verification and self-healing functionality
     isVerified,
     needsSync,
     getVerificationStatus,
@@ -5922,7 +5796,6 @@ async function listenMyRequests(myPub: string): Promise<void> {
     router,
     deleteOldAvatar,
     temppub,
-
     newGroupName,
     joinGroupKey,
     groups,

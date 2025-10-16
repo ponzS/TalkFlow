@@ -1,5 +1,26 @@
 <template>
-  
+      <ion-header class="avatar-index" :translucent="true" collapse="fade">
+      <ion-toolbar >
+        <ion-buttons slot="start">
+ <ion-button fill="clear" @click="onOpenOverlay">
+          <ion-icon :icon="callOutline"></ion-icon>
+        </ion-button>
+        </ion-buttons>
+<!-- 
+        <ion-title>{{ currentUserAlias || '' }}</ion-title> -->
+
+            <ion-buttons slot="end">
+     
+        <ion-button fill="clear" @click="showPanel('qrcode')">
+          <ion-icon :icon="qrCodeOutline"></ion-icon>
+        </ion-button>
+        <!-- <ion-button fill="clear" @click="goToScan">
+          <ion-icon :icon="scanSharp"></ion-icon>
+        </ion-button> -->
+      </ion-buttons>
+
+      </ion-toolbar>
+    </ion-header>
  <ion-header collapse="fade">
     <ion-toolbar>
       <div style="display: flex; align-items: center;justify-content: center;">
@@ -173,6 +194,30 @@
         </ion-list>
       </div>
 </ion-menu-toggle>
+
+
+       
+      <div class="settings-section avatar-index">
+        <h2 class="section-title">Tool</h2>
+        <ion-list class="settings-list">
+           <ion-item  button @click="router.push('/htmlpage')" class="cosmic-item">
+            <ion-icon slot="start" :icon="ionIcons.codeSlashOutline" class="cosmic-icon" style="color:#3880ff" />
+            <ion-label class="cosmic-label">Base64 for HTML</ion-label>
+          </ion-item>
+           <ion-item  button @click="router.push('/browser')" class="cosmic-item">
+            <ion-icon slot="start" :icon="browsersOutline" class="cosmic-icon" style="color:darkblue" />
+            <ion-label class="cosmic-label">Browser</ion-label>
+          </ion-item>
+            <ion-item  button @click="router.push('/qrpage')" class="cosmic-item">
+            <ion-icon slot="start" :icon="qrCodeOutline" class="cosmic-icon" style="color:steelblue" />
+            <ion-label class="cosmic-label">QR Tool</ion-label>
+          </ion-item>
+        </ion-list>
+      </div>
+
+
+
+
       <!-- Storage and Cache Section -->
       <div class="settings-section avatar-index">
         <h2 class="section-title">{{ $t('storage') }}</h2>
