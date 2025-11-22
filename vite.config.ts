@@ -40,6 +40,7 @@ export default defineConfig({
         name: 'TalkFlow',
         short_name: 'TalkFlow',
         description: 'P2P Mesh E2EE Chat App',
+        
        
         icons: [
           {
@@ -122,15 +123,6 @@ export default defineConfig({
   define: {
     global: "window",
   },
-  // rolldown
-  //  build: {
-  //   rollupOptions: {
-  //     output: {
-  //       advancedChunks: {
-  //         groups: [{ name: 'vendor', test: /\/react(?:-dom)?/ }]
-  //       }
-  //     }
-  //   }
   build: {
     rollupOptions: {
         output:{
@@ -140,6 +132,12 @@ export default defineConfig({
                 }
             }
         }
+          // rolldown
+        // output: {
+        //         advancedChunks: {
+        //           groups: [{ name: 'vendor', test: /\/react(?:-dom)?/ }]
+        //         }
+        //       }
     }
   },
   // esbuild: {

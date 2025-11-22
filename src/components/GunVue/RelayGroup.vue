@@ -8,7 +8,7 @@
         </ion-buttons>
         <IonTitle>Relay Manager</IonTitle>
         <ion-buttons slot="end">
-                    <IonButton size="small" @click="reconnectGunPeers">Reconnect</IonButton>
+                    <IonButton size="small" @click="Restartpeer">Reconnect</IonButton>
           <!-- <IonButton size="small" @click="runAllTests" :disabled="connectedPeers.length === 0">Test All</IonButton> -->
         </ion-buttons>
       </IonToolbar>
@@ -143,6 +143,11 @@ onMounted(() => {
 onUnmounted(() => {
   if (timer) window.clearInterval(timer)
 })
+
+function Restartpeer() {
+  reconnectGunPeers()
+    runAllTests()
+}
 
 // —— 延迟测速 ——
 type Latency = { wsMs?: number; putMs?: number; ts?: number }

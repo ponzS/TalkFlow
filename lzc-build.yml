@@ -3,8 +3,8 @@
 # buildscript
 # - 可以为构建脚本的路径地址
 # - 如果构建命令简单，也可以直接写 sh 的命令
+# buildscript: ./build.sh
 buildscript: pnpm build:web
-
 # manifest: 指定 lpk 包的 manifest.yml 文件路径
 manifest: ./lzc-manifest.yml
 
@@ -46,7 +46,7 @@ icon: ./lzc-icon.png
 # 如果 dependencies 和 build 同时存在，将会优先使用 dependencies
 devshell:
   routes:
-    - /=http://127.0.0.1:3000
+    - /=http://127.0.0.1:5173
   dependencies:
     - nodejs
     - npm

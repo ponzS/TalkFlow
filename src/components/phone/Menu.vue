@@ -23,6 +23,7 @@
     </ion-header>
  <ion-header collapse="fade">
     <ion-toolbar>
+      <div style="height: 20px;"></div>
       <div style="display: flex; align-items: center;justify-content: center;">
    <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden;margin: auto 11px;cursor: pointer;">
                   <img
@@ -307,7 +308,7 @@
         <div class="version-card">
           <div class="version-info">
             <h3 class="app-name">TalkFlow</h3>
-            <p class="version-number">v1.7.3</p>
+            <p class="version-number">v1.7.6</p>
           </div>
           <ion-icon :icon="cubeOutline" class="version-icon"></ion-icon>
         </div>

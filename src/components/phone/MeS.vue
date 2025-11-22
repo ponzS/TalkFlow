@@ -100,6 +100,16 @@
             <ion-icon slot="start" :icon="globeOutline" class="cosmic-icon" style="color:cornflowerblue;"/>
             <ion-label class="cosmic-label">{{ $t('language') }}</ion-label>
           </ion-item>
+          <!-- UI Mode Toggle: iOS / MD -->
+          <ion-item class="cosmic-item">
+            <ion-icon slot="start" :icon="settingsOutline" class="cosmic-icon" style="color:mediumpurple" />
+            <ion-label class="cosmic-label">UI Mode（iOS / MD）</ion-label>
+            <ion-toggle
+              slot="end"
+              :checked="isIosMode"
+              @ionChange="onModeToggle"
+            ></ion-toggle>
+          </ion-item>
         </ion-list>
       </div>
 
@@ -249,7 +259,7 @@
         <div class="version-card">
           <div class="version-info">
             <h3 class="app-name">TalkFlow</h3>
-            <p class="version-number">v1.7.5</p>
+            <p class="version-number">v1.7.6</p>
           </div>
           <ion-icon :icon="cubeOutline" class="version-icon"></ion-icon>
         </div>
@@ -569,6 +579,24 @@ const logout = () => {
 const handleSharingToggle = (event: CustomEvent) => {
   const enabled = event.detail.checked;
   toggleRelaySharing(enabled);
+};
+// UI模式切换逻辑（iOS / MD）
+// 从本地存储读取，默认 iOS
+const isIosMode = ref(((localStorage.getItem('ionic-mode') || 'ios') === 'ios'));
+
+const onModeToggle = (event: CustomEvent) => {
+  const enabled = (event as any).detail?.checked as boolean;
+  const newMode = enabled ? 'ios' : 'md';
+  localStorage.setItem('ionic-mode', newMode);
+  try {
+    // 尝试即时更新（多数组件需要重载才会完全应用）
+    document.documentElement.setAttribute('mode', newMode);
+  } catch {}
+  // 反馈并重载应用以让所有组件应用新模式
+  showToast?.(`已切换为 ${newMode === 'ios' ? 'iOS' : 'MD'} 模式，正在重载以应用样式`);
+  setTimeout(() => {
+    window.location.reload();
+  }, 300);
 };
 import { cn } from "@/lib/utils";
 import { useSpring } from "vue-use-spring";

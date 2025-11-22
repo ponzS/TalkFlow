@@ -83,12 +83,14 @@ pwaElements(window);
 customElements.define('jeep-sqlite', JeepSqlite);
 const platform = Capacitor.getPlatform();
 
+// Read preferred Ionic mode (ios/md) from localStorage; default to 'ios'
+const ionicMode = (localStorage.getItem('ionic-mode') as 'ios' | 'md') || 'ios';
+
 const app = createApp(App)
   .use(IonicVue,{
     rippleEffect: true,
-    mode: 'ios',
+    mode: ionicMode,
     maxPageCacheSize: 10
-    
   })
     //  .use(IonicVue)
 

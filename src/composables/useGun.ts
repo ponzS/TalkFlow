@@ -141,6 +141,7 @@ export function reconnectGunPeers() {
   if (typeof window !== 'undefined') {
     (window as any).gun = gun
   }
+
 }
 
 
