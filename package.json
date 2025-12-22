@@ -1,7 +1,7 @@
 {
   "name": "talkflow",
   "private": true,
-  "version": "1.7.8",
+  "version": "1.7.9",
   "type": "module",
   "scripts": {
     "dev": "npm run copy:sql:wasm && vite --host",
