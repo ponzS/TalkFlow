@@ -27,5 +27,3 @@ locales:
   en:
     name: "TalkFlow"
     description: "Decentralized instant messaging application"
-
-# 通过 application.upstreams 静态配置前端与后端，无需额外镜像与服务
