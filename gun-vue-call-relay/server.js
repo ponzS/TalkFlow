@@ -131,8 +131,8 @@ export default {
       file: "store",
       radisk: store,
       web: server,
-      axe: false,
-      multicast: false,
+      axe: true,
+      multicast: true,
     });
 
     // Initialize embedded STUN/TURN (UDP on same numeric port by default 3478)

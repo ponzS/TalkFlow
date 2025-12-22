@@ -1,4 +1,4 @@
-FROM node:18-alpine
+FROM registry.lazycat.cloud/library/node:18-alpine
 
 WORKDIR /app
 
@@ -7,7 +7,8 @@ COPY server.js .
 COPY start.js .
 COPY public/ public/
 
-RUN npm install
+ENV npm_config_registry=https://registry.npmmirror.com
+RUN apk add --no-cache curl && npm install
 
 EXPOSE 8765
 

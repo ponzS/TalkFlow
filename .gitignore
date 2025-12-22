@@ -4,4 +4,10 @@ ios
 android
 electron
 dist
-
+docs
+lzc-build.yml
+lzc-manifest.yml
+lzc-icon.png
+caddy
+scripts
+Makefile

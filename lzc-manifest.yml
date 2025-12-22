@@ -1,14 +1,22 @@
 name: TalkFlow
 package: cloud.lazycat.app.ponzs-talkflow
-version: 1.7.6
+version: 1.7.8
 description: 
 license: https://choosealicense.com/licenses/mit/
 homepage: 
 author: ponzS
 application:
   subdomain: talkflow
-  routes:
-    - /=file:///lzcapp/pkg/content
+  upstreams:
+    - location: /gun
+      backend: http://127.0.0.1:8765
+      backend_launch_command: /bin/sh /lzcapp/pkg/content/scripts/start-relay.sh
+    - location: /socket.io
+      backend: http://127.0.0.1:8765
+    - location: /ice
+      backend: http://127.0.0.1:8765
+    - location: /
+      backend: file:///lzcapp/pkg/content/
 locales:
   zh:
     name: "TalkFlow"
@@ -20,3 +28,4 @@ locales:
     name: "TalkFlow"
     description: "Decentralized instant messaging application"
 
+# 通过 application.upstreams 静态配置前端与后端，无需额外镜像与服务

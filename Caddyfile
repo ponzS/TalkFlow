@@ -1,0 +1,33 @@
+{
+    auto_https off
+    http_port 80
+    https_port 0
+}
+:80 {
+    # 将后端 relay 的关键路径反向代理出去
+    handle /gun/* {
+        reverse_proxy relay:8765
+    }
+    handle /socket.io/* {
+        reverse_proxy relay:8765
+    }
+    handle /ice {
+        reverse_proxy relay:8765
+    }
+
+    # 前端 SPA 静态文件，支持 history 路由
+    handle {
+        root * /lzcapp/pkg/content/
+        @static {
+            file
+        }
+        handle @static {
+            header Cache-Control "max-age=60, private, must-revalidate"
+            file_server
+        }
+        handle {
+            rewrite * /index.html
+            file_server
+        }
+    }
+}

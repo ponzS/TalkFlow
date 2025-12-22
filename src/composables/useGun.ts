@@ -3,19 +3,22 @@ import { ref, watch } from 'vue';
 
 // 默认节点列表（本地存在的 relay 列表）
 const DEFAULT_PEERS: string[] = [
-  'https://a.talkflow.team/gun',
-  'wss://a.talkflow.team/gun',
-  'https://gun.defucc.me/gun',
-  'wss://gun.defucc.me/gun',
-  'https://relay.peer.ooo/gun',
-  'wss://relay.peer.ooo/gun'
-  
+  'wss://gun.ponzs.com/gun'
 ];
 // 'http://localhost:8765/gun',
 const LS_KEYS = {
   list: 'gun_peers_list',
   enabled: 'gun_enabled_peers',
 } as const;
+
+// 统一将 http/https 写法转换为 ws/wss，避免因协议不匹配导致回落到轮询
+function normalizePeerUrl(url: string): string {
+  const u = (url || '').trim();
+  if (!u) return u;
+  if (u.startsWith('https://')) return 'wss://' + u.slice('https://'.length);
+  if (u.startsWith('http://')) return 'ws://' + u.slice('http://'.length);
+  return u;
+}
 
 function safeParseArray(value: string | null, fallback: string[]): string[] {
   if (!value) return fallback;
@@ -29,12 +32,14 @@ function safeParseArray(value: string | null, fallback: string[]): string[] {
 
 function loadPeersListFromStorage(): string[] {
   if (typeof localStorage === 'undefined') return DEFAULT_PEERS;
-  return safeParseArray(localStorage.getItem(LS_KEYS.list), DEFAULT_PEERS);
+  const arr = safeParseArray(localStorage.getItem(LS_KEYS.list), DEFAULT_PEERS);
+  return [...new Set(arr.map(normalizePeerUrl).filter(Boolean))];
 }
 
 function loadEnabledPeersFromStorage(): string[] {
   if (typeof localStorage === 'undefined') return DEFAULT_PEERS;
-  return safeParseArray(localStorage.getItem(LS_KEYS.enabled), DEFAULT_PEERS);
+  const arr = safeParseArray(localStorage.getItem(LS_KEYS.enabled), DEFAULT_PEERS);
+  return [...new Set(arr.map(normalizePeerUrl).filter(Boolean))];
 }
 
 export const peersList = ref<string[]>(loadPeersListFromStorage());
@@ -53,8 +58,8 @@ export function saveEnabledPeersToStorage(peers: string[]) {
 }
 
 // 持久化监听
-watch(peersList, (val) => savePeersListToStorage([...new Set(val.filter(Boolean))])),
-watch(enabledPeers, (val) => saveEnabledPeersToStorage([...new Set(val.filter(Boolean))]))
+watch(peersList, (val) => savePeersListToStorage([...new Set(val.filter(Boolean).map(normalizePeerUrl))])),
+watch(enabledPeers, (val) => saveEnabledPeersToStorage([...new Set(val.filter(Boolean).map(normalizePeerUrl))]))
 
 // Gun 实例：实际使用的 relay 为 enabledPeers
 export let gun: any = Gun({ peers: enabledPeers.value, localStorage: false });
@@ -64,17 +69,26 @@ if (typeof window !== 'undefined') {
 
 
 watch(enabledPeers, (peers) => {
-  const uniqPeers = [...new Set((peers || []).filter(Boolean))];
-  gun = Gun({ peers: uniqPeers, localStorage: false });
+  const uniqPeers = [...new Set((peers || []).map(normalizePeerUrl).filter(Boolean))];
+  // 优先使用 gun.opt 动态更新，以减少重连开销
+  try {
+    gun.opt({ peers: uniqPeers });
+  } catch {
+    gun = Gun({ peers: uniqPeers, localStorage: false });
+  }
+  // 轻量心跳，强制建立连接并触发订阅恢复
+  try {
+    gun.get('key').get('heartbeat').put('heartbeat');
+  } catch {}
   if (typeof window !== 'undefined') {
     (window as any).gun = gun;
   }
-
+ 
 });
 
 // —— 公开的操作：新增 / 删除 / 启用切换 ——
 export function addRelay(url: string) {
-  const u = (url || '').trim();
+  const u = normalizePeerUrl(url || '');
   if (!u) return;
   if (!peersList.value.includes(u)) peersList.value = [...peersList.value, u];
 }
@@ -143,5 +157,3 @@ export function reconnectGunPeers() {
   }
 
 }
-
-

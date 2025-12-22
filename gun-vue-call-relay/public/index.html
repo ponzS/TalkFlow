@@ -433,13 +433,16 @@
 
 <body>
   <div id="app" class="p-4 space-y-4">
+           <div style="color: #9ae6b4;font-size: 20px;"><a href="./SimpleChat.html">Go to SimpleChat</a></div>
     <!-- Language Switcher -->
     <div class="flex items-center justify-end gap-2">
+
       <label class="text-sm">{{ state.t('ui_language') }}
         <select v-model="state.lang" class="border rounded px-2 py-1 text-sm">
           <option value="en">{{ state.t('english') }}</option>
           <option value="zh">{{ state.t('chinese') }}</option>
         </select>
+       
       </label>
     
     </div>

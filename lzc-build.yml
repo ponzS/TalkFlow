@@ -1,59 +1,10 @@
-# 整个文件中，可以通过 ${var} 的方式，使用 manifest 字段指定的文件定义的值
-
-# buildscript
-# - 可以为构建脚本的路径地址
-# - 如果构建命令简单，也可以直接写 sh 的命令
-# buildscript: ./build.sh
-buildscript: pnpm build:web
-# manifest: 指定 lpk 包的 manifest.yml 文件路径
 manifest: ./lzc-manifest.yml
-
-# contentdir: 指定打包的内容，将会打包到 lpk 中
 contentdir: ./dist
-
-# pkgout: lpk 包的输出路径
-pkgout: ./
-
-# icon 指定 lpk 包 icon 的路径路径，如果不指定将会警告
-# icon 仅仅允许 png 后缀的文件
 icon: ./lzc-icon.png
-
-# devshell 自定义应用的开发容器环境
-# - routers 指定应用容器的访问路由
-
-# devshell 没有指定 image 的情况，将会默认使用 registry.lazycat.cloud/lzc-cli/devshell:v0.0.5
-# devshell:
-#   routers:
-#     - /=http://127.0.0.1:8080
-
-# devshell 指定 image 的情况
-# devshell:
-#   routes:
-#     - /=http://127.0.0.1:3000
-#   image: registry.lazycat.cloud/lzc-cli/devshell:v0.0.5
-
-# devshell 指定构建Dockerfile
-# image 字段如果没有定义，将默认使用 ${package}-devshell:${version}
-# devshell:
-#   routes:
-#     - /=http://127.0.0.1:3000
-#   image: ${package}-devshell:${version}
-#   pull_policy: build
-#   build: .
-
-# dvshell 指定开发依赖的情况
-# 这种情况下，选用 alpine:latest 作为基础镜像，在 dependencies 中添加所需要的开发依赖即可
-# 如果 dependencies 和 build 同时存在，将会优先使用 dependencies
-devshell:
-  routes:
-    - /=http://127.0.0.1:5173
-  dependencies:
-    - nodejs
-    - npm
-  # setupscript 每次进入到app container后都会执行的配置脚本
-  # - 可以为脚本的路径地址
-  # - 如果构建命令简单，也可以直接写 sh 的命令
-  # setupscript: export GOPROXY=https://goproxy.cn
-  # setupscript: ./setupscript.sh
-  setupscript: |
-    export npm_config_registry=https://registry.npmmirror.com
+pkgout: ./
+buildscript: |
+  pnpm build:web
+  mkdir -p dist/scripts dist/relay
+  cp -R gun-vue-call-relay/* dist/relay/
+  rm -rf dist/relay/node_modules
+  cp scripts/start-relay.sh dist/scripts/
