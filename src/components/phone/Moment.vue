@@ -3,15 +3,15 @@
   <ion-header :translucent="true" >
      <ion-toolbar>
       <ion-buttons slot="start">
-        <ion-button @click="goToMyNode" fill="clear">
-          <ion-icon :icon="personCircleOutline"></ion-icon>
-        </ion-button>
+        <ion-back-button></ion-back-button>
       </ion-buttons>
       
       <ion-title>Friend Feed</ion-title>
 
       <ion-buttons slot="end">
-      
+           <ion-button @click="goToMyNode" fill="clear">
+          <ion-icon :icon="personCircleOutline"></ion-icon>
+        </ion-button>
         <ion-button @click="openPostModal" fill="clear">
           <ion-icon :icon="addOutline"></ion-icon>
         </ion-button>
@@ -268,7 +268,7 @@ import { useI18n } from 'vue-i18n';
 import {
   IonContent, IonToolbar, IonButtons, IonButton, IonIcon, IonAvatar, IonRefresher, IonRefresherContent,
   IonInfiniteScroll, IonInfiniteScrollContent, toastController, IonHeader, IonTitle, IonModal,
-  IonTextarea, IonLoading
+  IonTextarea, IonLoading, IonBackButton
 } from '@ionic/vue';
 import {
   chatbubblesOutline, heart, heartOutline, createOutline, chevronDownOutline,

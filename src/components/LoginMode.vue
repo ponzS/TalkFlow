@@ -140,7 +140,7 @@
                               <strong>{{ section.content }}</strong>
                             </p>
                             <p v-else>{{ section.content }}</p>
-                            <br v-if="index < currentManualPageContent.sections.length - 1"/>
+                            <br v-if="index < currentManualPageContent.sections.length as any - 1"/>
                           </div>
                         </div>
                         

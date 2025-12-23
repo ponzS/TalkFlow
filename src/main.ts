@@ -87,9 +87,14 @@ const platform = Capacitor.getPlatform();
 const ionicMode = (localStorage.getItem('ionic-mode') as 'ios' | 'md') || 'ios';
 
 const app = createApp(App)
-  .use(IonicVue,{
+  // .use(IonicVue,{
+  //   rippleEffect: true,
+  //   mode: ionicMode,
+  //   maxPageCacheSize: 10
+  // })
+   .use(IonicVue,{
     rippleEffect: true,
-    mode: ionicMode,
+    mode: "ios",
     maxPageCacheSize: 10
   })
     //  .use(IonicVue)

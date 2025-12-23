@@ -11,11 +11,11 @@
 
       </div>
 
-       <div v-if="currentComponent === 'Call'" class="page-component" :class="{ 'active': currentComponent === 'Call' }">
+       <!-- <div v-if="currentComponent === 'Call'" class="page-component" :class="{ 'active': currentComponent === 'Call' }">
         
    <Moment/>
 
-      </div> 
+      </div>  -->
 
 <!-- style="height: 100% !important;" -->
       <div  style="height: 100% !important;" v-show="currentComponent === 'Link'" class="page-component " :class="{ 'active': currentComponent === 'Link' }">
@@ -68,15 +68,14 @@
           <ion-badge v-if="hasNewRequests && !requestsViewed" class="request-badge">●</ion-badge>
         </ion-tab-button>
 
-        <ion-tab-button 
+        <!-- <ion-tab-button 
           class="custom-tab-button"
           :class="{ 'tab-selected': currentComponent === 'Call' }"
           @click="handleTabClick('Call')"
         >
           <ion-icon :icon="currentComponent === 'Call' ? planet : planetOutline"></ion-icon>
-          <!-- <ion-label style="font-size: 12px;">Call</ion-label>
-         -->
-        </ion-tab-button>
+      
+        </ion-tab-button> -->
 
         <ion-tab-button 
           class="custom-tab-button"

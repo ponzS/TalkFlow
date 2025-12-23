@@ -85,7 +85,7 @@
           <ion-badge v-if="hasNewRequests && !requestsViewed" class="request-badge">●</ion-badge>
           </ion-item>
           
-               <ion-item
+               <!-- <ion-item
                lines="none"
             button
             :detail="false"
@@ -99,7 +99,7 @@
           :icon="currentComponent === 'Call' ? planet : planetOutline"></ion-icon>
           <ion-label class="cosmic-label">Moment</ion-label>
 
-          </ion-item>
+          </ion-item> -->
           
              <ion-item
             button
@@ -159,6 +159,11 @@
             <ion-icon slot="start" :icon="analyticsOutline" class="cosmic-icon" style="color:cadetblue" />
             <ion-label class="cosmic-label">Mesh Network Canvas</ion-label>
           </ion-item>
+           <ion-item  button @click="router.push('/Moment')" class="cosmic-item">
+            <ion-icon slot="start" :icon="planetOutline" class="cosmic-icon" style="color:deepskyblue" />
+            <ion-label class="cosmic-label">Friend Feed</ion-label>
+          </ion-item>
+
         </ion-list>
       </div>
 
@@ -276,7 +281,7 @@
            <div class="settings-section avatar-index">
         <h2 class="section-title">Contact US</h2>
         <ion-list class="settings-list">
-            <a href="https://x.com/TalkFlowSOL">
+            <a href="https://x.com/GuoaiZ11355">
            <ion-item  button  class="cosmic-item">
           
             <!-- <ion-icon slot="start" :icon="globeOutline" class="cosmic-icon" style="color:cornflowerblue;"/> -->
@@ -308,7 +313,7 @@
         <div class="version-card">
           <div class="version-info">
             <h3 class="app-name">TalkFlow</h3>
-            <p class="version-number">v1.7.6</p>
+            <p class="version-number">v1.8.0</p>
           </div>
           <ion-icon :icon="cubeOutline" class="version-icon"></ion-icon>
         </div>
