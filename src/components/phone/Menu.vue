@@ -163,7 +163,15 @@
             <ion-icon slot="start" :icon="planetOutline" class="cosmic-icon" style="color:deepskyblue" />
             <ion-label class="cosmic-label">Friend Feed</ion-label>
           </ion-item>
-
+   <ion-item class="cosmic-item">
+            <ion-icon slot="start" :icon="settingsOutline" class="cosmic-icon" style="color:mediumpurple" />
+            <ion-label class="cosmic-label">UI Mode（iOS / MD）</ion-label>
+            <ion-toggle
+              slot="end"
+              :checked="isIosMode"
+              @ionChange="onModeToggle"
+            ></ion-toggle>
+          </ion-item>
         </ion-list>
       </div>
 
@@ -678,7 +686,22 @@ const isSending = computed(() => {
   }
   return localIsSending.value;
 });
+const isIosMode = ref(((localStorage.getItem('ionic-mode') || 'ios') === 'ios'));
 
+const onModeToggle = (event: CustomEvent) => {
+  const enabled = (event as any).detail?.checked as boolean;
+  const newMode = enabled ? 'ios' : 'md';
+  localStorage.setItem('ionic-mode', newMode);
+  try {
+    // 尝试即时更新（多数组件需要重载才会完全应用）
+    document.documentElement.setAttribute('mode', newMode);
+  } catch {}
+  // 反馈并重载应用以让所有组件应用新模式
+  showToast?.(`已切换为 ${newMode === 'ios' ? 'iOS' : 'MD'} 模式，正在重载以应用样式`);
+  setTimeout(() => {
+    window.location.reload();
+  }, 300);
+};
 // 统一使用共享键盘状态；在需要键盘适配的页面初始化一次
 onMounted(() => {
   initKeyboard();

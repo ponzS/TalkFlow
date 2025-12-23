@@ -105,7 +105,7 @@
             <ion-label class="cosmic-label">{{ $t('language') }}</ion-label>
           </ion-item>
           <!-- UI Mode Toggle: iOS / MD -->
-          <!-- <ion-item class="cosmic-item">
+          <ion-item class="cosmic-item">
             <ion-icon slot="start" :icon="settingsOutline" class="cosmic-icon" style="color:mediumpurple" />
             <ion-label class="cosmic-label">UI Mode（iOS / MD）</ion-label>
             <ion-toggle
@@ -113,7 +113,7 @@
               :checked="isIosMode"
               @ionChange="onModeToggle"
             ></ion-toggle>
-          </ion-item> -->
+          </ion-item>
         </ion-list>
       </div>
 
