@@ -142,11 +142,13 @@ import { pinyin } from 'pinyin-pro';
 import { addCircleOutline, personAddOutline, trashOutline, keyOutline } from 'ionicons/icons';
 import { gunAvatar, mountClass } from 'gun-avatar';
 import { useTheme } from '@/composables/useTheme';
+import { getTalkFlowCore } from '@/composables/TalkFlowCore';
 
 mountClass();
 
 // 使用 useGroupChat 获取群聊数据
 const router = useRouter();
+const chatFlowStore = getTalkFlowCore();
 const {
   newGroupName,
   joinGroupKey,
@@ -232,7 +234,7 @@ onBeforeUnmount(() => {
 // 进入群聊
 const enterGroupChat = (pub: string) => {
   setCurrentGroup(pub);
-  router.push(`/group/${pub}/messages`);
+  router.push(chatFlowStore.isLargeScreen.value ? `/desktop/GroupMessages` : `/GroupMessages`);
 };
 
 // 跳转到密钥对页面

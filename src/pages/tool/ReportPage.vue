@@ -59,6 +59,8 @@
     IonInput,
     IonButton,
     IonAlert,
+    IonBackButton,
+    IonButtons
   } from '@ionic/vue';
 
   const router = useRouter();

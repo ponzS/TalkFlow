@@ -107,6 +107,7 @@ declare global {
   const useCssVars: typeof import('vue')['useCssVars']
   const useDateFormatter: typeof import('./composables/useDateFormatter')['useDateFormatter']
   const useDeviceTracking: typeof import('./composables/useDeviceTracking')['default']
+  const useFriendRequests: typeof import('./composables/useFriendRequests')['useFriendRequests']
   const useGroupChat: typeof import('./composables/useGroupChat')['useGroupChat']
   const useGroupVoiceBar: typeof import('./composables/useVoiceBarGroup')['useGroupVoiceBar']
   const useGunSQLiteAdapter: typeof import('./composables/GunStorageAdapter')['useGunSQLiteAdapter']
@@ -151,6 +152,9 @@ declare global {
   // @ts-ignore
   export type { DeviceRecord } from './composables/useDeviceTracking'
   import('./composables/useDeviceTracking')
+  // @ts-ignore
+  export type { FriendRequestDirection, FriendRequestStatus, FriendRequestItem } from './composables/useFriendRequests'
+  import('./composables/useFriendRequests')
   // @ts-ignore
   export type { CallState } from './composables/useGroupCall'
   import('./composables/useGroupCall')

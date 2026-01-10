@@ -844,6 +844,7 @@ import { Browser } from '@capacitor/browser';
 import { useI18n } from 'vue-i18n';
 import { useMoments } from '@/composables/useMoments';
 import { useTheme } from '@/composables/useTheme';
+import { useFriendRequests } from '@/composables/useFriendRequests';
 import ImageGridViewer from '@/components/ui/ImageGridViewer.vue';
 import ForwardModal from '@/components/ui/ForwardModal.vue';
 import OriginalMomentCard from '@/components/ui/OriginalMomentCard.vue';
@@ -869,10 +870,11 @@ interface MomentV2 {
 mountClass();
 const chatFlow = getTalkFlowCore();
 const { userAvatars, getAliasRealtime,getUserDataOnce, getFriendSignature, copyPub, friendRemarks, openChat, getAliasRealtime1, buddyList, manualSyncBuddyEpub, selectedFriendPub,
-   searchUserProfile, addFriendWithHealing,addFriend,
+   searchUserProfile,
    buddyError, currentUserPub, currentUserAlias, strangerAlias,
     strangerAvatar,
    currentUserAlias1,listenUserAlias,listenUserAvatar,listenFriendSignature, getUserEpub, currentUserPair } = chatFlow;
+const { sendFriendRequest: sendFriendRequestAction } = useFriendRequests();
 const router = useRouter();
 const route = useRoute();
 const { t } = useI18n();
@@ -1419,7 +1421,6 @@ function goToSettings() {
 
 function chatWithFriend() {
   openChat(friendPub.value);
-  router.push('/chatpage');
 }
 
 function goToNotifications() {
@@ -1529,7 +1530,7 @@ const onVideoPause = (msgId: string) => {
 // 发送好友申请
 async function sendFriendRequest() {
   try {
-    await addFriend(friendPub.value, requestMessage.value);
+    await sendFriendRequestAction(friendPub.value, requestMessage.value);
     
     showRequestModal.value = false;
     requestMessage.value = '';

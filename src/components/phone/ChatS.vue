@@ -30,6 +30,7 @@ import { useI18n } from 'vue-i18n';
 mountClass();
 const router = useRouter();
 const chatFlowStore = getTalkFlowCore();
+const gun = (chatFlowStore as any).gun;
 const groupChat = useGroupChat();
 const { isDark } = useTheme();
 const { formatLastTime } = useDateFormatter();
@@ -57,6 +58,40 @@ const isItemOpen = ref(false);
 const itemSlidingRefs = ref<Record<string, any>>({});
 const pinnedChatsMap = ref<Record<string, boolean>>({});
 const avatarurl = computed(() => gunAvatar({ pub: currentUserPub.value, round: false, dark: isDark.value, svg: true }as any));
+
+const relayConnectedPeers = ref<string[]>([]);
+let relayCountTimer: number | undefined;
+
+function refreshConnectedRelays() {
+  try {
+    const opt_peers = (gun as any).back('opt.peers') as Record<string, any>;
+    const list = Object.entries(opt_peers)
+      .filter(([, peer]) => {
+        return (
+          peer &&
+          peer.wire &&
+          peer.wire.readyState === 1 &&
+          peer.wire.OPEN === 1 &&
+          peer.wire.constructor?.name === 'WebSocket'
+        );
+      })
+      .map(([url]) => url);
+    relayConnectedPeers.value = list;
+  } catch {
+    relayConnectedPeers.value = [];
+  }
+}
+
+const connectedRelaysCount = computed(() => relayConnectedPeers.value.length);
+
+onMounted(() => {
+  refreshConnectedRelays();
+  relayCountTimer = window.setInterval(refreshConnectedRelays, 1500);
+});
+
+onBeforeUnmount(() => {
+  if (relayCountTimer) window.clearInterval(relayCountTimer);
+});
 
 // Segment state with persistence - 默认显示聊天列表
 const {
@@ -263,14 +298,14 @@ const selectRoomGroup = (pub: string) => {
   setCurrentGroup(pub);
   markGroupAsRead(pub);
   closeGroupListModal();
-  router.push(`/group/${pub}/messages`);
+  router.push(chatFlowStore.isLargeScreen.value ? `/desktop/GroupMessages` : `/GroupMessages`);
 };
 
 const enterGroupChat = (pub: string | undefined) => {
   if (!pub) return;
   setCurrentGroup(pub);
   markGroupAsRead(pub);
-  router.push(`/group/${pub}/messages`);
+  router.push(chatFlowStore.isLargeScreen.value ? `/desktop/GroupMessages` : `/GroupMessages`);
 };
 
 const createGroupWithToast = async () => {
@@ -696,7 +731,7 @@ const openChat = (pub: string, type: 'group' | 'private') => {
   if (type === 'group') {
     selectGroup(pub);
     // markGroupAsRead(pub);
-    router.push(`/GroupMessages`);
+    router.push(chatFlowStore.isLargeScreen.value ? `/desktop/GroupMessages` : `/GroupMessages`);
   } else {
     openPrivateChat(pub);
   }
@@ -1088,6 +1123,10 @@ const handleTouchMove = () => {
         </ion-title>
 
         <ion-buttons slot="end" >
+          <div class="relay-status">
+            <span class="breathing-dot" :class="connectedRelaysCount !== 0 ? 'green' : 'red'"></span>
+            <span class="RelayNumber">{{ connectedRelaysCount }}</span>
+          </div>
           <ion-button  expand="block" fill="clear" id="menu-trigger">
             <ion-icon  :icon="addOutline" ></ion-icon>
           </ion-button>
@@ -1686,6 +1725,56 @@ const handleTouchMove = () => {
   /* --border-color: transparent; */
   --background: var(--background-color-no);
   backdrop-filter: blur(10px);
+}
+
+.relay-status {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 8px;
+}
+
+.breathing-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  margin: 0 6px 0 4px;
+}
+.breathing-dot.green {
+  background-color: #2dd36f;
+  animation: breathe-green 1.8s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(45, 211, 111, 0.6);
+}
+.breathing-dot.red {
+  background-color: #eb445a;
+  animation: breathe-red 1.8s ease-in-out infinite;
+  box-shadow: 0 0 0 0 rgba(235, 68, 90, 0.6);
+}
+@keyframes breathe-green {
+  0% {
+    box-shadow: 0 0 0 0 rgba(45, 211, 111, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(45, 211, 111, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(45, 211, 111, 0);
+  }
+}
+@keyframes breathe-red {
+  0% {
+    box-shadow: 0 0 0 0 rgba(235, 68, 90, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(235, 68, 90, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(235, 68, 90, 0);
+  }
+}
+.RelayNumber{
+  color: #838383;
+  font-size: 13px;
 }
 
 ion-avatar {

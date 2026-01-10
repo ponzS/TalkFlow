@@ -232,6 +232,7 @@ import {
   IonMenu
 } from '@ionic/vue';
 import { useGroupChat } from '@/composables/useGroupChat';
+import { getTalkFlowCore } from '@/composables/TalkFlowCore';
 import { useRouter } from 'vue-router';
 import { ref, computed, onMounted, watch, shallowRef } from 'vue';
 import {
@@ -253,6 +254,7 @@ import { debounce } from 'lodash';
 
 
 const router = useRouter();
+const chatFlowStore = getTalkFlowCore();
 const {
   newGroupName,
   joinGroupKey,
@@ -378,7 +380,7 @@ const formatPubKey = (pub: string) => {
 const enterGroupChat = (pub: string | undefined) => {
   if (!pub) return;
   setCurrentGroup(pub);
-  router.push(`/group/${pub}/messages`);
+  router.push(chatFlowStore.isLargeScreen.value ? `/desktop/GroupMessages` : `/GroupMessages`);
 };
 
 const openGroupListModal = () => {
@@ -396,7 +398,7 @@ const closeGroupListModal = () => {
 const selectGroup = (pub: string) => {
   setCurrentGroup(pub);
   closeGroupListModal();
-  router.push(`/group/${pub}/messages`);
+  router.push(chatFlowStore.isLargeScreen.value ? `/desktop/GroupMessages` : `/GroupMessages`);
 };
 
 const getCardWidth = () => {

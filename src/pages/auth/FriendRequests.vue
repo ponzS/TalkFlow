@@ -144,20 +144,29 @@
       <!-- Friend Requests Section -->
       <div class="requests-section">
         <div class="section-header">
-          <ion-icon :icon="earthOutline" class="section-icon"></ion-icon>
+          <ion-icon :icon="peopleOutline" class="section-icon"></ion-icon>
           <h2>{{ $t('FriendRequests') || 'Friend Requests' }}</h2>
-          <ion-badge v-if="filteredReceivedRequests.length > 0" color="primary" class="count-badge">
-            {{ filteredReceivedRequests.length }}
+          <ion-badge v-if="combinedRequests.length > 0" color="primary" class="count-badge">
+            {{ combinedRequests.length }}
           </ion-badge>
+          <ion-button
+            fill="clear"
+            size="small"
+            class="refresh-button"
+            :disabled="isRefreshing"
+            @click="manualRefreshRequests"
+          >
+            <ion-icon :icon="refreshOutline" slot="icon-only"></ion-icon>
+          </ion-button>
         </div>
 
         <div class="requests-container">
           <ion-list class="requests-list">
             <ion-item
-              v-for="(req, idx) in filteredReceivedRequests"
-              :key="req.from + idx"
-              button
-              @click="openRequestModal(req)"
+              v-for="(req, idx) in combinedRequests"
+              :key="req.peerPub + req.requestId + idx"
+              :button="req.direction === 'in' && req.status === 'pending'"
+              @click="handleRequestItemClick(req)"
               class="request-item"
               lines="none"
             >
@@ -165,21 +174,40 @@
                 <img :src="strangerAvatars[req.from]" />
               </ion-avatar> -->
               <ion-avatar slot="start" >
-                <img :src="getGunAvatar(req.from)" alt="" />
+                <img :src="getGunAvatar(req.peerPub)" alt="" />
               </ion-avatar>
               <ion-label>
-                <h2>{{ strangerAliases[req.from] }}</h2>
-                <p class="pub-key" @click.stop="copyPubWithFeedback(req.from)">
-                  {{ $t('talkflowid') }}: {{ truncatePub(req.from) }}
+                <h2 class="request-title">
+                  <span>{{ strangerAliases[req.peerPub] || req.peerAlias || 'No Name' }}</span>
+                  <ion-badge :color="req.direction === 'in' ? 'success' : 'medium'" class="direction-badge">
+                    {{ req.direction === 'in' ? 'Receive' : 'Sent' }}
+                  </ion-badge>
+                </h2>
+                <p class="pub-key" @click.stop="copyPubWithFeedback(req.peerPub)">
+                  {{ $t('talkflowid') }}: {{ truncatePub(req.peerPub) }}
                 </p>
                 <!-- <p>epub: {{ req.epub }}</p> -->
                 <p v-if="req.message" class="message">{{ $t('message') }}: {{ req.message }}</p>
+                <p v-if="req.direction === 'out'" class="message">{{ $t('status') || 'Status' }}: {{ req.status }}</p>
+                <p v-if="req.direction === 'in' && req.status !== 'pending'" class="message">{{ $t('status') || 'Status' }}: {{ req.status }}</p>
               </ion-label>
+              <ion-button v-if="req.direction === 'out'" slot="end" fill="outline" size="small" @click.stop="handleResendRequest(req)">
+                {{ $t('resend') || 'Resend' }}
+              </ion-button>
+              <ion-button
+                v-if="req.direction === 'in' && req.status === 'accepted'"
+                slot="end"
+                fill="outline"
+                size="small"
+                @click.stop="handleResendAcceptedReceipt(req)"
+              >
+                {{ $t('resend') || 'Resend' }}
+              </ion-button>
   
             </ion-item>
 
             <!-- Empty State -->
-            <div v-if="!filteredReceivedRequests.length" class="empty-state">
+            <div v-if="!combinedRequests.length" class="empty-state">
               <div class="empty-illustration">
                 <ion-icon :icon="peopleOutline" class="empty-icon"></ion-icon>
               </div>
@@ -204,7 +232,7 @@
               <img :src="selectedRequest.avatar" />
             </ion-avatar> -->
             <ion-avatar  class="modal-avatar">
-              <img :src="getGunAvatar(selectedRequest.from)" alt="Avatar" />
+              <img :src="getGunAvatar(selectedRequest?.peerPub || '')" alt="Avatar" />
             </ion-avatar>
             <div class="header-text">
               <h2>{{ selectedRequest?.alias }}</h2>
@@ -218,7 +246,7 @@
             <ion-item lines="none">
               <ion-label position="stacked">PubKey</ion-label>
               <div class="pub-key-container">
-                <ion-text>{{ selectedRequest?.from}}</ion-text>
+                <ion-text>{{ selectedRequest?.peerPub }}</ion-text>
                  <!-- <h2>{{ selectedRequest?.epub }}</h2> -->
               </div>
             </ion-item>
@@ -246,40 +274,37 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import {
   IonPage, IonHeader, IonToolbar, IonTitle, IonButtons, IonButton, IonContent,
   IonItem, IonLabel, IonIcon, IonAvatar, IonModal, IonInput, IonToggle,
-  IonText, IonBadge, IonList, IonBackButton, IonSegment, IonSegmentButton,
-  IonAccordion, IonAccordionGroup,
+  IonText, IonBadge, IonList, IonBackButton,
 } from '@ionic/vue';
 
 import { 
-  arrowBackOutline, personAddOutline, scanOutline, searchOutline, earthOutline, 
-  closeOutline, peopleOutline, alertCircleOutline, chevronForwardOutline,
-  qrCodeOutline, copyOutline, serverOutline, refreshOutline, documentOutline
+  scanOutline, searchOutline,
+  closeOutline, peopleOutline, alertCircleOutline,
+  copyOutline,
+  refreshOutline,
 } from 'ionicons/icons';
 import { getTalkFlowCore } from '@/composables/TalkFlowCore';
+import { useFriendRequests, type FriendRequestItem } from '@/composables/useFriendRequests';
 import { gunAvatar, mountClass } from "gun-avatar";
 import { toastController } from '@ionic/vue';
 import QrShow from '@/components/GunVue/QrShow.vue';
 
 mountClass();
 
-// Define ReceivedRequest type
-interface ReceivedRequest {
-  from: string;
-  message?: string;
-}
-
 const chatFlowStore = getTalkFlowCore();
 const {
-  buddyList, receivedRequests, friendPub, buddyError, searchUserProfile,
-  gun, acceptBuddyRequest, rejectBuddyRequest, addToBlacklist, removeFromBlacklist, 
+  buddyList, friendPub, buddyError,
+  gun, addToBlacklist, removeFromBlacklist, 
   isInMyBlacklist, storageServ, copyPub, currentUserPub, currentUserAlias, userAvatars,
-  getUserDataOnce,listenMyRequests
+  getUserDataOnce
 } = chatFlowStore;
+
+const { incomingRequests, outgoingRequests, acceptRequest, rejectRequest, reloadAll: reloadRequests, refreshFromNetwork, resendFriendRequest, resendAcceptedReceipt } = useFriendRequests();
 
 const router = useRouter();
 
@@ -289,35 +314,34 @@ const strangerAvatars = ref<Record<string, string>>({});
 
 // Modal state for friend requests
 const isModalOpen = ref(false);
-const selectedRequest = ref<{ from: string; message?: string; alias?: string; avatar?: string; epub?: string } | null>(null);
+const selectedRequest = ref<null | { requestId: string; peerPub: string; message?: string; alias?: string; avatar?: string; epub?: string }>(null);
 const isBlocked = ref(false);
+const isRefreshing = ref(false);
 
 // Filter out already-added friends
 const filteredReceivedRequests = computed(() => {
-  return receivedRequests.value.filter(req => !buddyList.value.some(b => b.pub === req.from));
+  return incomingRequests.value.filter((req) => {
+    if (req.status !== 'pending' && req.status !== 'accepted') return false;
+    if (req.status === 'pending' && buddyList.value.some((b) => b.pub === req.peerPub)) return false;
+    return true;
+  });
 });
 
-// Gun data display state
-const selectedDataType = ref('requests');
-const gunRequestsData = ref<Record<string, any>>({});
-const gunBuddiesData = ref<Record<string, any>>({});
-const gunProfileData = ref<Record<string, any>>({});
+const filteredOutgoingRequests = computed(() => {
+  return outgoingRequests.value.filter(req => req.status === 'pending');
+});
+
+const combinedRequests = computed(() => {
+  return [...filteredReceivedRequests.value, ...filteredOutgoingRequests.value].sort((a, b) => b.timestamp - a.timestamp);
+});
 
 
 // 🆕 优化的获取陌生人数据函数（使用统一缓存机制）
 async function fetchStrangerData(pub: string) {
-  // 首先检查是否已经从好友申请中获取了信息
-  const requestData = receivedRequests.value.find(req => req.from === pub);
-  
-  if (requestData && 'alias' in requestData && 'avatar' in requestData) {
-    // 🆕 直接使用申请中的用户信息（避免重复网络请求）
-    const reqData = requestData as any;
-    if (reqData.alias && !strangerAliases.value[pub]) {
-      strangerAliases.value[pub] = reqData.alias;
-    }
-    if (reqData.avatar && !strangerAvatars.value[pub]) {
-      strangerAvatars.value[pub] = reqData.avatar;
-    }
+  const requestData = incomingRequests.value.find(req => req.peerPub === pub) || outgoingRequests.value.find(req => req.peerPub === pub);
+  if (requestData) {
+    if (requestData.peerAlias && !strangerAliases.value[pub]) strangerAliases.value[pub] = requestData.peerAlias;
+    if (requestData.peerAvatar && !strangerAvatars.value[pub]) strangerAvatars.value[pub] = requestData.peerAvatar;
     return;
   }
   
@@ -348,7 +372,7 @@ function truncatePub(pub: string): string {
 
 // Copy with feedback
 async function copyPubWithFeedback(pub: string) {
-  await copyPub(pub);
+  copyPub(pub);
   const toast = await toastController.create({
     message: 'ID Copied',
     duration: 1500,
@@ -358,17 +382,93 @@ async function copyPubWithFeedback(pub: string) {
   await toast.present();
 }
 
+async function manualRefreshRequests() {
+  if (isRefreshing.value) return;
+  isRefreshing.value = true;
+  try {
+    await refreshFromNetwork();
+    const toast = await toastController.create({
+      message: 'Refreshed',
+      duration: 1500,
+      position: 'bottom',
+      color: 'dark',
+    });
+    await toast.present();
+  } catch (error: any) {
+    const toast = await toastController.create({
+      message: String(error?.message ?? error ?? 'Refresh failed'),
+      duration: 2000,
+      position: 'bottom',
+      color: 'danger',
+    });
+    await toast.present();
+  } finally {
+    isRefreshing.value = false;
+  }
+}
+
+async function handleResendRequest(req: FriendRequestItem) {
+  try {
+    await resendFriendRequest(req);
+    const toast = await toastController.create({
+      message: 'Resent',
+      duration: 1500,
+      position: 'bottom',
+      color: 'dark',
+    });
+    await toast.present();
+  } catch (error: any) {
+    const toast = await toastController.create({
+      message: String(error?.message ?? error ?? 'Resend failed'),
+      duration: 2000,
+      position: 'bottom',
+      color: 'danger',
+    });
+    await toast.present();
+  }
+}
+
+async function handleResendAcceptedReceipt(req: FriendRequestItem) {
+  try {
+    await resendAcceptedReceipt(req);
+    const toast = await toastController.create({
+      message: 'Resent',
+      duration: 1500,
+      position: 'bottom',
+      color: 'dark',
+    });
+    await toast.present();
+  } catch (error: any) {
+    const toast = await toastController.create({
+      message: String(error?.message ?? error ?? 'Resend failed'),
+      duration: 2000,
+      position: 'bottom',
+      color: 'danger',
+    });
+    await toast.present();
+  }
+}
+
 // Open request modal
-function openRequestModal(req: ReceivedRequest) {
+function openRequestModal(req: FriendRequestItem) {
   // console.log('Opening modal for request:', req);
   selectedRequest.value = {
-    ...req,
-    alias: strangerAliases.value[req.from],
-    avatar: strangerAvatars.value[req.from],
+    requestId: req.requestId,
+    peerPub: req.peerPub,
+    message: req.message,
+    alias: strangerAliases.value[req.peerPub] || req.peerAlias,
+    avatar: strangerAvatars.value[req.peerPub] || req.peerAvatar,
+    epub: req.peerEpub,
   };
-  isBlocked.value = isInMyBlacklist(req.from);
+  isBlocked.value = isInMyBlacklist(req.peerPub);
   isModalOpen.value = true;
   // console.log('Modal state after opening:', { isModalOpen: isModalOpen.value, selectedRequest: selectedRequest.value });
+}
+
+function handleRequestItemClick(req: FriendRequestItem) {
+  if (req.direction !== 'in') return;
+  if (req.status !== 'pending') return;
+  openRequestModal(req);
 }
 
 // Close request modal
@@ -381,22 +481,30 @@ function closeRequestModal() {
 // Toggle blacklist
 async function toggleBlacklist() {
   if (!selectedRequest.value) return;
-  // console.log('Toggling blacklist for:', selectedRequest.value.from, 'New state:', isBlocked.value);
   if (isBlocked.value) {
-    addToBlacklist(selectedRequest.value.from);
-    await storageServ.saveBlacklist(selectedRequest.value.from, true);
+    addToBlacklist(selectedRequest.value.peerPub);
+    await storageServ.saveBlacklist(selectedRequest.value.peerPub, true);
   } else {
-    removeFromBlacklist(selectedRequest.value.from);
-    await storageServ.saveBlacklist(selectedRequest.value.from, false);
+    removeFromBlacklist(selectedRequest.value.peerPub);
+    await storageServ.saveBlacklist(selectedRequest.value.peerPub, false);
   }
 }
 
 // Handle accept request
 async function handleAcceptRequest() {
-  if (selectedRequest.value?.from) {
-    // console.log('Accepting request for:', selectedRequest.value.from);
+  if (selectedRequest.value?.peerPub && selectedRequest.value?.requestId) {
     try {
-      await acceptBuddyRequest(selectedRequest.value.from);
+      await acceptRequest({
+        requestId: selectedRequest.value.requestId,
+        direction: 'in',
+        peerPub: selectedRequest.value.peerPub,
+        peerEpub: selectedRequest.value.epub || '',
+        peerAlias: selectedRequest.value.alias || '',
+        peerAvatar: selectedRequest.value.avatar || '',
+        message: selectedRequest.value.message || '',
+        status: 'pending',
+        timestamp: Date.now(),
+      });
       // 等待acceptBuddyRequest完成后再关闭模态窗口
       closeRequestModal();
     } catch (error) {
@@ -409,9 +517,18 @@ async function handleAcceptRequest() {
 
 // Handle reject request
 function handleRejectRequest() {
-  if (selectedRequest.value?.from) {
-    // console.log('Rejecting request for:', selectedRequest.value.from);
-    rejectBuddyRequest(selectedRequest.value.from);
+  if (selectedRequest.value?.peerPub && selectedRequest.value?.requestId) {
+    rejectRequest({
+      requestId: selectedRequest.value.requestId,
+      direction: 'in',
+      peerPub: selectedRequest.value.peerPub,
+      peerEpub: selectedRequest.value.epub || '',
+      peerAlias: selectedRequest.value.alias || '',
+      peerAvatar: selectedRequest.value.avatar || '',
+      message: selectedRequest.value.message || '',
+      status: 'pending',
+      timestamp: Date.now(),
+    });
     closeRequestModal();
   }
 }
@@ -463,68 +580,6 @@ function startBackgroundSync(pub: string) {
   }, 100); // 延迟100ms避免阻塞UI
 }
 
-// Gun数据相关函数
-function refreshGunData() {
-  if (!currentUserPub.value) return;
-  
-  // 获取好友申请数据
-  gun.get('requests').get(currentUserPub.value).get('received').on((data: any) => {
-    gunRequestsData.value = data || {};
-  });
-  
-  // 获取好友列表数据
-  gun.get('users').get(currentUserPub.value).get('buddies').once((data: any) => {
-    gunBuddiesData.value = data || {};
-  });
-  
-  // 获取个人资料数据
-  gun.get('users').get(currentUserPub.value).once((data: any) => {
-    gunProfileData.value = data || {};
-  });
-}
-
-// 刷新好友申请列表
-function refreshFriendRequests() {
-  if (!currentUserPub.value) return;
-  
-  // 重新监听好友申请
-  listenMyRequests(currentUserPub.value);
-  
-  // 刷新陌生人数据
-  filteredReceivedRequests.value.forEach(req => {
-    fetchStrangerData(req.from);
-  });
-  
-  // 显示刷新成功提示
-  toastController.create({
-    message: '好友申请列表已刷新',
-    duration: 1500,
-    position: 'bottom',
-    color: 'success',
-  }).then(toast => toast.present());
-}
-
-function onDataTypeChange() {
-  // 当切换数据类型时刷新对应数据
-  refreshGunData();
-}
-
-// 复制数据到剪贴板
-async function copyDataWithFeedback(data: string) {
-  try {
-    await navigator.clipboard.writeText(data);
-    const toast = await toastController.create({
-      message: 'Data Copied',
-      duration: 1500,
-      position: 'bottom',
-      color: 'dark',
-    });
-    await toast.present();
-  } catch (error) {
-    console.error('Failed to copy data:', error);
-  }
-}
-
 // Theme support
 import { useTheme } from '@/composables/useTheme';
 const { isDark } = useTheme();
@@ -542,14 +597,16 @@ const getGunAvatar = (pub: string) => {
 
 
 onMounted(() => {
-  listenMyRequests(currentUserPub.value);
-  // Initialize stranger data for friend requests
-  filteredReceivedRequests.value.forEach(req => {
-    fetchStrangerData(req.from);
-  });
-  // Initialize gun data
-  refreshGunData();
+  reloadRequests();
 });
+
+watch(
+  () => combinedRequests.value.map((r) => r.peerPub),
+  (pubs) => {
+    pubs.forEach((pub) => fetchStrangerData(pub));
+  },
+  { immediate: true },
+);
 
 </script>
 
@@ -585,6 +642,20 @@ onMounted(() => {
   font-size: 13px;
   color: var(--ion-color-medium);
   margin: 4px 0 0 0;
+}
+
+.request-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.direction-badge {
+  font-size: 11px;
+  height: 18px;
+  line-height: 18px;
+  padding-left: 2xp;
+  padding-right: 2px;
 }
 
 .refresh-controls {

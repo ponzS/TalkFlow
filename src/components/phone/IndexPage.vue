@@ -1,36 +1,93 @@
 <template>
   <ion-page ref="page">
-  <ion-content  :fullscreen="true"  :scroll-y="false">
+  <ion-content v-if="!isLargeScreen" :fullscreen="true"  :scroll-y="false">
     <div class="components-container ">
       <div v-show="currentComponent === 'Chat'" class="page-component" :class="{ 'active': currentComponent === 'Chat' }">
         <Chat />
       </div>
       <div v-if="currentComponent === 'Contacts'" class="page-component" :class="{ 'active': currentComponent === 'Contacts' }">
-        
         <Contacts />
-
       </div>
-
-       <!-- <div v-if="currentComponent === 'Call'" class="page-component" :class="{ 'active': currentComponent === 'Call' }">
-        
-   <Moment/>
-
-      </div>  -->
-
-<!-- style="height: 100% !important;" -->
       <div  style="height: 100% !important;" v-show="currentComponent === 'Link'" class="page-component " :class="{ 'active': currentComponent === 'Link' }">
-      
-         <!-- <MaxFlow ref="maxFlowRef"/> -->
-<ion-page>
-  <ion-content :fullscreen="true"  :scroll-y="false">
-         <WebLLM/>
-         </ion-content>
-</ion-page>
+        <ion-page>
+          <ion-content :fullscreen="true"  :scroll-y="false">
+            <WebLLM/>
+          </ion-content>
+        </ion-page>
       </div>
-
-
       <div v-show="currentComponent === 'Profile'" class="page-component" :class="{ 'active': currentComponent === 'Profile' }">
         <MeS/>
+      </div>
+    </div>
+  </ion-content>
+
+  <ion-content v-else :fullscreen="true" :scroll-y="false" class="desktop-content">
+    <div class="desktop-shell" ref="desktopShellRef">
+      <div class="desktop-left">
+        <div class="desktop-left-item" :class="{ 'desktop-left-item-active': currentComponent === 'Chat' }" @click="handleTabClick('Chat')">
+          <ion-icon :icon="currentComponent === 'Chat' ? chatbubbles : chatbubblesOutline"></ion-icon>
+          <ion-badge v-if="hasUnreadMessages" class="request-badge">●</ion-badge>
+        </div>
+        <div class="desktop-left-item" :class="{ 'desktop-left-item-active': currentComponent === 'Contacts' }" @click="handleTabClick('Contacts')">
+          <ion-icon :icon="currentComponent === 'Contacts' ? people : peopleOutline"></ion-icon>
+          <ion-badge v-if="hasNewRequests && !requestsViewed" class="request-badge">●</ion-badge>
+        </div>
+        <div class="desktop-left-item" :class="{ 'desktop-left-item-active': currentComponent === 'Link' }" @click="handleTabClick('Link')">
+          <ion-icon :icon="currentComponent === 'Link' ? pulse : pulseOutline"></ion-icon>
+        </div>
+        <div class="desktop-left-item" :class="{ 'desktop-left-item-active': currentComponent === 'Profile' }" @click="handleTabClick('Profile')">
+          <div class="avatar-tab">
+            <img
+              v-if="userAvatars[currentUserPub!]"
+              :src="userAvatars[currentUserPub!]"
+              class="tab-avatar"
+            />
+            <img
+              v-else
+              :src="avatarurl"
+              class="tab-avatar"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="desktop-middle">
+        <div class="components-container">
+          <div v-show="currentComponent === 'Chat'" class="page-component" :class="{ 'active': currentComponent === 'Chat' }">
+            <Chat />
+          </div>
+          <div v-if="currentComponent === 'Contacts'" class="page-component" :class="{ 'active': currentComponent === 'Contacts' }">
+            <Contacts />
+          </div>
+          <div style="height: 100% !important;" v-show="currentComponent === 'Link'" class="page-component" :class="{ 'active': currentComponent === 'Link' }">
+            <ion-page>
+              <ion-content :fullscreen="true" :scroll-y="false">
+                <WebLLM/>
+              </ion-content>
+            </ion-page>
+          </div>
+          <div v-show="currentComponent === 'Profile'" class="page-component" :class="{ 'active': currentComponent === 'Profile' }">
+            <MeS/>
+          </div>
+        </div>
+      </div>
+
+      <div class="desktop-right" :style="{ width: `${desktopRightWidth}px` }">
+        <div class="desktop-resizer" @pointerdown="onDesktopResizerDown"></div>
+        <div v-if="hasDesktopDetail" class="desktop-right-header">
+          <ion-button fill="clear" @click="closeDesktopDetail">
+            <ion-icon :icon="closeOutline"></ion-icon>
+          </ion-button>
+        </div>
+
+        <div class="desktop-right-body">
+          <ion-router-outlet v-if="hasDesktopDetail" class="desktop-detail" />
+          <div v-else class="desktop-empty">
+            <div class="empty">
+            <Globe />
+        </div>
+          </div>
+        </div>
       </div>
     </div>
   </ion-content>
@@ -43,7 +100,7 @@
 
 
 
-  <ion-footer  class="footer-index"  :translucent="true" >
+  <ion-footer v-if="!isLargeScreen" class="footer-index"  :translucent="true" >
     <ion-toolbar class="footer-index" :style="{ marginBottom: `-${keyboardHeight}px` }">
 
 
@@ -132,7 +189,7 @@
 
 <script setup lang="ts">
 import { ref, shallowRef, onMounted, onUnmounted, onBeforeUnmount, watch, nextTick, computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import Chat from './ChatS.vue'
 import Contacts from './ContactsS.vue'
 
@@ -181,6 +238,7 @@ import {
   settingsSharp,
   sparkles,
   pulseSharp,
+  closeOutline,
 
   
 } from 'ionicons/icons'
@@ -188,6 +246,7 @@ import {
   IonFooter,
   IonToolbar,
   IonContent,
+  IonRouterOutlet,
   IonIcon,
   IonHeader, 
   IonMenu, 
@@ -201,8 +260,6 @@ import {
   IonPage,
   IonBadge,
   toastController,
-  IonSegment, 
-  IonSegmentButton,
   IonTabBar,
   IonTabButton,
   IonFab,
@@ -220,6 +277,7 @@ import { useI18n } from 'vue-i18n';
 
 import MaxFlow from './MaxFlow.vue'
 import WebLLM from './WebLLM.vue'
+import Globe from '@/components/ui/globe/Globe.vue'
 
 
 const { isDark } = useTheme();
@@ -232,6 +290,7 @@ const {
   currentUserAlias,
   currentUserAlias1,
   userAvatars,
+  isLargeScreen,
   storageServ,
   gun,
   translateY,
@@ -271,6 +330,116 @@ const avatarurl = computed(() => gunAvatar({ pub: currentUserPub.value, round: f
 
 // MaxFlow组件引用
 const maxFlowRef = ref<InstanceType<typeof MaxFlow> | null>(null);
+
+const route = useRoute();
+const hasDesktopDetail = computed(() => {
+  const path = route.path || '';
+  if (path === '/desktop' || path === '/desktop/') return false;
+  return path.startsWith('/desktop/');
+});
+
+function closeDesktopDetail() {
+  closeChat();
+  setCurrentGroup(null);
+  router.replace('/desktop');
+}
+
+const desktopShellRef = ref<HTMLElement | null>(null);
+const DESKTOP_RIGHT_WIDTH_KEY = 'desktop_right_width';
+const desktopRightWidth = ref<number>(420);
+const resizerPointerId = ref<number | null>(null);
+const lastBodyUserSelect = ref<string>('');
+
+function getDesktopRightWidthBounds() {
+  const shell = desktopShellRef.value;
+  if (!shell) return null;
+  const shellRect = shell.getBoundingClientRect();
+  const leftEl = shell.querySelector('.desktop-left') as HTMLElement | null;
+  const leftWidth = leftEl?.getBoundingClientRect().width ?? 72;
+  const minMiddleWidth = 320;
+  const minRightWidth = 360;
+  const maxRightWidth = Math.max(minRightWidth, shellRect.width - leftWidth - minMiddleWidth);
+  return { shellRect, leftWidth, minMiddleWidth, minRightWidth, maxRightWidth };
+}
+
+function clampDesktopRightWidth(width: number) {
+  const bounds = getDesktopRightWidthBounds();
+  if (!bounds) return width;
+  return Math.min(bounds.maxRightWidth, Math.max(bounds.minRightWidth, width));
+}
+
+function persistDesktopRightWidth() {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(DESKTOP_RIGHT_WIDTH_KEY, String(desktopRightWidth.value));
+  } catch (error) {
+  }
+}
+
+function restoreDesktopRightWidth() {
+  if (typeof window === 'undefined') return;
+  let hasSavedWidth = false;
+  try {
+    const raw = window.localStorage.getItem(DESKTOP_RIGHT_WIDTH_KEY);
+    const saved = Number(raw);
+    if (Number.isFinite(saved) && saved > 0) {
+      desktopRightWidth.value = saved;
+      hasSavedWidth = true;
+    }
+  } catch (error) {
+  }
+  nextTick(() => {
+    if (!hasSavedWidth) {
+      const bounds = getDesktopRightWidthBounds();
+      if (bounds) {
+        const remaining = bounds.shellRect.width - bounds.leftWidth;
+        const equalWidth = remaining / 2;
+        desktopRightWidth.value = equalWidth;
+      }
+    }
+    desktopRightWidth.value = clampDesktopRightWidth(desktopRightWidth.value);
+  });
+}
+
+function updateDesktopRightWidthFromPointerX(clientX: number) {
+  const bounds = getDesktopRightWidthBounds();
+  if (!bounds) return;
+  const nextWidth = bounds.shellRect.right - clientX;
+  desktopRightWidth.value = clampDesktopRightWidth(nextWidth);
+}
+
+function onDesktopResizerMove(event: PointerEvent) {
+  if (resizerPointerId.value === null) return;
+  updateDesktopRightWidthFromPointerX(event.clientX);
+}
+
+function onDesktopResizerUp() {
+  if (typeof window === 'undefined') return;
+  if (resizerPointerId.value === null) return;
+  resizerPointerId.value = null;
+  document.body.style.userSelect = lastBodyUserSelect.value;
+  window.removeEventListener('pointermove', onDesktopResizerMove);
+  window.removeEventListener('pointerup', onDesktopResizerUp);
+  window.removeEventListener('pointercancel', onDesktopResizerUp);
+  persistDesktopRightWidth();
+}
+
+function onDesktopResizerDown(event: PointerEvent) {
+  if (!isLargeScreen.value) return;
+  event.preventDefault();
+  resizerPointerId.value = event.pointerId;
+  lastBodyUserSelect.value = document.body.style.userSelect;
+  document.body.style.userSelect = 'none';
+  updateDesktopRightWidthFromPointerX(event.clientX);
+  window.addEventListener('pointermove', onDesktopResizerMove);
+  window.addEventListener('pointerup', onDesktopResizerUp);
+  window.addEventListener('pointercancel', onDesktopResizerUp);
+}
+
+function onDesktopWindowResize() {
+  if (!isLargeScreen.value) return;
+  desktopRightWidth.value = clampDesktopRightWidth(desktopRightWidth.value);
+}
 
 // 独立的localStorage状态管理，用于存储最后选择的segment
 const MAXFLOW_STORAGE_KEY = 'maxflow_selected_segment';
@@ -519,18 +688,19 @@ const router = useRouter();
   watch(
     () => router.currentRoute.value.path,
     (newRoutePath) => {
+      if (newRoutePath === '/desktop' || newRoutePath === '/desktop/') {
+        currentGroup.value = null;
+        currentGroupName.value = '';
+        setCurrentGroup(null);
+        closeChat();
+        return;
+      }
       if (newRoutePath === '/index' || newRoutePath === '/index/' || newRoutePath === 'index'|| newRoutePath === '/') {
-        // 清除当前群聊状态，确保未读状态可以正常工作
-        if (window.innerWidth > 768) {
-           return
-        }else{
-            currentGroup.value = null;
-          currentGroupName.value = '';
-          setCurrentGroup(null);
-        
-          closeChat();
-       
-        }
+        if (isLargeScreen.value) return;
+        currentGroup.value = null;
+        currentGroupName.value = '';
+        setCurrentGroup(null);
+        closeChat();
       }
     },
     { immediate: false, deep: true }
@@ -545,6 +715,11 @@ onMounted(async () => {
   positionState.value = 'middle';
   translateY.value = midPoint;
   cardsTranslateY.value = 0;
+
+  restoreDesktopRightWidth();
+  if (typeof window !== 'undefined') {
+    window.addEventListener('resize', onDesktopWindowResize);
+  }
    
   // 🎯 初始化键盘监听器（当可能需要底部输入框时）
   // nextTick(() => {
@@ -579,9 +754,10 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-
-  // cleanupKeyboardListeners();
-  
+  if (typeof window !== 'undefined') {
+    window.removeEventListener('resize', onDesktopWindowResize);
+  }
+  onDesktopResizerUp();
 });
 
 
@@ -652,6 +828,142 @@ const momentsRef = ref<InstanceType<typeof Moment> | null>(null);
      /* --background: transparent;
     background: transparent; */
   }
+}
+
+.desktop-content {
+  --padding-start: 0;
+  --padding-end: 0;
+  --padding-top: 0;
+  --padding-bottom: 0;
+}
+
+.desktop-shell {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+.desktop-left {
+  width: 72px;
+  min-width: 72px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 16px 10px;
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.desktop-left-item {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  color: var(--ion-color-medium);
+}
+
+.desktop-left-item-active {
+  color: var(--ion-color-primary);
+  background: rgba(var(--ion-color-primary-rgb), 0.12);
+}
+
+.desktop-left-item ion-icon {
+  font-size: 22px;
+}
+
+.desktop-middle {
+  flex: 1;
+  min-width: 320px;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+.desktop-right {
+  width: 420px;
+  min-width: 360px;
+  height: 100%;
+  border-left: 1px solid rgba(0, 0, 0, 0.06);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  transform: translateZ(0);
+  position: relative;
+}
+
+.desktop-right-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px 10px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.desktop-resizer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 10px;
+  transform: translateX(-5px);
+  cursor: col-resize;
+  z-index: 20;
+  touch-action: none;
+}
+
+.desktop-resizer::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: transparent;
+}
+
+.desktop-resizer:hover::after {
+  background: rgba(var(--ion-color-primary-rgb), 0.35);
+}
+
+.desktop-right-body {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+  contain: layout paint size;
+}
+
+.desktop-nav {
+  height: 100%;
+  overflow-y: auto;
+}
+
+.desktop-detail {
+  height: 100%;
+  overflow: hidden;
+}
+
+.desktop-empty {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+
+}
+.empty {
+  padding-top: 20%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.desktop-content .page-component {
+  height: 100%;
 }
 
 .empty-icon {

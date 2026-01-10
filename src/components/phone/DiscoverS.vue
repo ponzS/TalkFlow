@@ -105,7 +105,7 @@ import {
 } from 'ionicons/icons'
 import { Sortable } from 'sortablejs-vue3'
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem'
-import desktopIconsConfig from '../../config/desktopIcons.json'
+// import desktopIconsConfig from '../../config/desktopIcons.json'
 import { getTalkFlowCore } from '../../composables/TalkFlowCore'
 
 // 图标映射
@@ -187,7 +187,7 @@ async function loadIconsFromFile() {
   //  console.log('从文件加载图标配置成功')
   } catch (error) {
    // console.log('文件不存在或读取失败，使用默认配置:', error)
-    icons.value = [...desktopIconsConfig.icons]
+    // icons.value = [...desktopIconsConfig.icons]
     // 首次使用时保存默认配置
     await saveIconsToFile()
   }
@@ -222,7 +222,7 @@ async function saveIcons() {
 
 // 重置图标配置为默认值
 async function resetIconsToDefault() {
-  icons.value = [...desktopIconsConfig.icons]
+  // icons.value = [...desktopIconsConfig.icons]
   updateVisibleIcons()
   await saveIcons()
  // showToast('🔄 已重置为默认图标顺序', 'success')

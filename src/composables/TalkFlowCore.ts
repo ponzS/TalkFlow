@@ -1312,6 +1312,8 @@ const deletedRecordsMap: Ref<Record<string, number>> = ref({});
 const chatPreviewList: Ref<ChatPreview[]> = ref([]);
 const chatChunkRangeMap: Ref<Record<string, { minIndex: number; maxIndex: number }>> = ref({});
 const sentMessages: Ref<Set<string>> = ref(new Set());
+const pendingNetworkMessagesByChatId: Ref<Record<string, Record<string, NetworkChatMessage>>> = ref({});
+const pendingEpubFlushWatchersByChatId: Ref<Record<string, () => void>> = ref({});
 const offlineNotice: Ref<string | null> = ref(null);
 const userAvatars: Ref<Record<string, string>> = ref({});
 const selectedFriendPub: Ref<string | null> = ref(null);
@@ -1482,6 +1484,10 @@ export function useChatFlow() {
 
   function generateChatId(pubA: string, pubB: string): string {
     return pubA < pubB ? `${pubA}_${pubB}` : `${pubB}_${pubA}`;
+  }
+
+  function dmRoomSoulFor(pubA: string, pubB: string): string {
+    return `dm_${generateChatId(pubA, pubB)}`;
   }
 
   // Public key validation function
@@ -2390,7 +2396,47 @@ await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?
     
       return localEpub;
     }
-  
+
+    const myPub = currentUserPub.value;
+    if (myPub) {
+      const sharedNodeId = `epub_share_${[myPub, pub].sort().join('_')}`;
+      const sharedEpub = await new Promise<string | null>((resolve) => {
+        const timeout = setTimeout(() => resolve(null), 2500);
+        gun
+          .get('epub_sharing')
+          .get(sharedNodeId)
+          .get(pub)
+          .once(async (data: any) => {
+            clearTimeout(timeout);
+            try {
+              if (!data || typeof data !== 'object') return resolve(null);
+              const epubVal = typeof data.epub === 'string' ? data.epub : '';
+              const from = typeof data.from === 'string' ? data.from : '';
+              const to = typeof data.to === 'string' ? data.to : '';
+              const signature = typeof data.signature === 'string' ? data.signature : '';
+              const ts = typeof data.timestamp === 'number' ? data.timestamp : Number(data.timestamp);
+              if (!epubVal || !from || !to || !signature || !Number.isFinite(ts) || ts <= 0) return resolve(null);
+              if (from !== pub || to !== myPub) return resolve(null);
+              const now = Date.now();
+              if (now - ts > 24 * 60 * 60 * 1000) return resolve(null);
+              if (ts > now + 60 * 1000) return resolve(null);
+              if (!isValidEpub(epubVal)) return resolve(null);
+              const verified = await Gun.SEA.verify(signature, from);
+              if (!verified) return resolve(null);
+              const expected = `${epubVal}:${to}:${ts}`;
+              const verifiedText = typeof verified === 'string' ? verified : JSON.stringify(verified);
+              if (verifiedText !== expected) return resolve(null);
+              epubCache[pub] = epubVal;
+              await storageServ.saveEpub(pub, epubVal);
+              resolve(epubVal);
+            } catch {
+              resolve(null);
+            }
+          });
+      });
+      if (sharedEpub) return sharedEpub;
+    }
+
     // 3. 只有在本地数据库没有epub时才从网络获取
     const maxRetries = 3;
     let retries = 0;
@@ -3672,27 +3718,63 @@ await storageServ.run('INSERT OR REPLACE INTO credentials (key, value) VALUES (?
   // Clear network message after receiving receipt
   async function clearNetworkMessageAfterReceipt(chatId: string, msgId: string): Promise<void> {
     try {
-      // Ensure only clearing messages sent by current user
       if (!currentUserPub.value) return;
-      
-      // Check if message was indeed sent by current user
-      const messageRef = gun.get('chats').get(chatId).get('messages').get(msgId);
-      messageRef.once(async (data: NetworkChatMessage) => {
-        if (data && data.from === currentUserPub.value) {
-          // Confirmed as message sent by current user, safe to delete
-          messageRef.put(null, (ack: any) => {
-            if (ack.err) {
-              // Failed to clear network message
-            } else {
-                        gun.get('chats').get(chatId).get('receipts').get(msgId).put(null);
-              // Network message cleared after receipt
-            }
-          });
-          
-          // Also clear corresponding receipt
-         // gun.get('chats').get(chatId).get('receipts').get(msgId).put(null);
-        }
+
+      const myPub = currentUserPub.value;
+
+      const legacyRef = gun.get('chats').get(chatId).get('messages').get(msgId);
+      const legacyDeleted = await new Promise<boolean>((resolve) => {
+        let settled = false;
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true;
+          resolve(false);
+        }, 2500);
+
+        legacyRef.once((data: NetworkChatMessage | undefined) => {
+          if (settled) return;
+          if (data && data.from === myPub) {
+            legacyRef.put(null, (ack: any) => {
+              clearTimeout(timer);
+              if (settled) return;
+              settled = true;
+              resolve(!(ack && ack.err));
+            });
+            return;
+          }
+          clearTimeout(timer);
+          settled = true;
+          resolve(false);
+        });
       });
+
+      if (!legacyDeleted) {
+        const pubs = String(chatId || '').split('_').filter(Boolean);
+        const otherPub = pubs.length >= 2 ? (pubs[0] === myPub ? pubs[1] : pubs[0]) : '';
+        const roomSoul = otherPub ? dmRoomSoulFor(myPub, otherPub) : '';
+
+        if (roomSoul) {
+          const roomChain = gun.get(roomSoul);
+          await new Promise<void>((resolve) => {
+            setTimeout(resolve, 1800);
+            roomChain
+              .map()
+              .once((data: NetworkChatMessage | undefined, key: string) => {
+                if (!data) return;
+                if (data.from !== myPub) return;
+                const dataMsgId = String((data as any)?.msgId || '');
+                if (!dataMsgId || dataMsgId !== msgId) return;
+                try {
+                  roomChain.get(key).put(null);
+                } catch {}
+              });
+          });
+        }
+      }
+
+      try {
+        gun.get('chats').get(chatId).get('receipts').get(msgId).put(null);
+      } catch {}
       
     } catch (error) {
       // Failed to clear network message
@@ -3934,6 +4016,7 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
   const targetPub = currentChatPub.value;
   const now = Date.now();
   const chatId = generateChatId(myPub, targetPub);
+  const roomSoul = dmRoomSoulFor(myPub, targetPub);
   const msgId = uuidv4();
   const localMsg: LocalChatMessage = {
     chatID: chatId,
@@ -4043,8 +4126,7 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
 
     try {
       await new Promise<void>((resolve, reject) => {
-        gun.get('chats').get(chatId).get('messages').get(msgId)
-          .put(networkMsg, (ack: any) => (ack && ack.err) ? reject(new Error(ack.err)) : resolve());
+        gun.get(roomSoul).set(networkMsg, (ack: any) => (ack && ack.err) ? reject(new Error(ack.err)) : resolve(), { lack: 9000 });
       });
 
       // 发送成功：更新本地状态与预览
@@ -4123,7 +4205,11 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
   }
 
   async function openChat(pubKey: string): Promise<void> {
-    router.push('/chatpage');
+    if (isLargeScreen.value) {
+      await router.replace('/desktop/chatpage')
+    } else {
+      await router.push('/chatpage')
+    }
     if (!currentUserPub.value) {
       // showToast('Not logged in, cannot open chat', 'warning');
       return;
@@ -4178,6 +4264,7 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
   function listenChat(pubKey: string): (() => void) | null {
     const myPub = currentUserPub.value;
     const chatId = generateChatId(myPub, pubKey);
+    const roomSoul = dmRoomSoulFor(myPub, pubKey);
 
     if (!buddyList.value.some(b => b.pub === pubKey)) return null;
     if (chatListeners.value[pubKey]) return chatListeners.value[pubKey];
@@ -4191,25 +4278,192 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
       chatMessages.value = { ...chatMessages.value };
     });
 
-    const messageListener = gun.get('chats').get(chatId).get('messages').map().on(async (data: NetworkChatMessage | undefined, msgId: string) => {
-      if (!data || !data.from || sentMessages.value.has(msgId)) return;
-      if (!buddyList.value.some(b => b.pub === data.from )) return;
+    const queuePendingNetworkMessage = (msgId: string, data: NetworkChatMessage) => {
+      const id = String(msgId || '');
+      if (!id) return;
+      const current = pendingNetworkMessagesByChatId.value[chatId] || {};
+      current[id] = data;
+      pendingNetworkMessagesByChatId.value[chatId] = current;
+      pendingNetworkMessagesByChatId.value = { ...pendingNetworkMessagesByChatId.value };
+    };
+
+    const flushPendingNetworkMessages = async () => {
+      const pending = pendingNetworkMessagesByChatId.value[chatId];
+      if (!pending) return;
+      const entries = Object.entries(pending);
+      if (!entries.length) return;
+
+      for (const [msgId, data] of entries) {
+        const cutoff = deletedRecordsMap.value[chatId] || 0;
+        if ((data?.timestamp || 0) <= cutoff) {
+          delete pending[msgId];
+          continue;
+        }
+        const existingInSqlite = await storageServ.query('SELECT id FROM messages WHERE chatID = ? AND msgId = ?', [chatId, msgId]);
+        if (existingInSqlite.values?.length > 0) {
+          delete pending[msgId];
+          continue;
+        }
+        const localMsg = await decryptMessage(data, pubKey);
+        if (!localMsg) continue;
+        localMsg.chatID = chatId;
+        const insertedId = await autoSaveStorageServ.insertMessage(chatId, localMsg);
+        localMsg.id = insertedId;
+        if (currentChatPub.value != null) {
+          chatMessages.value[pubKey] = chatMessages.value[pubKey] || [];
+          chatMessages.value[pubKey].push(localMsg);
+          chatMessages.value = { ...chatMessages.value };
+        }
+
+        if (data.from !== myPub) {
+          await sendMessageReceipt(chatId, msgId);
+        }
+
+        if (data.from !== myPub) {
+          const lastNotified = lastNotifiedTimestamp.value[pubKey] || 0;
+          if (localMsg.timestamp > lastNotified && localMsg.timestamp <= Date.now()) {
+            lastNotifiedTimestamp.value[pubKey] = localMsg.timestamp;
+            await triggerLightHaptic();
+          }
+        }
+
+        const shortMsg = getPreviewText(localMsg).length > 10 ? getPreviewText(localMsg).slice(0, 10) + '...' : getPreviewText(localMsg);
+        const timeStr = formatTimestamp(localMsg.timestamp);
+        const idx = chatPreviewList.value.findIndex(c => c.pub === pubKey);
+        const shouldUpdatePreview = data.from !== myPub || (idx >= 0 && !chatPreviewList.value[idx].lastMsg.startsWith('⏳') && !chatPreviewList.value[idx].lastMsg.startsWith('✓'));
+        if (shouldUpdatePreview) {
+          if (idx >= 0) {
+            chatPreviewList.value[idx].lastMsg = shortMsg;
+            chatPreviewList.value[idx].lastTime = timeStr;
+            chatPreviewList.value[idx].hidden = false;
+            chatPreviewList.value[idx].hasNew = data.from !== myPub && currentChatPub.value !== pubKey;
+            await autoSaveStorageServ.saveChatPreview(chatPreviewList.value[idx]);
+          } else {
+            const newPreview: ChatPreview = {
+              pub: pubKey,
+              lastMsg: shortMsg,
+              lastTime: timeStr,
+              hidden: false,
+              hasNew: data.from !== myPub && currentChatPub.value !== pubKey,
+            };
+            chatPreviewList.value.push(newPreview);
+            await autoSaveStorageServ.saveChatPreview(newPreview);
+          }
+          await saveChatPreviewsToDb(chatPreviewList.value);
+          chatPreviewList.value = [...chatPreviewList.value];
+        }
+
+        delete pending[msgId];
+      }
+
+      if (Object.keys(pending).length === 0) {
+        delete pendingNetworkMessagesByChatId.value[chatId];
+      } else {
+        pendingNetworkMessagesByChatId.value[chatId] = pending;
+      }
+      pendingNetworkMessagesByChatId.value = { ...pendingNetworkMessagesByChatId.value };
+    };
+
+    const ensureEpubFlushWatcher = () => {
+      if (pendingEpubFlushWatchersByChatId.value[chatId]) return;
+      const my = currentUserPub.value;
+      if (!my) return;
+
+      let sharedChain: any;
+      let userChain: any;
+      let stopped = false;
+
+      const stop = () => {
+        if (stopped) return;
+        stopped = true;
+        try {
+          sharedChain?.off?.();
+        } catch {}
+        try {
+          userChain?.off?.();
+        } catch {}
+        try {
+          delete pendingEpubFlushWatchersByChatId.value[chatId];
+          pendingEpubFlushWatchersByChatId.value = { ...pendingEpubFlushWatchersByChatId.value };
+        } catch {}
+      };
+
+      pendingEpubFlushWatchersByChatId.value[chatId] = stop;
+      pendingEpubFlushWatchersByChatId.value = { ...pendingEpubFlushWatchersByChatId.value };
+
+      const sharedNodeId = `epub_share_${[my, pubKey].sort().join('_')}`;
+      try {
+        sharedChain = gun.get('epub_sharing').get(sharedNodeId).get(pubKey).on(async () => {
+          const epub = await getUserEpub(pubKey);
+          if (!epub) return;
+          await flushPendingNetworkMessages();
+          stop();
+        });
+      } catch {}
+
+      try {
+        userChain = gun.get('users').get(pubKey).get('epub').on(async (val: any) => {
+          const epubVal = typeof val === 'string' && isValidEpub(val) ? val : null;
+          if (!epubVal) return;
+          epubCache[pubKey] = epubVal;
+          await storageServ.saveEpub(pubKey, epubVal);
+          await flushPendingNetworkMessages();
+          stop();
+        });
+      } catch {}
+
+      setTimeout(stop, 45000);
+    };
+
+    const handleIncomingMessage = async (data: NetworkChatMessage | undefined, key: string) => {
+      if (!data || !data.from) return;
+      const id = String((data as any)?.msgId || key || '');
+      if (!id || id === '_' || id === '#' || id === '>' || id === '<') return;
       if (data.from !== myPub && data.from !== pubKey) return;
 
       const cutoff = deletedRecordsMap.value[chatId] || 0;
-      if (data.timestamp <= cutoff) return;
+      if ((data.timestamp || 0) <= cutoff) return;
 
-      const existingInSqlite = await storageServ.query('SELECT id FROM messages WHERE chatID = ? AND msgId = ?', [chatId, msgId]);
-      if (existingInSqlite.values?.length > 0) return;
+      const existingInSqlite = await storageServ.query('SELECT id FROM messages WHERE chatID = ? AND msgId = ?', [chatId, id]);
+      if (existingInSqlite.values?.length > 0) {
+        if (data.from === myPub) {
+          await storageServ.run('UPDATE messages SET status = ?, isSending = ?, sent = ? WHERE chatID = ? AND msgId = ?', [
+            'sent',
+            0,
+            1,
+            chatId,
+            id,
+          ]);
+          if (chatMessages.value[pubKey]?.length) {
+            const idx = chatMessages.value[pubKey].findIndex(m => m.msgId === id);
+            if (idx >= 0) {
+              chatMessages.value[pubKey][idx] = {
+                ...chatMessages.value[pubKey][idx],
+                status: 'sent',
+                isSending: false,
+                sent: true,
+              };
+              chatMessages.value = { ...chatMessages.value };
+            }
+          }
+        }
+        return;
+      }
 
       const localMsg = await decryptMessage(data, pubKey);
-      if (!localMsg) return;
+      if (!localMsg) {
+        queuePendingNetworkMessage(id, data);
+        ensureEpubFlushWatcher();
+        const epub = await getUserEpub(pubKey);
+        if (epub) await flushPendingNetworkMessages();
+        return;
+      }
 
       localMsg.chatID = chatId;
       const insertedId = await autoSaveStorageServ.insertMessage(chatId, localMsg);
       localMsg.id = insertedId;
 
-      if(currentChatPub.value != null) {
+      if (currentChatPub.value != null) {
         chatMessages.value[pubKey] = chatMessages.value[pubKey] || [];
         chatMessages.value[pubKey].push(localMsg);
         chatMessages.value = { ...chatMessages.value };
@@ -4217,7 +4471,7 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
 
       // Send message receipt (confirmation that the other party received the message)
       if (data.from !== myPub) {
-        await sendMessageReceipt(chatId, msgId);
+        await sendMessageReceipt(chatId, id);
       }
 
       // Handle AI auto-reply (WebLLM)
@@ -4297,6 +4551,14 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
         await saveChatPreviewsToDb(chatPreviewList.value);
         chatPreviewList.value = [...chatPreviewList.value];
       }
+    };
+
+    const messageListener = gun.get(roomSoul).map().on(async (data: NetworkChatMessage | undefined, key: string) => {
+      await handleIncomingMessage(data, key);
+    });
+
+    const legacyMessageListener = gun.get('chats').get(chatId).get('messages').map().on(async (data: NetworkChatMessage | undefined, key: string) => {
+      await handleIncomingMessage(data, key);
     });
 
     // Start receipt listening
@@ -4305,6 +4567,15 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
     const cleanup = () => {
       deletedListener.off();
       messageListener.off();
+      legacyMessageListener.off();
+      try {
+        const stop = pendingEpubFlushWatchersByChatId.value[chatId];
+        if (stop) stop();
+      } catch {}
+      try {
+        delete pendingNetworkMessagesByChatId.value[chatId];
+        pendingNetworkMessagesByChatId.value = { ...pendingNetworkMessagesByChatId.value };
+      } catch {}
     };
     
     chatListeners.value[pubKey] = cleanup;
@@ -5844,6 +6115,3 @@ export function getTalkFlowCore() {
 }
 
 export default getTalkFlowCore;
-
-
-

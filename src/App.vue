@@ -6,8 +6,10 @@
  <div v-show="relayok">
   <RelayGroup/>
  </div>
-
-
+   <div style="z-index: 99999;">
+    <Call />
+</div>
+<!-- 
     <ion-split-pane  content-id="main"  v-show="isLoggedIn">
           <ion-menu type="push"  content-id="main">
          
@@ -25,9 +27,9 @@
 </div>
             </ion-content>
           </div>
-        </ion-split-pane>
+        </ion-split-pane> -->
 
-
+ <ion-router-outlet  />
 
     <ion-modal :is-open="!isLoggedIn" :can-dismiss="false" class="login-modal" :key="`modal-${isLoggedIn}`">
      
@@ -53,29 +55,30 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
+import { useRouter } from 'vue-router';
 import { IonApp, IonRouterOutlet, IonModal, IonHeader, IonToolbar, IonTitle, IonContent, IonButton 
   , IonMenu, 
   IonSplitPane, 
 } from '@ionic/vue';
 import { getTalkFlowCore } from '@/composables/TalkFlowCore';
 import { useLanguage } from '@/composables/useLanguage';
-
+const { incomingRequests, outgoingRequests, acceptRequest, rejectRequest, reloadAll: reloadRequests,reloadAll } = useFriendRequests();
 import Call from '@/components/phone/Call.vue'
 const { initLanguage } = useLanguage();
 const chatFlowStore = getTalkFlowCore();
-
 import { peersList, enabledPeers,loadRelays } from '@/composables/useGun';
 import RelayGroup from './components/GunVue/RelayGroup.vue';
+
 
 const { 
   restoreLoginState, 
   storageServ, 
   offlineNotice, 
-
   isLoggedIn,
-
 } = chatFlowStore;
 const relayok = ref(false);
+const router = useRouter();
+let removeRouteGuard: (() => void) | null = null;
 
 function setupNetworkListener() {
   let debounceTimer: NodeJS.Timeout;
@@ -95,11 +98,73 @@ onMounted(async () => {
 
   // await loadRelays();
   await storageServ.initializeDatabase();
-await loadRelays();
+  await loadRelays();
   await initLanguage();
   await setupNetworkListener(); 
+  chatFlowStore.updateScreenSize();
+  window.addEventListener('resize', chatFlowStore.updateScreenSize);
+  removeRouteGuard = router.beforeEach((to) => {
+    const isDesktop = chatFlowStore.isLargeScreen.value;
+    const isDesktopPath = to.path === '/desktop' || to.path.startsWith('/desktop/');
+
+    if (!isDesktop && isDesktopPath) {
+      const stripped = to.fullPath.replace(/^\/desktop/, '') || '/';
+      return stripped;
+    }
+
+    if (isDesktop && !isDesktopPath) {
+      if (to.path === '/' || to.path === '/index') {
+        return '/desktop';
+      }
+      const eligible = [
+        '/chatpage',
+        '/friend-profile',
+        '/friend-settings',
+        '/FriendRequests',
+        '/GroupMessages',
+        '/GroupMembers',
+        '/ModelPersona',
+        '/notifications',
+        '/Notifications',
+        '/call',
+        '/CallPage',
+        '/Moment',
+        '/FriendMoments',
+        '/i18nset',
+        '/Mesh',
+        '/NotificationSettings',
+        '/keycheck',
+        '/ScanPage',
+        '/MigrationChoice',
+        '/MigrationExport',
+        '/MigrationImport',
+        '/blacklist',
+        '/blackList',
+        '/ReportPage',
+        '/myself',
+        '/Relay',
+        '/browser',
+        '/qrpage',
+        '/htmlpage',
+        '/Sponsorship',
+        '/indexedDBpage',
+        '/settingspage',
+        '/GroupCallPage',
+      ];
+      if (eligible.includes(to.path)) {
+        return `/desktop${to.fullPath}`;
+      }
+    }
+    return true;
+  });
   await restoreLoginState();
 
+
+});
+
+onUnmounted(() => {
+  window.removeEventListener('resize', chatFlowStore.updateScreenSize);
+  if (removeRouteGuard) removeRouteGuard();
 });
 
 

@@ -28,7 +28,7 @@
      
    
       <ion-toolbar class="avatar-index" >
-        <ion-menu-button >
+        <!-- <ion-menu-button > -->
    <div style="display: flex;justify-content: center;align-items: center;">
         <div style="width: 100px; height: 100px; border-radius: 50%; overflow: hidden;margin: auto 11px;cursor: pointer;">
                   <img
@@ -42,18 +42,17 @@
 
             /></div>
             </div>
-            </ion-menu-button>
+            <!-- </ion-menu-button> -->
 </ion-toolbar>
 
   
       <ion-header collapse="condense" >
           <ion-toolbar>
-             <ion-menu-button >
+
          <p class="username"> {{ currentUserAlias || '' }}</p>
-     </ion-menu-button>   
-        <ion-menu-button >
+
          <p class="userlink"> {{ currentUserAlias1 || '' }}</p>
-   </ion-menu-button>
+
     </ion-toolbar>
         </ion-header>
 
@@ -157,7 +156,7 @@
 
 
              
-      <div class="settings-section">
+      <!-- <div class="settings-section">
         <h2 class="section-title">Tool</h2>
         <ion-list class="settings-list">
            <ion-item  button @click="router.push('/htmlpage')" class="cosmic-item">
@@ -173,7 +172,7 @@
             <ion-label class="cosmic-label">QR Tool</ion-label>
           </ion-item>
         </ion-list>
-      </div>
+      </div> -->
       <!-- Storage and Cache Section -->
       <div class="settings-section">
         <h2 class="section-title">{{ $t('storage') }}</h2>
@@ -803,11 +802,11 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-  @media (min-width: 998px) {
+  /* @media (min-width: 998px) {
   .avatar-index{
     display: none;
   }
-}
+} */
 /* Settings Content Layout */
 .settings-content {
   --padding-top: 16px;
