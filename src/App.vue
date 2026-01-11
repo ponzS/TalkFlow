@@ -333,4 +333,14 @@ body {
   font-weight: 600;
   margin-top: 1rem;
 }
+
+/* * {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+} */
 </style>

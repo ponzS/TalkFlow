@@ -27,6 +27,7 @@ import { shallowRef } from 'vue';
 import { debounce } from 'lodash';
 import { useI18n } from 'vue-i18n';
 import LzcApp from '@lazycatcloud/sdk/dist/extentions'
+import { v4 as uuidv4 } from 'uuid';
 
 mountClass();
 const router = useRouter();
@@ -79,6 +80,15 @@ const avatarurl = computed(() => gunAvatar({ pub: currentUserPub.value, round: f
 
 const relayConnectedPeers = ref<string[]>([]);
 let relayCountTimer: number | undefined;
+let relayStatusTimer: number | undefined;
+let relayAckProbeTimer: number | undefined;
+
+const relayStatusNow = ref(Date.now());
+const relayZeroSince = ref<number>(Date.now());
+
+const lastRelayAckMs = ref<number | null>(null);
+const lastRelayAckAt = ref<number | null>(null);
+const relayAckPendingSince = ref<number | null>(null);
 
 function refreshConnectedRelays() {
   try {
@@ -102,13 +112,111 @@ function refreshConnectedRelays() {
 
 const connectedRelaysCount = computed(() => relayConnectedPeers.value.length);
 
+function runRelayAckProbe() {
+  if (!connectedRelaysCount.value) return;
+  if (relayAckPendingSince.value !== null) return;
+
+  const startMs = performance.now();
+  const startedAt = Date.now();
+  relayAckPendingSince.value = startedAt;
+
+  const key = uuidv4();
+  let settled = false;
+
+  const settle = (ms: number) => {
+    if (settled) return;
+    settled = true;
+    lastRelayAckMs.value = ms;
+    lastRelayAckAt.value = Date.now();
+    relayAckPendingSince.value = null;
+  };
+
+  try {
+    (gun as any)
+      .get('tf-relay-ack-probe')
+      .get(key)
+      .put({ t: Date.now(), k: key }, (ack: any) => {
+        if (ack?.err) return settle(Infinity);
+        settle(performance.now() - startMs);
+      });
+  } catch {
+    settle(Infinity);
+  }
+
+  window.setTimeout(() => {
+    if (relayAckPendingSince.value === startedAt) {
+      settle(Infinity);
+    }
+  }, 10000);
+}
+
+const isRelayAckSlow = computed(() => {
+  if (!connectedRelaysCount.value) return false;
+
+  const pendingSince = relayAckPendingSince.value;
+  if (pendingSince !== null && relayStatusNow.value - pendingSince > 3000) return true;
+
+  const lastAt = lastRelayAckAt.value;
+  const lastMs = lastRelayAckMs.value;
+  if (lastAt !== null && lastMs !== null && relayStatusNow.value - lastAt <= 20000) {
+    return lastMs > 3000;
+  }
+
+  return false;
+});
+
+const relayStatusText = computed(() => {
+  if (!connectedRelaysCount.value) {
+    const elapsed = relayStatusNow.value - relayZeroSince.value;
+    return elapsed < 10000
+      ? (t('relayStatusConnecting') || '正在连接中继')
+      : (t('relayStatusDisconnected') || '未连接中继网络');
+  }
+
+  if (isRelayAckSlow.value) return t('relayStatusDiskIoAbnormal') || '磁盘读写存在异常';
+  return '';
+});
+
+const relayStatusTextTone = computed(() => {
+  if (!connectedRelaysCount.value) {
+    const elapsed = relayStatusNow.value - relayZeroSince.value;
+    return elapsed < 10000 ? 'info' : 'error';
+  }
+  return isRelayAckSlow.value ? 'error' : 'info';
+});
+
 onMounted(() => {
   refreshConnectedRelays();
   relayCountTimer = window.setInterval(refreshConnectedRelays, 1500);
+
+  relayStatusNow.value = Date.now();
+  relayZeroSince.value = Date.now();
+  relayStatusTimer = window.setInterval(() => {
+    relayStatusNow.value = Date.now();
+  }, 500);
+
+  runRelayAckProbe();
+  relayAckProbeTimer = window.setInterval(runRelayAckProbe, 8000);
 });
 
 onBeforeUnmount(() => {
   if (relayCountTimer) window.clearInterval(relayCountTimer);
+  if (relayStatusTimer) window.clearInterval(relayStatusTimer);
+  if (relayAckProbeTimer) window.clearInterval(relayAckProbeTimer);
+});
+
+watch(connectedRelaysCount, (count, prevCount) => {
+  if (!count && prevCount) {
+    relayZeroSince.value = Date.now();
+    relayAckPendingSince.value = null;
+    lastRelayAckAt.value = null;
+    lastRelayAckMs.value = null;
+    return;
+  }
+
+  if (count && !prevCount) {
+    runRelayAckProbe();
+  }
 });
 
 // Segment state with persistence - 默认显示聊天列表
@@ -1136,12 +1244,17 @@ const handleTouchMove = () => {
           </ion-button>
         </ion-buttons>
 
-        <ion-title >
+        <ion-title v-if="!relayStatusText">
          TalkFlow
         </ion-title>
 
         <ion-buttons slot="end" >
           <div class="relay-status">
+            <span
+              v-if="relayStatusText"
+              class="relay-status-text"
+              :class="relayStatusTextTone"
+            >{{ relayStatusText }}</span>
             <span class="breathing-dot" :class="connectedRelaysCount !== 0 ? 'green' : 'red'"></span>
             <span class="RelayNumber">{{ connectedRelaysCount }}</span>
           </div>
@@ -1749,6 +1862,22 @@ const handleTouchMove = () => {
   display: inline-flex;
   align-items: center;
   margin-right: 8px;
+}
+
+.relay-status-text {
+  font-size: 12px;
+  line-height: 1;
+  margin-right: 6px;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.relay-status-text.info {
+  color: var(--ion-text-color-step-600);
+}
+.relay-status-text.error {
+  color: #eb445a;
 }
 
 .breathing-dot {

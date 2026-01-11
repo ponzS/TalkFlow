@@ -929,7 +929,7 @@ const momentsRef = ref<InstanceType<typeof Moment> | null>(null);
 .desktop-right-header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: end;
   gap: 8px;
   padding: 10px 10px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);

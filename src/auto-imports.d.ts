@@ -41,6 +41,7 @@ declare global {
   const getVerificationStatus: typeof import('./composables/TalkFlowCore')['getVerificationStatus']
   const gun: typeof import('./composables/useGun')['gun']
   const h: typeof import('vue')['h']
+  const initGun: typeof import('./composables/useGun')['initGun']
   const inject: typeof import('vue')['inject']
   const isProxy: typeof import('vue')['isProxy']
   const isReactive: typeof import('vue')['isReactive']

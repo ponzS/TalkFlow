@@ -4944,53 +4944,165 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
     filePreviewUrl.value = null;
   }
 
-  async function onDeleteChatClick(pub: string): Promise<void> {
-    if (!pub || !currentUserPub.value) return;
-    const chatId = generateChatId(currentUserPub.value, pub);
-    await new Promise<void>((resolve) => {
-      gun.get('chats').get(chatId).get('messages').map().once((data: any, msgId: string) => {
-        if (data) {
-          gun.get('chats').get(chatId).get('messages').get(msgId).put(null, (ack: any) => {
-            if (ack.err) {
-              // Failed to delete message
-            }
-          });
+  type ChatDeleteRequestPayload = {
+    requestId: string;
+    from: string;
+    to: string;
+    chatId: string;
+    cutoffTs: number;
+    timestamp: number;
+  };
 
-        }
-      });
-      // Wait for cleanup to complete
-      setTimeout(resolve, 1000); // Add delay to ensure Gun.js sync
-    });
+  let chatDeleteRequestsChain: any;
+  const processedChatDeleteRequestIds = new Set<string>();
+
+  function stopChatDeleteRequestsListener(): void {
     try {
-      // Local cleanup
+      chatDeleteRequestsChain?.off?.();
+    } catch {}
+    chatDeleteRequestsChain = null;
+  }
+
+  function listenChatDeleteRequests(myPub: string): void {
+    stopChatDeleteRequestsListener();
+    if (!myPub) return;
+    try {
+      chatDeleteRequestsChain = gun
+        .get('chat_delete_requests')
+        .get(myPub)
+        .map()
+        .on(async (data: any, key: string) => {
+          if (!data) return;
+          const requestId = String(data?.requestId || key || '').trim();
+          if (!requestId || requestId === '_' || requestId === '#' || requestId === '>' || requestId === '<') return;
+          if (processedChatDeleteRequestIds.has(requestId)) return;
+
+          const fromPub = String(data?.from || '').trim();
+          const toPub = String(data?.to || '').trim();
+          if (!fromPub || !toPub) return;
+          if (toPub !== myPub) return;
+          if (fromPub === myPub) return;
+
+          processedChatDeleteRequestIds.add(requestId);
+
+          const cutoffTs = Number(data?.cutoffTs || data?.timestamp || Date.now());
+          await onDeleteChatClick(fromPub, { notifyPeer: false, silent: true, cutoffTs });
+
+          try {
+            gun.get('chat_delete_requests').get(myPub).get(requestId).put(null);
+          } catch {}
+        }, { change: true } as any);
+    } catch {}
+  }
+
+  function sendChatDeleteRequest(toPub: string, chatId: string, cutoffTs: number): void {
+    const myPub = currentUserPub.value;
+    if (!myPub || !toPub || toPub === myPub) return;
+    const requestId = `${cutoffTs}_${Math.random().toString(36).slice(2, 10)}`;
+    const payload: ChatDeleteRequestPayload = {
+      requestId,
+      from: myPub,
+      to: toPub,
+      chatId,
+      cutoffTs,
+      timestamp: Date.now(),
+    };
+    try {
+      gun.get('chat_delete_requests').get(toPub).get(requestId).put(payload);
+    } catch {}
+  }
+
+  async function onDeleteChatClick(
+    pub: string,
+    options?: { notifyPeer?: boolean; silent?: boolean; cutoffTs?: number },
+  ): Promise<void> {
+    if (!pub || !currentUserPub.value) return;
+    const myPub = currentUserPub.value;
+    const chatId = generateChatId(myPub, pub);
+    const roomSoul = dmRoomSoulFor(myPub, pub);
+    const cutoffTs = options?.cutoffTs ?? Date.now();
+    const notifyPeer = options?.notifyPeer !== false;
+    const silent = options?.silent === true;
+
+    const deleteGunMap = async (chain: any): Promise<void> => {
+      await new Promise<void>((resolve) => {
+        let settleTimer: number | undefined;
+        let maxTimer: number | undefined;
+
+        const finish = () => {
+          if (settleTimer) window.clearTimeout(settleTimer);
+          if (maxTimer) window.clearTimeout(maxTimer);
+          resolve();
+        };
+
+        const bump = () => {
+          if (settleTimer) window.clearTimeout(settleTimer);
+          settleTimer = window.setTimeout(finish, 500);
+        };
+
+        maxTimer = window.setTimeout(finish, 6000);
+
+        try {
+          chain.map().once((data: any, key: string) => {
+            const k = String(key || '');
+            if (!k || k === '_' || k === '#' || k === '>' || k === '<') return;
+            if (data === undefined) return;
+            try {
+              chain.get(k).put(null);
+            } catch {}
+            bump();
+          });
+        } catch {}
+
+        bump();
+      });
+
+      try {
+        chain.put(null);
+      } catch {}
+    };
+
+    try {
+      if (chatListeners.value[pub]) {
+        chatListeners.value[pub]();
+        delete chatListeners.value[pub];
+      }
+
+      deletedRecordsMap.value[chatId] = cutoffTs;
+      deletedRecordsMap.value = { ...deletedRecordsMap.value };
+
+      gun.get('chats').get(chatId).get('deleted').get(myPub).put(cutoffTs);
+
+      if (notifyPeer) {
+        sendChatDeleteRequest(pub, chatId, cutoffTs);
+      }
+
+      await Promise.all([
+        deleteGunMap(gun.get(roomSoul)),
+        deleteGunMap(gun.get('chats').get(chatId).get('messages')),
+        deleteGunMap(gun.get('chats').get(chatId).get('receipts')),
+      ]);
+
+      try {
+        const stop = pendingEpubFlushWatchersByChatId.value[chatId];
+        if (stop) stop();
+      } catch {}
+      try {
+        delete pendingNetworkMessagesByChatId.value[chatId];
+        pendingNetworkMessagesByChatId.value = { ...pendingNetworkMessagesByChatId.value };
+      } catch {}
+
       chatMessages.value[pub] = [];
       chatMessages.value = { ...chatMessages.value };
       await storageServ.run('DELETE FROM messages WHERE chatID = ?', [chatId]);
-      await autoSaveStorageServ.deleteChatPreview(pub); // Delete chat preview
-  
-      // Remote cleanup of all messages
-      await new Promise<void>((resolve) => {
-        gun.get('chats').get(chatId).get('messages').map().once((data: any, msgId: string) => {
-          if (data) {
-            gun.get('chats').get(chatId).get('messages').get(msgId).put(null, (ack: any) => {
-              if (ack.err) {
-                // Failed to delete message
-              }
-            });
+      await autoSaveStorageServ.deleteChatPreview(pub);
+      chatPreviewList.value = chatPreviewList.value.filter(c => c.pub !== pub);
+      await saveChatPreviewsToDb(chatPreviewList.value);
+      chatPreviewList.value = [...chatPreviewList.value];
 
-          }
-        });
-        // Wait for cleanup to complete
-        setTimeout(resolve, 1000); // Add delay to ensure Gun.js sync
-      });
-  
-      // Optional: clear deleted marker (if still needed to retain)
-      gun.get('chats').get(chatId).get('deleted').get(currentUserPub.value).put(null);
-  
-      showToast(`Chat ${chatId} has been completely deleted`, 'success');
+      if (!silent) showToast(`deleted`, 'success');
     } catch (err) {
-      // Failed to delete chat
-      showToast('Failed to delete chat', 'error');
+      if (!silent) showToast('Failed to delete chat', 'error');
     }
   }
 
@@ -5062,6 +5174,7 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
     listenMyAlias(pub);
     listenMyBlacklist(pub);
     listenMyRequests(pub);
+    listenChatDeleteRequests(pub);
 
     listenEpubPool(pub); 
     listenAllChats(pub);
