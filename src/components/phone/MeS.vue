@@ -113,6 +113,15 @@
               @ionChange="onModeToggle"
             ></ion-toggle>
           </ion-item>
+          <ion-item class="cosmic-item">
+            <ion-icon slot="start" :icon="returnDownBackOutline" class="cosmic-icon" style="color:#3880ff" />
+            <ion-label class="cosmic-label">Enter Mode</ion-label>
+            <ion-toggle
+              slot="end"
+              :checked="isEnterToSendEnabled"
+              @ionChange="onEnterToSendToggle"
+            ></ion-toggle>
+          </ion-item>
         </ion-list>
       </div>
 
@@ -483,6 +492,7 @@ import {
   rocketOutline,
   codeSlashOutline,
   qrCodeSharp,
+  returnDownBackOutline,
 
 } from 'ionicons/icons';
 
@@ -599,6 +609,15 @@ const onModeToggle = (event: CustomEvent) => {
   setTimeout(() => {
     window.location.reload();
   }, 300);
+};
+
+const ENTER_TO_SEND_KEY = 'talkflow_enter_to_send';
+const isEnterToSendEnabled = ref((localStorage.getItem(ENTER_TO_SEND_KEY) || '0') === '1');
+
+const onEnterToSendToggle = (event: CustomEvent) => {
+  const enabled = (event as any).detail?.checked as boolean;
+  isEnterToSendEnabled.value = enabled;
+  localStorage.setItem(ENTER_TO_SEND_KEY, enabled ? '1' : '0');
 };
 import { cn } from "@/lib/utils";
 import { useSpring } from "vue-use-spring";

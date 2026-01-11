@@ -73,7 +73,7 @@
       </div>
 
       <div class="desktop-right" :style="{ width: `${desktopRightWidth}px` }">
-        <div class="desktop-resizer" @pointerdown="onDesktopResizerDown"></div>
+        <div class="desktop-resizer" :class="{ 'desktop-resizer-active': resizerPointerId !== null }" @pointerdown="onDesktopResizerDown"></div>
         <div v-if="hasDesktopDetail" class="desktop-right-header">
           <ion-button fill="clear" @click="closeDesktopDetail">
             <ion-icon :icon="closeOutline"></ion-icon>
@@ -84,7 +84,8 @@
           <ion-router-outlet v-if="hasDesktopDetail" class="desktop-detail" />
           <div v-else class="desktop-empty">
             <div class="empty">
-            <Globe />
+            <!-- <Globe /> -->
+             ^_^
         </div>
           </div>
         </div>
@@ -349,11 +350,14 @@ const DESKTOP_RIGHT_WIDTH_KEY = 'desktop_right_width';
 const desktopRightWidth = ref<number>(420);
 const resizerPointerId = ref<number | null>(null);
 const lastBodyUserSelect = ref<string>('');
+const lastBodyCursor = ref<string>('');
+const lastHtmlCursor = ref<string>('');
 
 function getDesktopRightWidthBounds() {
   const shell = desktopShellRef.value;
   if (!shell) return null;
   const shellRect = shell.getBoundingClientRect();
+  if (shellRect.width <= 0) return null;
   const leftEl = shell.querySelector('.desktop-left') as HTMLElement | null;
   const leftWidth = leftEl?.getBoundingClientRect().width ?? 72;
   const minMiddleWidth = 320;
@@ -376,7 +380,24 @@ function persistDesktopRightWidth() {
   }
 }
 
-function restoreDesktopRightWidth() {
+function nextAnimationFrame() {
+  return new Promise<void>((resolve) => {
+    if (typeof window === 'undefined') return resolve();
+    window.requestAnimationFrame(() => resolve());
+  });
+}
+
+async function getMeasuredDesktopRightWidthBounds(maxRetries = 12) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const bounds = getDesktopRightWidthBounds();
+    if (bounds) return bounds;
+    await nextTick();
+    await nextAnimationFrame();
+  }
+  return getDesktopRightWidthBounds();
+}
+
+async function restoreDesktopRightWidth() {
   if (typeof window === 'undefined') return;
   let hasSavedWidth = false;
   try {
@@ -388,17 +409,16 @@ function restoreDesktopRightWidth() {
     }
   } catch (error) {
   }
-  nextTick(() => {
-    if (!hasSavedWidth) {
-      const bounds = getDesktopRightWidthBounds();
-      if (bounds) {
-        const remaining = bounds.shellRect.width - bounds.leftWidth;
-        const equalWidth = remaining / 2;
-        desktopRightWidth.value = equalWidth;
-      }
-    }
-    desktopRightWidth.value = clampDesktopRightWidth(desktopRightWidth.value);
-  });
+
+  if (!isLargeScreen.value) return;
+
+  const bounds = await getMeasuredDesktopRightWidthBounds();
+  if (!hasSavedWidth && bounds) {
+    const remaining = bounds.shellRect.width - bounds.leftWidth;
+    const equalWidth = remaining / 2;
+    desktopRightWidth.value = equalWidth;
+  }
+  desktopRightWidth.value = clampDesktopRightWidth(desktopRightWidth.value);
 }
 
 function updateDesktopRightWidthFromPointerX(clientX: number) {
@@ -418,6 +438,8 @@ function onDesktopResizerUp() {
   if (resizerPointerId.value === null) return;
   resizerPointerId.value = null;
   document.body.style.userSelect = lastBodyUserSelect.value;
+  document.body.style.cursor = lastBodyCursor.value;
+  document.documentElement.style.cursor = lastHtmlCursor.value;
   window.removeEventListener('pointermove', onDesktopResizerMove);
   window.removeEventListener('pointerup', onDesktopResizerUp);
   window.removeEventListener('pointercancel', onDesktopResizerUp);
@@ -429,7 +451,11 @@ function onDesktopResizerDown(event: PointerEvent) {
   event.preventDefault();
   resizerPointerId.value = event.pointerId;
   lastBodyUserSelect.value = document.body.style.userSelect;
+  lastBodyCursor.value = document.body.style.cursor;
+  lastHtmlCursor.value = document.documentElement.style.cursor;
   document.body.style.userSelect = 'none';
+  document.body.style.cursor = 'col-resize';
+  document.documentElement.style.cursor = 'col-resize';
   updateDesktopRightWidthFromPointerX(event.clientX);
   window.addEventListener('pointermove', onDesktopResizerMove);
   window.addEventListener('pointerup', onDesktopResizerUp);
@@ -440,6 +466,11 @@ function onDesktopWindowResize() {
   if (!isLargeScreen.value) return;
   desktopRightWidth.value = clampDesktopRightWidth(desktopRightWidth.value);
 }
+
+watch(isLargeScreen, (nextValue) => {
+  if (!nextValue) return;
+  void restoreDesktopRightWidth();
+});
 
 // 独立的localStorage状态管理，用于存储最后选择的segment
 const MAXFLOW_STORAGE_KEY = 'maxflow_selected_segment';
@@ -716,7 +747,7 @@ onMounted(async () => {
   translateY.value = midPoint;
   cardsTranslateY.value = 0;
 
-  restoreDesktopRightWidth();
+  await restoreDesktopRightWidth();
   if (typeof window !== 'undefined') {
     window.addEventListener('resize', onDesktopWindowResize);
   }
@@ -928,6 +959,10 @@ const momentsRef = ref<InstanceType<typeof Moment> | null>(null);
 }
 
 .desktop-resizer:hover::after {
+  background: rgba(var(--ion-color-primary-rgb), 0.35);
+}
+
+.desktop-resizer.desktop-resizer-active::after {
   background: rgba(var(--ion-color-primary-rgb), 0.35);
 }
 

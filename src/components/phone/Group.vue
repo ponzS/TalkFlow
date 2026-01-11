@@ -143,8 +143,18 @@ import { addCircleOutline, personAddOutline, trashOutline, keyOutline } from 'io
 import { gunAvatar, mountClass } from 'gun-avatar';
 import { useTheme } from '@/composables/useTheme';
 import { getTalkFlowCore } from '@/composables/TalkFlowCore';
+import LzcApp from '@lazycatcloud/sdk/dist/extentions'
 
 mountClass();
+
+function isClientMobileWebShell() {
+  if (typeof window === 'undefined') return false
+  try {
+    return LzcApp.isIosWebShell() || LzcApp.isAndroidWebShell()
+  } catch {
+    return false
+  }
+}
 
 // 使用 useGroupChat 获取群聊数据
 const router = useRouter();
@@ -232,9 +242,14 @@ onBeforeUnmount(() => {
 });
 
 // 进入群聊
-const enterGroupChat = (pub: string) => {
+const enterGroupChat = async (pub: string) => {
   setCurrentGroup(pub);
-  router.push(chatFlowStore.isLargeScreen.value ? `/desktop/GroupMessages` : `/GroupMessages`);
+  const target = chatFlowStore.isLargeScreen.value ? `/desktop/GroupMessages` : `/GroupMessages`
+  if (isClientMobileWebShell()) {
+    await router.replace(target)
+    return
+  }
+  await router.push(target);
 };
 
 // 跳转到密钥对页面

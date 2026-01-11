@@ -1,7 +1,7 @@
 {
   "name": "talkflow",
   "private": true,
-  "version": "1.8.1",
+  "version": "1.8.2",
   "type": "module",
   "scripts": {
     "dev": "npm run copy:sql:wasm && vite --host",
@@ -179,7 +179,8 @@
     "vue3-carousel": "^0.15.0",
     "vue3-qrcode-reader": "latest",
     "vue3-touch-events": "latest",
-    "webrtc-adapter": "^9.0.3"
+    "webrtc-adapter": "^9.0.3",
+    "@lazycatcloud/sdk": "^0.1.477"
   },
   "devDependencies": {
     "@capacitor/cli": "^7.4.0",

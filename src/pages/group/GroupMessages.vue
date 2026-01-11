@@ -9,6 +9,7 @@ import { getTalkFlowCore } from '@/composables/TalkFlowCore';
 import { 
   IonButton, IonButtons, IonIcon, IonTitle, IonToolbar, IonHeader, 
   IonFooter, IonPage, IonCheckbox, IonProgressBar,IonBackButton,
+  onIonViewWillEnter,
 } from '@ionic/vue';
 import {
   ellipsisHorizontal, playOutline, pauseOutline,
@@ -72,6 +73,7 @@ const {
   userAvatars,
   buddyList,
   gun,
+  isLargeScreen,
 } = chatFlow;
 const showOverlay = ref(true);
 
@@ -138,10 +140,118 @@ const fileInput = ref<HTMLInputElement | null>(null);
 const isInitialLoad = ref(true);
 const capsuleRef = ref<HTMLDivElement | null>(null);
 
+watch(
+  currentGroup,
+  (newGroupPub, oldGroupPub) => {
+    if (!newGroupPub) return;
+    if (newGroupPub === oldGroupPub) return;
+    void (async () => {
+      await selectGroup(newGroupPub);
+      await markGroupAsRead(newGroupPub);
+      nextTick(() => {
+        scrollerRef.value?.reset?.();
+        scrollToBottomSmooth();
+      });
+    })();
+  },
+  { immediate: true }
+);
+
 // =================== 新增：消息模板相关状态 ===================
 interface Meta { type: 'about' | 'think'; content: string; from?: string; alias?: string }
 const typedMeta = ref<Meta[]>([]);
 const inputMode = ref<'default' | 'about' | 'think'>('default');
+
+const ENTER_TO_SEND_KEY = 'talkflow_enter_to_send';
+const isEnterToSendEnabled = ref(false);
+
+function loadEnterToSendSetting() {
+  isEnterToSendEnabled.value = (localStorage.getItem(ENTER_TO_SEND_KEY) || '0') === '1';
+}
+
+loadEnterToSendSetting();
+onIonViewWillEnter(() => {
+  loadEnterToSendSetting();
+});
+
+function insertNewline() {
+  const el = textInputRef.value;
+  if (!el) {
+    newMessage.value += '\n';
+    nextTick(() => adjustHeight());
+    return;
+  }
+
+  const start = el.selectionStart ?? newMessage.value.length;
+  const end = el.selectionEnd ?? newMessage.value.length;
+  const before = newMessage.value.slice(0, start);
+  const after = newMessage.value.slice(end);
+  newMessage.value = `${before}\n${after}`;
+
+  nextTick(() => {
+    el.focus();
+    const pos = start + 1;
+    el.setSelectionRange(pos, pos);
+    adjustHeight();
+  });
+}
+
+function sendMessageWithMeta() {
+  scrollToBottom();
+  if (!newMessage.value.trim() && !typedMeta.value.length) return;
+
+  let full = '';
+  typedMeta.value.forEach(m => {
+    if (m.type === 'think') {
+      const from = m.from ? ` from="${m.from}"` : '';
+      const alias = m.alias ? ` alias="${m.alias}"` : '';
+      full += `<think${from}${alias}>${m.content}</think>\n`;
+    } else if (m.type === 'about') {
+      full += `<about>${m.content}</about>\n`;
+    }
+  });
+
+  const trimmedMsg = newMessage.value.trim();
+  if (trimmedMsg && /^\d+$/.test(trimmedMsg)) {
+    full += `Number:${trimmedMsg}`;
+  } else if (trimmedMsg) {
+    full += trimmedMsg;
+  }
+
+  let finalContent = full;
+  if (replyPreview.value) {
+    finalContent = `<think from="${selectedMsg.value?.sender_pub || ''}" alias="${replyPreview.value.alias}">${replyPreview.value.snippet}</think>\n\n` + full;
+  }
+
+  sendMessage(finalContent);
+  newMessage.value = '';
+  typedMeta.value = [];
+  replyPreview.value = null;
+  inputMode.value = 'default';
+  triggerLightHaptic();
+  setTimeout(() => scrollToBottom(), 150);
+  setTimeout(() => {
+    nextTick(() => scrollToBottomSmooth());
+  }, 200);
+
+  if (inputFocused.value) {
+    nextTick(() => {
+      if (textInputRef.value) {
+        textInputRef.value.focus();
+        adjustHeight();
+        scrollToBottom();
+      }
+    });
+  }
+}
+
+function handleTextKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Enter') return;
+  if (!isEnterToSendEnabled.value) return;
+  if (event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return;
+  event.preventDefault();
+  sendMessageWithMeta();
+}
 
 // =================== 新增：emoji快捷回复相关状态 ===================
 const showEmojiPicker = ref(false);
@@ -507,57 +617,9 @@ const onFocus = () => {
 };
 const onBlur = () => inputFocused.value = false;
 
-const handleEnterKey = (event: KeyboardEvent) => {
-  event.preventDefault();
-  scrollToBottom();
-  if (!newMessage.value.trim() && !typedMeta.value.length) return;
-
-  let full = '';
-  typedMeta.value.forEach(m => {
-    if (m.type === 'think') {
-      const from = m.from ? ` from="${m.from}"` : '';
-      const alias = m.alias ? ` alias="${m.alias}"` : '';
-      full += `<think${from}${alias}>${m.content}</think>\n`;
-    } else if (m.type === 'about') {
-       full += `<about>${m.content}</about>\n`;
-      // const from = m.from ? ` from="${m.from}"` : '';
-      // const alias = m.alias ? ` alias="${m.alias}"` : '';
-      // full += `<think${from}${alias}>${m.content}</think>\n`;
-    }
-  });
-
-  const trimmedMsg = newMessage.value.trim();
-  if (trimmedMsg && /^\d+$/.test(trimmedMsg)) {
-    full += `Number:${trimmedMsg}`;
-  } else if (trimmedMsg) {
-    full += trimmedMsg;
-  }
-
-  let finalContent = full;
-  if (replyPreview.value) {
-    finalContent = `<think from="${selectedMsg.value?.sender_pub || ''}" alias="${replyPreview.value.alias}">${replyPreview.value.snippet}</think>\n\n` + full;
-  }
-
-  sendMessage(finalContent);
-  newMessage.value = '';
-  typedMeta.value = [];
-  replyPreview.value = null;
-  inputMode.value = 'default';
-  triggerLightHaptic();
-  setTimeout(() => scrollToBottom(), 150);
-  setTimeout(() => {
-    nextTick(() => scrollToBottomSmooth());
-  }, 200);
-
-  if (inputFocused.value) {
-    nextTick(() => {
-      if (textInputRef.value) {
-        textInputRef.value.focus();
-        adjustHeight();
-        scrollToBottom();
-      }
-    });
-  }
+const handleEnterKey = (event?: Event) => {
+  event?.preventDefault?.();
+  sendMessageWithMeta();
 };
 
 const sendMessageFromInput = () => {
@@ -640,6 +702,10 @@ const handleActionButtonClick = async () => {
   if (isVoiceMode.value) {
     isVoiceMode.value = false;
   } else if (newMessage.value.trim() || typedMeta.value.length) {
+    if (isEnterToSendEnabled.value) {
+      insertNewline();
+      return;
+    }
     sendMessageFromInput();
   } else {
     isVoiceMode.value = true;
@@ -736,18 +802,10 @@ watch(lastMessageId, (newVal, oldVal) => {
 onMounted(async () => {
  const groupPub = currentGroup.value;
   if (groupPub) {
-    await selectGroup(groupPub);
-    
-    // // console.log('selectGroup done 已经完成');
-    // // console.log('groupPub', groupPub);
-    // // await loadGroups();
-    // // console.log('loadGroups done 已经完成');
-
-    setTimeout( () => {
-     scrollToBottomSmooth()
-    showOverlay.value = false;
-  }, 50);
-    // scrollInitial(); // Removed, as initial scroll will be triggered by isInitialGroupMessageSyncing watch
+    setTimeout(() => {
+      scrollToBottomSmooth();
+      showOverlay.value = false;
+    }, 50);
   }
   scrollerEl.value = scrollerRef.value?.$el; // Re-add this line
 
@@ -782,7 +840,9 @@ onMounted(async () => {
     console.error('Keyboard setup error:', error);
   }
 
-  await markGroupAsRead(groupPub);
+  if (groupPub) {
+    await markGroupAsRead(groupPub);
+  }
   scrollerRef.value?.reset(); 
   // setTimeout(() => {
   //       nextTick(() => scrollToBottomSmooth());
@@ -953,10 +1013,24 @@ const onVideoPause = (msgId: string) => {
     <ion-header :translucent="true"  collapse="fade" class="ion-no-border">
       <ion-toolbar>
         <ion-buttons slot="start">
-             <ion-back-button :text="$t('back')" ></ion-back-button>
+             <ion-back-button v-if="!isLargeScreen" :text="$t('back')" default-href="/index"></ion-back-button>
         </ion-buttons>
-        <ion-title @click="gotoMembers">
+        <ion-title v-if="!isLargeScreen" @click="gotoMembers">
             <div class="header-title">
+              <div class="header-avatars" @click="gotoMembers">
+                <img
+                  v-for="member in displayedMembers"
+                  :key="member.member_pub"
+                  class="header-avatar"
+                  :src="userAvatars[member.member_pub] || getGunAvatar(member.member_pub)"
+                  alt=""
+                />
+              </div>
+              <span class="chat-name">{{ currentGroupName }}</span>
+            </div>
+        </ion-title>
+        <ion-title v-else slot="start" class="pc-left-title" @click="gotoMembers">
+            <div class="header-title pc-left-header">
               <div class="header-avatars" @click="gotoMembers">
                 <img
                   v-for="member in displayedMembers"
@@ -1308,6 +1382,8 @@ const onVideoPause = (msgId: string) => {
                 <div v-if="!isVoiceMode" class="text-input" key="text-input">
                   <textarea
                     v-model="newMessage"
+                    :enterkeyhint="isEnterToSendEnabled ? 'send' : undefined"
+                    @keydown="handleTextKeydown"
                     @focus="onFocus"
                     @blur="onBlur"
                     placeholder="Message"
@@ -1331,7 +1407,7 @@ const onVideoPause = (msgId: string) => {
               <ion-button class="action-button" fill="clear" @click="handleActionButtonClick">
                 <transition name="button-fade" mode="out-in">
                   <ion-icon slot="icon-only" v-if="!newMessage && !isVoiceMode" :icon="micOutline" key="voice" style="font-size: 26px;"></ion-icon>
-                  <ion-icon slot="icon-only" v-else-if="newMessage && !isVoiceMode" :icon="sendOutline" key="send" style="font-size: 20px;"></ion-icon>
+                  <ion-icon slot="icon-only" v-else-if="newMessage && !isVoiceMode" :icon="isEnterToSendEnabled ? returnDownBackOutline : sendOutline" key="send" style="font-size: 20px;"></ion-icon>
                   <ion-icon slot="icon-only" v-else-if="isVoiceMode" :icon="chatbubbleEllipsesOutline" key="keyboard" style="font-size: 26px;"></ion-icon>
                 </transition>
               </ion-button>
@@ -1361,6 +1437,22 @@ const onVideoPause = (msgId: string) => {
   flex-direction: column;
   align-items: center;
   gap: 0px;
+}
+.pc-left-title {
+  text-align: left;
+}
+.pc-left-header {
+  flex-direction: row;
+  align-items: center;
+  gap: 10px;
+  padding-left: 6px;
+  padding-right: 6px;
+}
+.pc-left-header .header-avatars {
+  margin: 2px 0;
+}
+.pc-left-header .chat-name {
+  margin: 0;
 }
 .header-avatars {
   display: flex;

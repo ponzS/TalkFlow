@@ -7,6 +7,7 @@ import { getCurrentInstance } from 'vue';
 import StorageService, { FileData, } from '../services/storageService';
 import { v4 as uuidv4 } from 'uuid';
 import { toastController } from '@ionic/vue';
+import LzcApp from '@lazycatcloud/sdk/dist/extentions'
 
 
 // Use Ionic Toast instead of custom Toast
@@ -31,6 +32,20 @@ async function showToast(message: string, type: 'success' | 'warning' | 'error' 
   await toast.present();
 }
 import { sqliteServ, dbVerServ, storageServ } from '../services/globalServices';
+
+function isClientMobileWebShell() {
+  if (typeof window === 'undefined') return false
+  try {
+    return LzcApp.isIosWebShell() || LzcApp.isAndroidWebShell()
+  } catch {
+    return false
+  }
+}
+
+function getIsLargeScreen() {
+  if (typeof window === 'undefined') return false
+  return window.innerWidth > 768 && !isClientMobileWebShell()
+}
 
 // 🆕 用户数据缓存机制
 interface UserData {
@@ -1202,7 +1217,7 @@ export interface ChatPreview {
   
 
 
-const isLargeScreen = ref(window.innerWidth > 768);
+const isLargeScreen = ref(getIsLargeScreen());
 
 const currentComponent = shallowRef('Chat')
 const previousComponent = ref('Chat')
@@ -1678,6 +1693,7 @@ export function useChatFlow() {
   const showUserCard: Ref<boolean> = ref(false);
   const lastReadTimestamps: Ref<Record<string, number>> = ref({});
   const isLoadingHistory: Ref<boolean> = ref(false);
+  let loadingHistoryCount = 0;
   const chatListRef: Ref<HTMLDivElement | null> = ref(null);
   const LoginData = computed(() => ({
     isLoggedIn: isLoggedIn.value,
@@ -4205,43 +4221,55 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
   }
 
   async function openChat(pubKey: string): Promise<void> {
+    const targetPub = String(pubKey || '').trim()
+    if (!targetPub) return
+    if (!currentUserPub.value) {
+      return;
+    }
+
+    user.auth(currentUserPair!)
+    currentChatPub.value = targetPub;
+
+    const shouldReplace = isClientMobileWebShell()
     if (isLargeScreen.value) {
+      
+      //  setCurrentGroup(null);
+
+      // await  closeChat();
       await router.replace('/desktop/chatpage')
+    } else if (shouldReplace) {
+      await router.replace('/chatpage')
     } else {
       await router.push('/chatpage')
     }
-    if (!currentUserPub.value) {
-      // showToast('Not logged in, cannot open chat', 'warning');
-      return;
-    }
-    user.auth(currentUserPair!)
-    currentChatPub.value = pubKey;
-    const chat = chatPreviewList.value.find(c => c.pub === pubKey);
+
+    const chat = chatPreviewList.value.find(c => c.pub === targetPub);
     if (chat) {
       chat.hasNew = false;
       await autoSaveStorageServ.saveChatPreview(chat);
       // Backup chat previews to IndexedDB (web version only)
       await saveChatPreviewsToDb(chatPreviewList.value);
     }
-    if (chatListeners.value[pubKey]) {
-      chatListeners.value[pubKey]();
-      delete chatListeners.value[pubKey];
+    if (chatListeners.value[targetPub]) {
+      chatListeners.value[targetPub]();
+      delete chatListeners.value[targetPub];
     }
     // Always initialize message array and load history messages
-    chatMessages.value[pubKey] = chatMessages.value[pubKey] || [];
-    await loadMoreChatHistory(pubKey); // Force load initial history messages
-    listenChat(pubKey);
+    chatMessages.value[targetPub] = chatMessages.value[targetPub] || [];
+    await loadMoreChatHistory(targetPub); // Force load initial history messages
+    listenChat(targetPub);
   }
 
 
   async function loadMoreChatHistory(pubKey: string, beforeId?: number): Promise<void> {
-    if (!currentUserPub.value || isLoadingHistory.value) return;
+    if (!currentUserPub.value) return;
 
     const chatId = generateChatId(currentUserPub.value, pubKey);
     const messages = chatMessages.value[pubKey] || [];
     const oldestMsg = messages.length > 0 ? messages[0] : undefined;
 
-    isLoadingHistory.value = true;
+    loadingHistoryCount += 1;
+    isLoadingHistory.value = loadingHistoryCount > 0;
     try {
       const fetchBeforeId = beforeId !== undefined ? beforeId : oldestMsg?.id;
       const newMessages = await storageServ.getMessages(chatId, 15, fetchBeforeId, 'DESC');
@@ -4257,7 +4285,8 @@ async function sendChat(messageType: MessageType, payload: string | null = null,
       // console.error(`Failed to load more history messages for ${pubKey}:`, err);
       // showToast('Failed to load more history messages', 'error');
     } finally {
-      isLoadingHistory.value = false;
+      loadingHistoryCount = Math.max(0, loadingHistoryCount - 1);
+      isLoadingHistory.value = loadingHistoryCount > 0;
     }
   }
 
@@ -5486,7 +5515,7 @@ async function loadRequestsViewedState() {
 
 
   const updateScreenSize = () => {
-    isLargeScreen.value = window.innerWidth > 768;
+    isLargeScreen.value = getIsLargeScreen();
     switchTo('Chat');
   };
 

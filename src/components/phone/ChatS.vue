@@ -26,6 +26,7 @@ import { useSegmentState } from '@/composables/useSegmentState';
 import { shallowRef } from 'vue';
 import { debounce } from 'lodash';
 import { useI18n } from 'vue-i18n';
+import LzcApp from '@lazycatcloud/sdk/dist/extentions'
 
 mountClass();
 const router = useRouter();
@@ -35,6 +36,23 @@ const groupChat = useGroupChat();
 const { isDark } = useTheme();
 const { formatLastTime } = useDateFormatter();
 const { t } = useI18n();
+
+function isClientMobileWebShell() {
+  if (typeof window === 'undefined') return false
+  try {
+    return LzcApp.isIosWebShell() || LzcApp.isAndroidWebShell()
+  } catch {
+    return false
+  }
+}
+
+async function navigateToGroupMessages() {
+  const target = chatFlowStore.isLargeScreen.value ? `/desktop/GroupMessages` : `/GroupMessages`
+  if (isClientMobileWebShell()) {
+    return router.replace(target)
+  }
+  return router.push(target)
+}
 
 const {
   visibleChatPreviewList, openChat: openPrivateChat, userAvatars, hideCurrentChat,
@@ -294,18 +312,18 @@ const closeGroupListModal = () => {
   roomSearchQuery.value = '';
 };
 
-const selectRoomGroup = (pub: string) => {
+const selectRoomGroup = async (pub: string) => {
   setCurrentGroup(pub);
   markGroupAsRead(pub);
   closeGroupListModal();
-  router.push(chatFlowStore.isLargeScreen.value ? `/desktop/GroupMessages` : `/GroupMessages`);
+  await navigateToGroupMessages();
 };
 
-const enterGroupChat = (pub: string | undefined) => {
+const enterGroupChat = async (pub: string | undefined) => {
   if (!pub) return;
   setCurrentGroup(pub);
   markGroupAsRead(pub);
-  router.push(chatFlowStore.isLargeScreen.value ? `/desktop/GroupMessages` : `/GroupMessages`);
+  await navigateToGroupMessages();
 };
 
 const createGroupWithToast = async () => {
@@ -729,9 +747,9 @@ const sortedUnpinnedChats = computed(() => {
 
 const openChat = (pub: string, type: 'group' | 'private') => {
   if (type === 'group') {
-    selectGroup(pub);
+    setCurrentGroup(pub);
     // markGroupAsRead(pub);
-    router.push(chatFlowStore.isLargeScreen.value ? `/desktop/GroupMessages` : `/GroupMessages`);
+    void navigateToGroupMessages();
   } else {
     openPrivateChat(pub);
   }

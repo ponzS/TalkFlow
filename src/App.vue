@@ -55,7 +55,6 @@
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, ref } from 'vue';
-import { useRouter } from 'vue-router';
 import { IonApp, IonRouterOutlet, IonModal, IonHeader, IonToolbar, IonTitle, IonContent, IonButton 
   , IonMenu, 
   IonSplitPane, 
@@ -77,8 +76,6 @@ const {
   isLoggedIn,
 } = chatFlowStore;
 const relayok = ref(false);
-const router = useRouter();
-let removeRouteGuard: (() => void) | null = null;
 
 function setupNetworkListener() {
   let debounceTimer: NodeJS.Timeout;
@@ -103,60 +100,6 @@ onMounted(async () => {
   await setupNetworkListener(); 
   chatFlowStore.updateScreenSize();
   window.addEventListener('resize', chatFlowStore.updateScreenSize);
-  removeRouteGuard = router.beforeEach((to) => {
-    const isDesktop = chatFlowStore.isLargeScreen.value;
-    const isDesktopPath = to.path === '/desktop' || to.path.startsWith('/desktop/');
-
-    if (!isDesktop && isDesktopPath) {
-      const stripped = to.fullPath.replace(/^\/desktop/, '') || '/';
-      return stripped;
-    }
-
-    if (isDesktop && !isDesktopPath) {
-      if (to.path === '/' || to.path === '/index') {
-        return '/desktop';
-      }
-      const eligible = [
-        '/chatpage',
-        '/friend-profile',
-        '/friend-settings',
-        '/FriendRequests',
-        '/GroupMessages',
-        '/GroupMembers',
-        '/ModelPersona',
-        '/notifications',
-        '/Notifications',
-        '/call',
-        '/CallPage',
-        '/Moment',
-        '/FriendMoments',
-        '/i18nset',
-        '/Mesh',
-        '/NotificationSettings',
-        '/keycheck',
-        '/ScanPage',
-        '/MigrationChoice',
-        '/MigrationExport',
-        '/MigrationImport',
-        '/blacklist',
-        '/blackList',
-        '/ReportPage',
-        '/myself',
-        '/Relay',
-        '/browser',
-        '/qrpage',
-        '/htmlpage',
-        '/Sponsorship',
-        '/indexedDBpage',
-        '/settingspage',
-        '/GroupCallPage',
-      ];
-      if (eligible.includes(to.path)) {
-        return `/desktop${to.fullPath}`;
-      }
-    }
-    return true;
-  });
   await restoreLoginState();
 
 
@@ -164,7 +107,6 @@ onMounted(async () => {
 
 onUnmounted(() => {
   window.removeEventListener('resize', chatFlowStore.updateScreenSize);
-  if (removeRouteGuard) removeRouteGuard();
 });
 
 

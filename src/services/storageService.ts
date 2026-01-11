@@ -325,6 +325,29 @@ class StorageService implements IStorageService {
   appInstance = getCurrentInstance();
   platform!: string;
   private isInitialized = false;
+  private dbOpChain: Promise<void> = Promise.resolve();
+
+  private enqueueDbOp<T>(op: () => Promise<T>): Promise<T> {
+    const run = this.dbOpChain.then(op, op);
+    this.dbOpChain = run.then(
+      () => undefined,
+      () => undefined
+    );
+    return run;
+  }
+
+  private wrapDb(db: SQLiteDBConnection): SQLiteDBConnection {
+    const enqueue = this.enqueueDbOp.bind(this);
+    return new Proxy(db as any, {
+      get(target, prop, receiver) {
+        const value = Reflect.get(target, prop, receiver);
+        if ((prop === 'run' || prop === 'query' || prop === 'execute') && typeof value === 'function') {
+          return (...args: any[]) => enqueue(() => value.apply(target, args));
+        }
+        return value;
+      },
+    }) as any;
+  }
  
 
   constructor(sqliteService: ISQLiteService, dbVersionService: IDbVersionService) {
@@ -420,7 +443,8 @@ class StorageService implements IStorageService {
        }
 
        // console.log('🔧 [StorageService] Opening/retrieving database connection...');
-       this.db = await this.sqliteServ.openDatabase(this.database, this.loadToVersion, false);
+       const rawDb = await this.sqliteServ.openDatabase(this.database, this.loadToVersion, false);
+       this.db = this.wrapDb(rawDb);
        // console.log('✅ [StorageService] Database connection established');
 
       // console.log('🔧 [StorageService] Setting database version...');
@@ -1240,4 +1264,3 @@ class StorageService implements IStorageService {
 }
 
 export default StorageService;
-

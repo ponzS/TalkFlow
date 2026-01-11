@@ -4,9 +4,24 @@ import routes from 'virtual:generated-pages'
 import { nextTick } from 'vue'
 import { getTalkFlowCore } from '@/composables/TalkFlowCore'
 import { useGroupChat } from '@/composables/useGroupChat'
+import LzcApp from '@lazycatcloud/sdk/dist/extentions'
 // import { useChatFlow } from '@/composables/TalkFlowCore'
 
 // const { isLoggedIn } = useChatFlow()
+
+function isClientMobileWebShell() {
+  if (typeof window === 'undefined') return false
+  try {
+    return LzcApp.isIosWebShell() || LzcApp.isAndroidWebShell()
+  } catch {
+    return false
+  }
+}
+
+function isSmallScreenMode() {
+  if (typeof window === 'undefined') return false
+  return window.innerWidth <= 768 || isClientMobileWebShell()
+}
 
 const customRoutes = [
 
@@ -221,7 +236,7 @@ let desktopPreClosing = false
 
 async function preCloseDesktopDetailIfNeeded(to: any) {
   if (typeof window === 'undefined') return
-  if (window.innerWidth <= 768) return
+  if (isSmallScreenMode()) return
   if (desktopPreClosing) return
 
   const resolved = router.resolve(to)
@@ -239,41 +254,27 @@ async function preCloseDesktopDetailIfNeeded(to: any) {
     targetPath === '/desktop/GroupMessages' ||
     targetPath === '/desktop/GroupMembers' ||
     targetPath === '/desktop/GroupCallPage'
+  const isChatTarget = targetPath === '/desktop/chatpage'
 
   desktopPreClosing = true
   try {
-    let preservedGroupPub: string | null = null
     let group: ReturnType<typeof useGroupChat> | null = null
     try {
       group = useGroupChat()
-      if (isGroupTarget) preservedGroupPub = group.currentGroup.value
     } catch (error) {
     }
 
     try {
-      const core = getTalkFlowCore()
-      core.closeChat()
+      if (!isChatTarget) {
+        const core = getTalkFlowCore()
+        core.closeChat()
+      }
     } catch (error) {
     }
     if (!isGroupTarget) {
       try {
         if (!group) group = useGroupChat()
         group.setCurrentGroup(null)
-      } catch (error) {
-      }
-    }
-
-    if (router.currentRoute.value.path !== '/desktop') {
-      await originalReplace('/desktop')
-      await nextTick()
-      await nextTick()
-    }
-
-    if (isGroupTarget && preservedGroupPub) {
-      try {
-        if (!group) group = useGroupChat()
-        group.setCurrentGroup(preservedGroupPub)
-        await nextTick()
       } catch (error) {
       }
     }
@@ -288,7 +289,7 @@ async function preCloseDesktopDetailIfNeeded(to: any) {
 }
 
 ;(router as any).push = async (to: any) => {
-  if (typeof window !== 'undefined' && window.innerWidth > 768) {
+  if (!isSmallScreenMode()) {
     return (router as any).replace(to)
   }
   return originalPush(to)
@@ -296,8 +297,16 @@ async function preCloseDesktopDetailIfNeeded(to: any) {
 
 router.beforeEach((to) => {
   if (typeof window === 'undefined') return true
-  if (window.innerWidth <= 768) return true
-  if (to.path === '/' || to.path === '/index') return true
+  if (isSmallScreenMode()) {
+    if (to.path === '/desktop' || to.path.startsWith('/desktop/')) {
+      const stripped = to.fullPath.replace(/^\/desktop/, '') || '/'
+      return { path: stripped, replace: true }
+    }
+    return true
+  }
+  if (to.path === '/' || to.path === '/index') {
+    return { path: '/desktop', replace: true }
+  }
   if (to.path === '/desktop' || to.path.startsWith('/desktop/')) return true
 
   const candidatePath = `/desktop${to.path.startsWith('/') ? to.path : `/${to.path}`}`

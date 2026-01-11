@@ -235,6 +235,7 @@ import { useGroupChat } from '@/composables/useGroupChat';
 import { getTalkFlowCore } from '@/composables/TalkFlowCore';
 import { useRouter } from 'vue-router';
 import { ref, computed, onMounted, watch, shallowRef } from 'vue';
+import LzcApp from '@lazycatcloud/sdk/dist/extentions'
 import {
   chevronBackOutline,
   copyOutline,
@@ -269,6 +270,23 @@ const {
   joinGroupWithKeyPair,
 } = useGroupChat();
 import { menuController } from '@ionic/vue';
+
+function isClientMobileWebShell() {
+  if (typeof window === 'undefined') return false
+  try {
+    return LzcApp.isIosWebShell() || LzcApp.isAndroidWebShell()
+  } catch {
+    return false
+  }
+}
+
+async function navigateToGroupMessages() {
+  const target = chatFlowStore.isLargeScreen.value ? `/desktop/GroupMessages` : `/GroupMessages`
+  if (isClientMobileWebShell()) {
+    return router.replace(target)
+  }
+  return router.push(target)
+}
 
 
 function openEndMenu() {
@@ -377,10 +395,10 @@ const formatPubKey = (pub: string) => {
   return pub.length > 6 ? `${pub.slice(0, 6)}...` : pub;
 };
 
-const enterGroupChat = (pub: string | undefined) => {
+const enterGroupChat = async (pub: string | undefined) => {
   if (!pub) return;
   setCurrentGroup(pub);
-  router.push(chatFlowStore.isLargeScreen.value ? `/desktop/GroupMessages` : `/GroupMessages`);
+  await navigateToGroupMessages();
 };
 
 const openGroupListModal = () => {
@@ -395,10 +413,10 @@ const closeGroupListModal = () => {
   searchQuery.value = ''; 
 };
 
-const selectGroup = (pub: string) => {
+const selectGroup = async (pub: string) => {
   setCurrentGroup(pub);
   closeGroupListModal();
-  router.push(chatFlowStore.isLargeScreen.value ? `/desktop/GroupMessages` : `/GroupMessages`);
+  await navigateToGroupMessages();
 };
 
 const getCardWidth = () => {

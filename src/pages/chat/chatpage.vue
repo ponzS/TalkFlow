@@ -7,7 +7,7 @@ import { useVoiceBar } from '@/composables/useVoiceBar';
 import { useGroupChat } from '@/composables/useGroupChat';
 import { 
   IonBackButton, IonButton, IonButtons, IonIcon, IonTitle, IonToolbar, IonHeader, 
-  IonFooter, IonPage, IonCheckbox, IonProgressBar, IonModal, IonContent ,toastController 
+  IonFooter, IonPage, IonCheckbox, IonProgressBar, IonModal, IonContent, toastController, onIonViewWillEnter 
 } from '@ionic/vue';
 import {
   ellipsisHorizontal, ellipsisVertical, playOutline, pauseOutline, refreshOutline,
@@ -69,7 +69,8 @@ const {
   closeChat, currentChatPub, getAliasRealtime, newMsg, sendChat, resendMessage,
   chatMessages, userAvatars, formatTimestamp, currentUserPub, loadMoreChatHistory,
   isLoadingHistory, generateChatId, retractMessage, triggerLightHaptic,
-  friendRemarks,currentUserAlias
+  friendRemarks,currentUserAlias,
+  isLargeScreen
 } = chatFlow;
 const { isRecording, recordingDuration, playingAudio, transcriptions, startRecording, 
         stopRecording, sendVoiceMessage, playVoice, stopVoice, initialize
@@ -127,6 +128,95 @@ const scrollerEl = ref<HTMLElement | null>(null);
 const deleteButtonVisible = ref(false);
 const deleteButtonPos = ref({ x: 0, y: 0 });
 const deleteTargetMessage = ref<LocalChatMessage | null>(null);
+
+const ENTER_TO_SEND_KEY = 'talkflow_enter_to_send';
+const isEnterToSendEnabled = ref(false);
+
+function loadEnterToSendSetting() {
+  isEnterToSendEnabled.value = (localStorage.getItem(ENTER_TO_SEND_KEY) || '0') === '1';
+}
+
+loadEnterToSendSetting();
+onIonViewWillEnter(() => {
+  loadEnterToSendSetting();
+});
+
+function insertNewline() {
+  const el = textInputRef.value;
+  if (!el) {
+    newMsg.value += '\n';
+    nextTick(() => adjustHeight());
+    return;
+  }
+
+  const start = el.selectionStart ?? newMsg.value.length;
+  const end = el.selectionEnd ?? newMsg.value.length;
+  const before = newMsg.value.slice(0, start);
+  const after = newMsg.value.slice(end);
+  newMsg.value = `${before}\n${after}`;
+
+  nextTick(() => {
+    el.focus();
+    const pos = start + 1;
+    el.setSelectionRange(pos, pos);
+    adjustHeight();
+  });
+}
+
+function sendMessageFromInput() {
+  scrollToBottom();
+  if (!newMsg.value.trim() && !typedMeta.value.length) return;
+
+  let full = '';
+  typedMeta.value.forEach(m => {
+    if (m.type === 'think') {
+      const from = m.from ? ` from="${m.from}"` : '';
+      const alias = m.alias ? ` alias="${m.alias}"` : '';
+      full += `<think${from}${alias}>${m.content}</think>\n`;
+    } else if (m.type === 'about') {
+      full += `<about>${m.content}</about>\n`;
+    }
+  });
+
+  const trimmedMsg = newMsg.value.trim();
+  if (trimmedMsg && /^\d+$/.test(trimmedMsg)) {
+    full += `Number:${trimmedMsg}`;
+  } else if (trimmedMsg) {
+    full += trimmedMsg;
+  }
+
+  sendChat('text', full);
+  newMsg.value = '';
+  typedMeta.value = [];
+  inputMode.value = 'default';
+  setTimeout(() => scrollToBottom(), 150);
+  resetHeight();
+  if (inputFocused.value) {
+    nextTick(() => {
+      if (textInputRef.value) {
+        textInputRef.value.focus();
+        adjustHeight();
+        scrollToBottom();
+      }
+    });
+  }
+}
+
+function handleTextKeydown(event: KeyboardEvent) {
+  if (event.key !== 'Enter') return;
+  if (!isEnterToSendEnabled.value) return;
+  if (event.shiftKey || event.altKey || event.ctrlKey || event.metaKey) return;
+  event.preventDefault();
+  sendMessageFromInput();
+}
+
+function handleSendButtonClick() {
+  if (isEnterToSendEnabled.value) {
+    insertNewline();
+    return;
+  }
+  sendMessageFromInput();
+}
 
 // 模态窗口状态
 const isModalOpen = ref(false);
@@ -471,23 +561,26 @@ async function cancelVoiceRecording() {
   if (isVoiceMode.value) {
     isVoiceMode.value = false;
   } else if (newMsg.value) {
-   await  sendChat('text', newMsg.value);
-   await  testFriendBarkNotification();
-      newMsg.value = '';
-  typedMeta.value = [];
-  inputMode.value = 'default';
-  setTimeout(() => scrollToBottom(), 150);
-  resetHeight();
-  if (inputFocused.value) {
-    nextTick(() => {
-      if (textInputRef.value) {
-        textInputRef.value.focus();
-        adjustHeight();
-      
-        scrollToBottom();
-      }
-    });
-  }
+    if (isEnterToSendEnabled.value) {
+      insertNewline();
+      return;
+    }
+    await sendChat('text', newMsg.value);
+    await testFriendBarkNotification();
+    newMsg.value = '';
+    typedMeta.value = [];
+    inputMode.value = 'default';
+    setTimeout(() => scrollToBottom(), 150);
+    resetHeight();
+    if (inputFocused.value) {
+      nextTick(() => {
+        if (textInputRef.value) {
+          textInputRef.value.focus();
+          adjustHeight();
+          scrollToBottom();
+        }
+      });
+    }
     // newMsg.value += '\n';
     // nextTick(() => {
     //   if (textInputRef.value) {
@@ -507,45 +600,9 @@ function removeMeta(index: number) {
 }
 
 // ========== think 发送时自动写 from/alias ==========
-function handleEnterKey(event: KeyboardEvent) {
-  event.preventDefault();
-  scrollToBottom();
-  if (!newMsg.value.trim() && !typedMeta.value.length) return;
-
-  let full = '';
-  typedMeta.value.forEach(m => {
-    if (m.type === 'think') {
-      const from = m.from ? ` from="${m.from}"` : '';
-      const alias = m.alias ? ` alias="${m.alias}"` : '';
-      full += `<think${from}${alias}>${m.content}</think>\n`;
-    } else if (m.type === 'about') {
-      full += `<about>${m.content}</about>\n`;
-    }
-  });
-
-  const trimmedMsg = newMsg.value.trim();
-  if (trimmedMsg && /^\d+$/.test(trimmedMsg)) {
-    full += `Number:${trimmedMsg}`;
-  } else if (trimmedMsg) {
-    full += trimmedMsg;
-  }
-
-  sendChat('text', full);
-  newMsg.value = '';
-  typedMeta.value = [];
-  inputMode.value = 'default';
-  setTimeout(() => scrollToBottom(), 150);
-  resetHeight();
-  if (inputFocused.value) {
-    nextTick(() => {
-      if (textInputRef.value) {
-        textInputRef.value.focus();
-        adjustHeight();
-      
-        scrollToBottom();
-      }
-    });
-  }
+function handleEnterKey(event?: Event) {
+  event?.preventDefault?.();
+  sendMessageFromInput();
 }
 
 function triggerFileUpload() {
@@ -703,9 +760,9 @@ const debouncedLoadMore = debounce(async () => {
 }, 300);
 
 function scrollToBottom() {
-  if (scrollerEl.value) {
-    scrollerEl.value.scrollTo({ top: scrollerEl.value.scrollHeight, behavior: 'smooth' });
-  }
+  const el = (scrollerRef.value?.$el as HTMLElement | undefined) || scrollerEl.value;
+  if (!el) return;
+  el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
 }
 
 function scrollToBottomInitial() {
@@ -852,17 +909,38 @@ watch(
   { deep: true, immediate: true }
 );
 
-watch(currentChatPub, (newPub) => {
-  if (newPub) {
+watch(
+  currentChatPub,
+  (newPub, oldPub) => {
+    if (!newPub) return;
+
+    if (newPub !== oldPub) {
+      isSelectMode.value = false;
+      selectedMessages.value = [];
+      selectedMessage.value = null;
+      contextMenu.value.visible = false;
+      typedMeta.value = [];
+      inputMode.value = 'default';
+      isInitialLoad.value = true;
+
+      const existing = chatMessages.value[newPub] || [];
+      if (existing.length === 0) {
+        void loadMoreChatHistory(newPub);
+      }
+    }
+
     nextTick(() => {
+      scrollerEl.value = scrollerRef.value?.$el;
+      scrollerRef.value?.reset?.();
       if (isInitialLoad.value) {
         scrollToBottomInitial();
       } else {
         scrollToBottom();
       }
     });
-  }
-});
+  },
+  { immediate: true }
+);
 // 当前选择的配置类型：'self' 或 'friend'
 const configType = ref<'self' | 'friend'>('self');
 
@@ -917,8 +995,10 @@ onMounted(async () => {
   watch(keyboardHeight, (h) => {
     nextTick(() => {
       scrollerRef.value?.reset?.();
-      if (inputFocused.value && scrollerEl.value) {
-        scrollerEl.value.scrollTo({ top: scrollerEl.value.scrollHeight, behavior: 'auto' });
+      const el = scrollerRef.value?.$el as HTMLElement | undefined;
+      if (el) scrollerEl.value = el;
+      if (inputFocused.value && el) {
+        el.scrollTo({ top: el.scrollHeight, behavior: 'auto' });
       }
     });
   });
@@ -946,16 +1026,12 @@ onMounted(async () => {
   nextTick(() => {
     document.querySelectorAll('.video-container').forEach(el => observer.observe(el));
   });
+});
 
-  onUnmounted(() => {
-    document.removeEventListener('click', handleGlobalClick);
-    // closeChat();
-  // 使用共享键盘状态，无需在此移除所有监听
-    // 清理所有定时器和间隔器
-    cleanupAllTimers();
-    // 清理长按定时器
-    clearPressTimer();
-  });
+onUnmounted(() => {
+  document.removeEventListener('click', handleGlobalClick);
+  cleanupAllTimers();
+  clearPressTimer();
 });
 
 
@@ -1503,12 +1579,33 @@ const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-4
     <ion-header :translucent="true"  collapse="fade" class="ion-no-border" >
       <ion-toolbar >
         <ion-buttons slot="start">
-      
-           <ion-back-button :text="$t('back')" ></ion-back-button>
+       
+           <ion-back-button v-if="!isLargeScreen" :text="$t('back')" default-href="/index"></ion-back-button>
         </ion-buttons>
-        <ion-title @click="goToFriendProfile" >
+        <ion-title v-if="!isLargeScreen" @click="goToFriendProfile">
           <div style="height:5px"></div>
           <div class="header-title">
+          <div class="avatar-container">
+
+            <img
+              v-if="userAvatars[currentChatPub!]"
+              :src="userAvatars[currentChatPub!]"
+              alt=""
+              class="header-avatar"
+            />
+            <img
+              v-else
+              :src="getGunAvatar(currentChatPub!)"
+              alt=""
+              class="header-avatar"
+            />
+          </div>
+          <span class="chat-name">{{ getDisplayName(currentChatPub!) }}</span>
+       </div>
+        </ion-title>
+        <ion-title v-else slot="start" class="pc-left-title" @click="goToFriendProfile">
+          <div style="height:5px"></div>
+          <div class="header-title pc-left-header">
           <div class="avatar-container">
 
             <img
@@ -1790,6 +1887,7 @@ const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-4
           v-slot="{ item, index, active }"
           ref="scrollerRef"
           @scroll.passive="onScrollerScroll"
+          :key="currentChatPub"
         >
           <DynamicScrollerItem
             :item="item"
@@ -2169,6 +2267,8 @@ const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-4
                 <!--   @keydown.enter.prevent="handleEnterKey"  enterkeyhint="send"-->
                 <textarea
                   v-model="newMsg"
+                  :enterkeyhint="isEnterToSendEnabled ? 'send' : undefined"
+                  @keydown="handleTextKeydown"
                   @input="adjustHeight"
                   @focus="onFocus"
                   @blur="onBlur"
@@ -2210,9 +2310,9 @@ const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-4
                 key="send-button"
                 fill="clear"
                 class="send-button"
-                @click="handleEnterKey"
+                @click="handleSendButtonClick"
               >
-                <ion-icon slot="icon-only" :icon="sendOutline"></ion-icon>
+                <ion-icon slot="icon-only" :icon="isEnterToSendEnabled ? returnDownBackOutline : sendOutline"></ion-icon>
               </ion-button>
             </transition>
         </div>
@@ -2636,6 +2736,25 @@ const testIcon = ref('https://github.com/user-attachments/assets/0027f593-e971-4
   align-items: center;
   gap: 0px;
  
+}
+.pc-left-title {
+  text-align: left;
+}
+.pc-left-header {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding-left: 6px;
+}
+.pc-left-header .avatar-container {
+  justify-content: flex-start;
+}
+.pc-left-header .header-avatar {
+  margin: 2px 0;
+}
+.pc-left-header .chat-name {
+  margin: 0;
+  padding-right: 6px;
 }
 .header-avatar {
   width: 33px; height: 33px; border-radius: 50%; object-fit: cover;
